@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import math
 from apache_beam.io.gcp.datastore.v1new.types import Key, Entity
 
@@ -21,7 +22,8 @@ class DatastoreEntityMapper():
         self.batch_size_bytes = batch_size_bytes
 
     def _create_entity(self, values, id):
-        key = Key(['megalist', 'bloom_filter', 'batch', str(id)], project=self.project)
+        key = Key(['megalist', 'bloom_filter', 'batch',
+                   str(id)], project=self.project)
         entity = Entity(key=key, exclude_from_indexes=['array'])
         entity.set_properties(
             {'array': bytes(values)[id*self.batch_size_bytes:(id+1)*self.batch_size_bytes]})

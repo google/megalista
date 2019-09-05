@@ -11,13 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 from apache_beam.options.pipeline_options import PipelineOptions
 
 
 class DataflowOptions(PipelineOptions):
     @classmethod
     def _add_argparse_args(cls, parser):
-        #OAUTH
+        # OAUTH
         parser.add_value_provider_argument(
             '--client_id',
             help='Client Id for the Google APIs')
@@ -30,7 +31,7 @@ class DataflowOptions(PipelineOptions):
         parser.add_value_provider_argument(
             '--access_token',
             help='OAUTH Access Token for the Google APIs')
-        #Google Ads
+        # Google Ads
         parser.add_argument(
             '--upload_to_ads',
             help='Activates Google Ads module')
@@ -65,7 +66,7 @@ class DataflowOptions(PipelineOptions):
             help='Campaign Manager Profile Id')
         parser.add_value_provider_argument(
             '--floodlight_activity_id',
-            help='Floodlight Activity Id')       
+            help='Floodlight Activity Id')
         parser.add_value_provider_argument(
             '--floodlight_configuration_id',
             help='Floodlight Configuration Id')

@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import logging
 import apache_beam as beam
 from apiclient.discovery import build
@@ -73,7 +74,8 @@ class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
 
     def start_bundle(self):
         if self.active == False:
-            logging.getLogger().warn("Skipping upload to Google Analytics, parameters not configured.")
+            logging.getLogger().warn(
+                "Skipping upload to Google Analytics, parameters not configured.")
             return
         analytics = self._get_analytics_service()
         list_profiles = analytics.management().profiles().list(
