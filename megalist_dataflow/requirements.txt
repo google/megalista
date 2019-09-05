@@ -1,0 +1,2 @@
+googleads==20.0.0
+bloom-filter==1.3

@@ -1,0 +1,91 @@
+{
+    "name": "Megalist",
+    "description": "Buyers audience generator and uploader",
+    "parameters": [
+        {
+            "name": "developer_token",
+            "label": "Google Ads Developer Token",
+            "help_text": "Google Ads Developer Token"
+        },
+        {
+            "name": "customer_id",
+            "label": "Google Ads Customer ID",
+            "help_text": "Google Ads Customer ID"
+        },
+        {
+            "name": "client_id",
+            "label": "Client Id for the Google APIs",
+            "help_text": "Client Id for the Google APIs"
+        },
+        {
+            "name": "client_secret",
+            "label": "Client Secret for the Google Ads API",
+            "help_text": "Client Secret for the Google Ads API"
+        },
+        {
+            "name": "access_token",
+            "label": "Refresh Token for the Google APIs",
+            "help_text": "Refresh Token for the Google APIs"
+        },
+        {
+            "name": "refresh_token",
+            "label": "Refresh Token for the Google APIs",
+            "help_text": "Refresh Token for the Google APIs"
+        },
+        {
+            "name": "google_analytics_account_id",
+            "label": "Account Id for Google Analytics",
+            "help_text": "Account Id for Google Analytics"
+        },
+        {
+            "name": "google_analytics_web_property_id",
+            "label": "Web Property Id for Google Analytics",
+            "help_text": "Web Property Id for Google Analytics"
+        },
+        {
+            "name": "google_analytics_user_id_custom_dim",
+            "label": "User Id Custom Dimension in Google Analytics",
+            "help_text": "User Id Custom Dimension in Google Analytics"
+        },
+        {
+            "name": "google_analytics_buyer_custom_dim",
+            "label": "User Id Custom Dimension in Google Analytics",
+            "help_text": "User Id Custom Dimension in Google Analytics"
+        },
+        {
+            "name": "upload_to_dcm",
+            "label": "Flag for enabling Campaign Manager module",
+            "help_text": "Flag for enabling Campaign Manager module"
+        },
+        {
+            "name": "upload_to_ga",
+            "label": "Flag for enabling Google Analytics module",
+            "help_text": "Flag for enabling Google Analytics module"
+        },
+        {
+            "name": "upload_to_ads",
+            "label": "Flag for enabling Google Ads module",
+            "help_text": "Flag for enabling Google Ads module"
+        },
+        {
+            "name": "upload_user_cache",
+            "label": "Flag for enabling User Cache for endpoint",
+            "help_text": "Flag for enabling User Cache for endpoint"
+        },
+        {
+            "name": "dcm_profile_id",
+            "label": "Profile id for Campaign Manager",
+            "help_text": "Profile id for Campaign Manager"
+        },
+        {
+            "name": "floodlight_activity_id",
+            "label": "Floodlight Activity id for Campaign Manager",
+            "help_text": "Floodlight Activity id for Campaign Manager"
+        },
+        {
+            "name": "floodlight_configuration_id",
+            "label": "Floodlight Configuration id for Campaign Manager",
+            "help_text": "Floodlight Configuration id for Campaign Manager"
+        }
+    ]
+}
