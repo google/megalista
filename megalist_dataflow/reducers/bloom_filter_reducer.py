@@ -37,20 +37,3 @@ class BloomFilterReducer(beam.CombineFn):
 
     def extract_output(self, acc):
         return acc.backend.array_
-
-
-if __name__ == '__main__':
-    bloom = BloomFilterReducer(5000)
-    acc = bloom.create_accumulator()
-    acc = bloom.add_input(acc, [{'user_id': 'teste@teste.com'}])
-    acc = bloom.add_input(acc, [{'user_id': 'teste2@teste.com'}])
-    acc2 = bloom.create_accumulator()
-    acc2 = bloom.add_input(acc, [{'user_id': 'teste3@teste.com'}])
-    result = bloom.merge_accumulators([acc, acc2])
-    result_array = bloom.extract_output(result)
-    bloom_result = BloomFilter(max_elements=5000, error_rate=0.1)
-    bloom_result.backend.array_ = result_array
-    print('teste@teste.com' in bloom_result)
-    print('teste2@teste.com' in bloom_result)
-    print('teste3@teste.com' in bloom_result)
-    print('teste4@teste.com' in bloom_result)
