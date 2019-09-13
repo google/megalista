@@ -13,4 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+if [ $# != 0 ]; then
+    echo "Usage: $0 client_id client_secret"
+    exit 1
+fi
+
+pip3 install --user -q -r megalist_dataflow/requirements.txt 
 python3 cloud_config/generate_megalist_token.py --client_id $1 --client_secret $2

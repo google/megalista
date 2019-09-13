@@ -13,16 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+if [ $# != 2 ]; then
+    echo "Usage: $0 gcp_project_id bucket_name"
+    exit 1
+fi
+
 cd megalist_dataflow
-pip3 install --user -r requirements.txt
-python3 -m main --runner DataflowRunner --project vuru-beacons-test --gcp_project_id vuru-beacons-test --temp_location gs://megalist-data/tmp/  --setup_file ./setup.py --template_location gs://megalist-data/templates/megalist
-gsutil cp megalist_metadata gs://megalist-data/templates/megalist_metadata
+pip3 install --user -q -r requirements.txt
+python3 -m main --runner DataflowRunner --project $1 --gcp_project_id $1 --temp_location gs://$2/tmp/  --setup_file ./setup.py --template_location gs://$2/templates/megalist
+gsutil cp megalist_metadata gs://$2/templates/megalist_metadata
 cd ..
 cd cloud_functions
 cd is_new_buyer
 gcloud functions deploy is_new_buyer --runtime python37 --trigger-http
 cd ..
-cd ..
-cd examples
-gsutil cp generate_megalist_token.py gs://megalist-data/generate_megalist_token.py
 cd ..
