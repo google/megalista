@@ -18,6 +18,7 @@ setuptools.setup(
     name='megalist_dataflow',
     version='0.1',
     install_requires=['googleads==20.0.0', 'google-api-python-client==1.7.9',
-                      'bloom-filter==1.3', 'google-cloud-core==1.0.2', 'google-cloud-datastore==1.9.0'],
+                      'bloom-filter==1.3', 'google-cloud-core==1.0.2',
+                      'google-cloud-datastore==1.9.0'],
     packages=setuptools.find_packages(),
 )
