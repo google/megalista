@@ -32,9 +32,6 @@ class DataflowOptions(PipelineOptions):
             '--access_token',
             help='OAUTH Access Token for the Google APIs')
         # Google Ads
-        parser.add_argument(
-            '--upload_to_ads',
-            help='Activates Google Ads module')
         parser.add_value_provider_argument(
             '--developer_token',
             help='Developer Token for Google Ads API')
@@ -42,9 +39,6 @@ class DataflowOptions(PipelineOptions):
             '--customer_id',
             help='Google Ads Customer ID')
         # Google Analytics
-        parser.add_argument(
-            '--upload_to_ga',
-            help='Activates Google Analytics module')
         parser.add_value_provider_argument(
             '--google_analytics_account_id',
             help='Google Analytics Account ID')
@@ -58,9 +52,6 @@ class DataflowOptions(PipelineOptions):
             '--google_analytics_buyer_custom_dim',
             help='Google Analytics Buyer Custom Dimension')
         # Campaign Manager
-        parser.add_argument(
-            '--upload_to_dcm',
-            help='Activates Campaign Manager module')
         parser.add_value_provider_argument(
             '--dcm_profile_id',
             help='Campaign Manager Profile Id')
@@ -70,10 +61,6 @@ class DataflowOptions(PipelineOptions):
         parser.add_value_provider_argument(
             '--floodlight_configuration_id',
             help='Floodlight Configuration Id')
-        # Cloud Function
-        parser.add_argument(
-            '--upload_user_cache',
-            help='Upload user cache for endpoint')
         # GCP
         parser.add_value_provider_argument(
             '--dataset_id',
