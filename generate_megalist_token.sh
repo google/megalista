@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if [ $# != 0 ]; then
+if [ $# != 2 ]; then
     echo "Usage: $0 client_id client_secret"
     exit 1
 fi
