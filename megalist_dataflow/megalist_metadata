@@ -24,8 +24,8 @@
         },
         {
             "name": "access_token",
-            "label": "Refresh Token for the Google APIs",
-            "help_text": "Refresh Token for the Google APIs"
+            "label": "Access Token for the Google APIs",
+            "help_text": "Access Token for the Google APIs"
         },
         {
             "name": "refresh_token",
