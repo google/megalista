@@ -74,7 +74,7 @@ class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
 
     def start_bundle(self):
         if self.active == False:
-            logging.getLogger().warn(
+            logging.getLogger().warning(
                 "Skipping upload to Google Analytics, parameters not configured.")
             return
         analytics = self._get_analytics_service()

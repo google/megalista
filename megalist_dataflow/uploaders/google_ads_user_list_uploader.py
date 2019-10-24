@@ -62,7 +62,7 @@ class GoogleAdsUserListUploaderDoFn(beam.DoFn):
 
     def start_bundle(self):
         if self.active == False:
-            logging.getLogger().warn("Skipping upload to ads, parameters not configured.")
+            logging.getLogger().warning("Skipping upload to ads, parameters not configured.")
             return
         user_list_service = self._get_user_list_service()
         self.user_list_id = self._create_list_if_it_does_not_exist(user_list_service, self.crm_list_name, {

@@ -53,21 +53,6 @@
             "help_text": "User Id Custom Dimension in Google Analytics"
         },
         {
-            "name": "upload_to_dcm",
-            "label": "Flag for enabling Campaign Manager module",
-            "help_text": "Flag for enabling Campaign Manager module"
-        },
-        {
-            "name": "upload_to_ga",
-            "label": "Flag for enabling Google Analytics module",
-            "help_text": "Flag for enabling Google Analytics module"
-        },
-        {
-            "name": "upload_to_ads",
-            "label": "Flag for enabling Google Ads module",
-            "help_text": "Flag for enabling Google Ads module"
-        },
-        {
             "name": "upload_user_cache",
             "label": "Flag for enabling User Cache for endpoint",
             "help_text": "Flag for enabling User Cache for endpoint"

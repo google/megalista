@@ -33,7 +33,7 @@ def uploader(mocker):
 
 
 def test_get_service(mocker, uploader):
-    uploader._get_user_list_service()
+    assert uploader._get_user_list_service() != None
 
 def test_not_active(mocker):
     id = StaticValueProvider(str, "id")
