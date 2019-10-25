@@ -38,6 +38,12 @@ class DataflowOptions(PipelineOptions):
         parser.add_value_provider_argument(
             '--customer_id',
             help='Google Ads Customer ID')
+        parser.add_value_provider_argument(
+            '--ssd_conversion_name',
+            help='Google Ads Store Sales Direct Conversion Name')
+        parser.add_value_provider_argument(
+            '--ssd_external_upload_id',
+            help='Google Ads Store Sales Direct External Upload Id')
         # Google Analytics
         parser.add_value_provider_argument(
             '--google_analytics_account_id',

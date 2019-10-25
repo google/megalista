@@ -35,42 +35,56 @@
         {
             "name": "google_analytics_account_id",
             "label": "Account Id for Google Analytics",
-            "help_text": "Account Id for Google Analytics"
+            "help_text": "Account Id for Google Analytics",
+            "is_optional": true
         },
         {
             "name": "google_analytics_web_property_id",
             "label": "Web Property Id for Google Analytics",
-            "help_text": "Web Property Id for Google Analytics"
+            "help_text": "Web Property Id for Google Analytics",
+            "is_optional": true
         },
         {
             "name": "google_analytics_user_id_custom_dim",
             "label": "User Id Custom Dimension in Google Analytics",
-            "help_text": "User Id Custom Dimension in Google Analytics"
+            "help_text": "User Id Custom Dimension in Google Analytics",
+            "is_optional": true
         },
         {
             "name": "google_analytics_buyer_custom_dim",
             "label": "User Id Custom Dimension in Google Analytics",
-            "help_text": "User Id Custom Dimension in Google Analytics"
-        },
-        {
-            "name": "upload_user_cache",
-            "label": "Flag for enabling User Cache for endpoint",
-            "help_text": "Flag for enabling User Cache for endpoint"
+            "help_text": "User Id Custom Dimension in Google Analytics",
+            "is_optional": true
         },
         {
             "name": "dcm_profile_id",
             "label": "Profile id for Campaign Manager",
-            "help_text": "Profile id for Campaign Manager"
+            "help_text": "Profile id for Campaign Manager",
+            "is_optional": true
         },
         {
             "name": "floodlight_activity_id",
             "label": "Floodlight Activity id for Campaign Manager",
-            "help_text": "Floodlight Activity id for Campaign Manager"
+            "help_text": "Floodlight Activity id for Campaign Manager",
+            "is_optional": true
         },
         {
             "name": "floodlight_configuration_id",
             "label": "Floodlight Configuration id for Campaign Manager",
-            "help_text": "Floodlight Configuration id for Campaign Manager"
+            "help_text": "Floodlight Configuration id for Campaign Manager",
+            "is_optional": true
+        },
+        {
+            "name": "ssd_conversion_name",
+            "label": "Conversion name for Store Sales Direct in Google Ads",
+            "help_text": "Conversion name for Store Sales Direct in Google Ads",
+            "is_optional": true
+        },
+        {
+            "name": "ssd_external_upload_id",
+            "label": "Google Ads Store Sales Direct External Upload Id",
+            "help_text": "Google Ads Store Sales Direct External Upload Id",
+            "is_optional": true
         }
     ]
 }

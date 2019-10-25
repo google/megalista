@@ -17,6 +17,9 @@ import setuptools
 setuptools.setup(
     name='megalist_dataflow',
     version='0.1',
+    author='Alvaro Stivi',
+    author_email='astivi@google.com',
+    url='https://cse.googlesource.com/solutions/megalist',
     install_requires=['googleads==20.0.0', 'google-api-python-client==1.7.9',
                       'bloom-filter==1.3', 'google-cloud-core==1.0.2',
                       'google-cloud-datastore==1.9.0'],

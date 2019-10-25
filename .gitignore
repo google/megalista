@@ -3,3 +3,4 @@
 .pytest_cache
 .coverage
 htmlcov
+*/scheduler.json

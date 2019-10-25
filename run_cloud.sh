@@ -14,19 +14,11 @@
 # limitations under the License.
 
 
-if [ $# != 3 ]; then
-    echo "Usage: $0 gcp_project_id bucket_name region"
+if [ $# != 2 ]; then
+    echo "Usage: $0 gcp_project_id bucket_name"
     exit 1
 fi
 
-cd megalist_dataflow
 gcloud config set project $1
-pip3 install --user -q -r requirements.txt
-python3 -m main --runner DataflowRunner --project $1 --gcp_project_id $1 --temp_location gs://$2/tmp/ --region $3 --setup_file ./setup.py --template_location gs://$2/templates/megalist
-gsutil cp megalist_metadata gs://$2/templates/megalist_metadata
-cd ..
-cd cloud_functions
-cd is_new_buyer
-gcloud functions deploy is_new_buyer --runtime python37 --trigger-http
-cd ..
-cd ..
+token=$(gcloud auth application-default print-access-token)
+curl -H "Authorization: Bearer $token" -H "Content-Type:application/json" "https://dataflow.googleapis.com/v1b3/projects/$1/templates:launch?gcsPath=gs://$2/templates/megalist" --data-binary "@cloud_config/scheduler.json"

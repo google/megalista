@@ -22,30 +22,33 @@ from apache_beam.options.pipeline_options import PipelineOptions
 from utils.options import DataflowOptions
 from utils.oauth_credentials import OAuthCredentials
 from mappers.pii_hashing_mapper import PIIHashingMapper
+from mappers.ssd_hashing_mapper import SSDHashingMapper
 from mappers.datastore_entity_mapper import DatastoreEntityMapper
 from reducers.bloom_filter_reducer import BloomFilterReducer
 from uploaders.google_ads_user_list_uploader import GoogleAdsUserListUploaderDoFn
 from uploaders.google_analytics_user_list_uploader import GoogleAnalyticsUserListUploaderDoFn
 from uploaders.campaign_manager_conversion_uploader import CampaignManagerConversionUploaderDoFn
+from uploaders.google_ads_ssd_uploader import GoogleAdsSSDUploaderDoFn
 
 
 def run(argv=None):
     pipeline_options = PipelineOptions()
     dataflow_options = pipeline_options.view_as(DataflowOptions)
     hasher = PIIHashingMapper()
+    ssd_mapper = SSDHashingMapper()
     datastore_mapper = DatastoreEntityMapper(
         dataflow_options.gcp_project_id, 1024000)
     oauth_credentials = OAuthCredentials(dataflow_options.client_id, dataflow_options.client_secret,
                                          dataflow_options.developer_token, dataflow_options.refresh_token)
     with beam.Pipeline(options=pipeline_options) as pipeline:
         users = (pipeline
-                 | 'Read Table' >> beam.io.Read(beam.io.BigQuerySource('megalist.buyers')))
+                 | 'Read Users Table' >> beam.io.Read(beam.io.BigQuerySource('megalist.buyers')))
 
-        batched_users = (users 
+        batched_users = (users
                          | 'Batch Users' >> beam.util.BatchElements(min_batch_size=5000, max_batch_size=5000))
 
         google_ads = (batched_users
-                        | 'Hash Users' >> beam.Map(hasher.hash_users)
+                      | 'Hash Users' >> beam.Map(hasher.hash_users)
                         | 'Upload to Ads' >> beam.ParDo(GoogleAdsUserListUploaderDoFn(oauth_credentials, dataflow_options.developer_token, dataflow_options.customer_id)))
 
         google_analytics = (batched_users
@@ -56,9 +59,16 @@ def run(argv=None):
                             | 'Upload to CampaignManager' >> beam.ParDo(CampaignManagerConversionUploaderDoFn(oauth_credentials, dataflow_options.dcm_profile_id, dataflow_options.floodlight_activity_id, dataflow_options.floodlight_configuration_id)))
 
         containing_set = (batched_users
-                            | 'Bloom Filter Apply' >> beam.CombineGlobally(BloomFilterReducer(50000000))
+                          | 'Bloom Filter Apply' >> beam.CombineGlobally(BloomFilterReducer(50000000))
                             | 'Transform to Datastore entities' >> beam.FlatMap(datastore_mapper.batch_entities)
                             | 'Write to Datastore' >> WriteToDatastore(dataflow_options.gcp_project_id))
+
+        conversions = (pipeline
+                       | 'Read Conversions Table' >> beam.io.Read(beam.io.BigQuerySource('megalist.conversions')))
+
+        google_ads_ssd = (conversions
+                      | 'Map Conversions' >> beam.Map(ssd_mapper.map_conversions)
+                      | 'Upload SSD to Ads' >> beam.ParDo(GoogleAdsSSDUploaderDoFn(oauth_credentials, dataflow_options.developer_token, dataflow_options.customer_id, dataflow_options.ssd_conversion_name, dataflow_options.ssd_external_upload_id)))
 
         result = pipeline.run()
         result.wait_until_finish()

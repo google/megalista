@@ -14,17 +14,23 @@
 
 import apache_beam as beam
 import logging
-from megalist_dataflow.utils.oauth_credentials import OAuthCredentials
+import pytz
+import datetime
+from utils.oauth_credentials import OAuthCredentials
 from apache_beam.options.value_provider import StaticValueProvider
+
+timezone = pytz.timezone('America/Sao_Paulo')
 
 
 class GoogleAdsSSDUploaderDoFn(beam.DoFn):
 
-    def __init__(self, oauth_credentials, developer_token, customer_id):
+    def __init__(self, oauth_credentials, developer_token, customer_id, conversion_name, external_upload_id):
         self.oauth_credentials = oauth_credentials
         self.developer_token = developer_token
         self.customer_id = customer_id
         self.active = True
+        self.conversion_name = conversion_name
+        self.external_upload_id = external_upload_id
         if self.developer_token is None or self.customer_id is None:
             self.active = False
 
@@ -38,34 +44,53 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
         return client.GetService(
             'OfflineDataUploadService', 'v201809')
 
+    def _format_date(self, date):
+        return '%s %s' % (datetime.datetime.strftime(date, '%Y%m%d %H%M%S'), timezone.zone)
+
     def start_bundle(self):
         pass
 
-    def process(self, element):
+    def process(self, elements_batch):
         if self.active == False:
             return
         ssd_service = self._get_ssd_service()
-        print(dir(ssd_service))
 
-        # mutate_members_operation = {
-        #     'operand': {
-        #         'userListId': self.user_list_id,
-        #         'membersList': element
-        #     },
-        #     'operator': 'ADD'
-        # }
-        # ssd_service.mutateMembers([mutate_members_operation])
+        upload_data = [{
+            'StoreSalesTransaction': {
+                'userIdentifiers': [
+                    {
+                        'userIdentifierType': 'HASHED_EMAIL',
+                        'value': conversion['email']
+                    }
+                ],
+                'transactionTime': self._format_date(conversion['time']),
+                'transactionAmount': {
+                    'currencyCode': 'BRL',
+                    'money': {
+                        'microAmount': conversion['amount']
+                    }
+                },
+                'conversionName': self.conversion_name.get()
+            }
+        } for conversion in elements_batch]
 
-        return element
+        offline_data_upload = {
+            'externalUploadId': self.external_upload_id.get(),
+            'offlineDataList': upload_data,
+            'uploadType': 'STORE_SALES_UPLOAD_FIRST_PARTY',
+            'uploadMetadata': {
+                'StoreSalesUploadCommonMetadata': {
+                    'xsi_type': 'FirstPartyUploadMetadata',
+                    'loyaltyRate': 1.0,
+                    'transactionUploadRate': 1.0,
+                }
+            }
+        }
 
+        add_conversions_operation = {
+            'operand': offline_data_upload,
+            'operator': 'ADD'
+        }
+        ssd_service.mutate([add_conversions_operation])
 
-print('yay')
-client_id = StaticValueProvider(str, "601628591949-qm671o3eeam3eacevk3rp2v3e64tt9ud.apps.googleusercontent.com")
-client_secret = StaticValueProvider(str, "JC9ZnhqDx-sHgvJyTvQ28j_D")
-access_token = StaticValueProvider(str, "ya29.Il-pB1PI4Njzfe3KDuNlAfoW8shJUl-0XzRopJRoG68leBgJW6Z-RnJuS_aB0cSXHvQ0Kjerp4Tc9fhIaQBptvBr-DHNwA2rb0X-XkCE7NSv4_GyraDugcL6xlzZTMqwWQ")
-refresh_token = StaticValueProvider(str, "1//0hNdWArOM2BCrCgYIARAAGBESNwF-L9Irf5ABkXW4h0wYA1EjAqrGie3qFF8xk979vRXdcNF23tPdTUIeKvSTSHqZ972sTTPCsjg")
-developer_token = StaticValueProvider(str, "z27QEhvZe2mjjYFmwwfskg")
-customer_id = StaticValueProvider(str, "872-438-5642")
-credentials = OAuthCredentials(client_id, client_secret, access_token, refresh_token)
-uploader = GoogleAdsSSDUploaderDoFn(credentials, developer_token, customer_id)
-uploader.process({'a':'b'})
+        return elements_batch
