@@ -22,7 +22,7 @@ fi
 cd megalist_dataflow
 gcloud config set project $1
 pip3 install --user -q -r requirements.txt
-python3 -m main --runner DataflowRunner --project $1 --gcp_project_id $1 --temp_location gs://$2/tmp/ --region $3 --setup_file ./setup.py --template_location gs://$2/templates/megalist
+python3 -m main --runner DataflowRunner --project $1 --gcp_project_id $1 --temp_location gs://$2/tmp/ --region $3 --setup_file ./setup.py --template_location gs://$2/templates/megalist --num_workers 1 --autoscaling_algorithm=NONE
 gsutil cp megalist_metadata gs://$2/templates/megalist_metadata
 cd ..
 cd cloud_functions

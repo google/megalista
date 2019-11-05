@@ -18,12 +18,14 @@ import logging
 
 class GoogleAdsUserListUploaderDoFn(beam.DoFn):
     crm_list_name = 'Megalist - CRM - Buyers'
-    rev_list_name = 'Megalist - CRM - Potential New Buyers'
+    mobile_list_name = 'Megalist - Mobile - Buyers'
+    rev_list_name = 'Megalist - Potential New Buyers'
 
-    def __init__(self, oauth_credentials, developer_token, customer_id):
+    def __init__(self, oauth_credentials, developer_token, customer_id, app_id):
         self.oauth_credentials = oauth_credentials
         self.developer_token = developer_token
         self.customer_id = customer_id
+        self.app_id = app_id
         self.active = True
         if self.developer_token is None or self.customer_id is None:
             self.active = False
@@ -76,6 +78,18 @@ class GoogleAdsUserListUploaderDoFn(beam.DoFn):
                 'uploadKeyType': 'CONTACT_INFO'
             }
         })
+        self.mobile_user_list_id = self._create_list_if_it_does_not_exist(user_list_service, self.mobile_list_name, {
+            'operand': {
+                'xsi_type': 'CrmBasedUserList',
+                'name': self.mobile_list_name,
+                'description': self.mobile_list_name,
+                # CRM-based user lists can use a membershipLifeSpan of 10000 to indicate
+                # unlimited; otherwise normal values apply.
+                'membershipLifeSpan': 10000,
+                'appId': self.app_id.get(),
+                'uploadKeyType': 'MOBILE_ADVERTISING_ID'
+            }
+        })
         self._create_list_if_it_does_not_exist(user_list_service, self.rev_list_name, {
             'operand': {
                 'xsi_type': 'LogicalUserList',
@@ -89,7 +103,11 @@ class GoogleAdsUserListUploaderDoFn(beam.DoFn):
                             'id': self.user_list_id,
                             'xsi_type': 'CrmBasedUserList'
                         }
-                    }]
+                    }, {
+                        'UserList': {
+                            'id': self.mobile_user_list_id,
+                            'xsi_type': 'CrmBasedUserList'
+                        }}]
                 }]
             }
         })
@@ -98,6 +116,20 @@ class GoogleAdsUserListUploaderDoFn(beam.DoFn):
         if self.active == False:
             return
         user_list_service = self._get_user_list_service()
+
+        mobile_ids = [{'mobileId': row['mobileId']} for row in element]
+
+        mutate_mobile_members_operation = {
+            'operand': {
+                'userListId': self.mobile_user_list_id,
+                'membersList': mobile_ids
+            },
+            'operator': 'ADD'
+        }
+        user_list_service.mutateMembers([mutate_mobile_members_operation])
+
+        for row in element:
+            row.pop('mobileId', None)
 
         mutate_members_operation = {
             'operand': {

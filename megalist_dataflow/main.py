@@ -42,33 +42,33 @@ def run(argv=None):
                                          dataflow_options.developer_token, dataflow_options.refresh_token)
     with beam.Pipeline(options=pipeline_options) as pipeline:
         users = (pipeline
-                 | 'Read Users Table' >> beam.io.Read(beam.io.BigQuerySource('megalist.buyers')))
+                 | 'Read Users Table' >> beam.io.Read(beam.io.BigQuerySource('megalist.buyers2')))
 
         batched_users = (users
                          | 'Batch Users' >> beam.util.BatchElements(min_batch_size=5000, max_batch_size=5000))
 
         google_ads = (batched_users
                       | 'Hash Users' >> beam.Map(hasher.hash_users)
-                        | 'Upload to Ads' >> beam.ParDo(GoogleAdsUserListUploaderDoFn(oauth_credentials, dataflow_options.developer_token, dataflow_options.customer_id)))
+                      | 'Upload to Ads' >> beam.ParDo(GoogleAdsUserListUploaderDoFn(oauth_credentials, dataflow_options.developer_token, dataflow_options.customer_id, dataflow_options.app_id)))
 
-        google_analytics = (batched_users
-                            | 'Upload to Analytics' >> beam.ParDo(GoogleAnalyticsUserListUploaderDoFn(oauth_credentials, dataflow_options.google_analytics_account_id, dataflow_options.google_analytics_web_property_id, dataflow_options.customer_id, dataflow_options.google_analytics_user_id_custom_dim, dataflow_options.google_analytics_buyer_custom_dim)))
+        # google_analytics = (batched_users
+        #                     | 'Upload to Analytics' >> beam.ParDo(GoogleAnalyticsUserListUploaderDoFn(oauth_credentials, dataflow_options.google_analytics_account_id, dataflow_options.google_analytics_web_property_id, dataflow_options.customer_id, dataflow_options.google_analytics_user_id_custom_dim, dataflow_options.google_analytics_buyer_custom_dim)))
 
-        campaign_manager = (users
-                            | beam.util.BatchElements(min_batch_size=1000, max_batch_size=1000)
-                            | 'Upload to CampaignManager' >> beam.ParDo(CampaignManagerConversionUploaderDoFn(oauth_credentials, dataflow_options.dcm_profile_id, dataflow_options.floodlight_activity_id, dataflow_options.floodlight_configuration_id)))
+        # campaign_manager = (users
+        #                     | beam.util.BatchElements(min_batch_size=1000, max_batch_size=1000)
+        #                     | 'Upload to CampaignManager' >> beam.ParDo(CampaignManagerConversionUploaderDoFn(oauth_credentials, dataflow_options.dcm_profile_id, dataflow_options.floodlight_activity_id, dataflow_options.floodlight_configuration_id)))
 
-        containing_set = (batched_users
-                          | 'Bloom Filter Apply' >> beam.CombineGlobally(BloomFilterReducer(50000000))
-                            | 'Transform to Datastore entities' >> beam.FlatMap(datastore_mapper.batch_entities)
-                            | 'Write to Datastore' >> WriteToDatastore(dataflow_options.gcp_project_id))
+        # containing_set = (batched_users
+        #                   | 'Bloom Filter Apply' >> beam.CombineGlobally(BloomFilterReducer(50000000))
+        #                     | 'Transform to Datastore entities' >> beam.FlatMap(datastore_mapper.batch_entities)
+        #                     | 'Write to Datastore' >> WriteToDatastore(dataflow_options.gcp_project_id))
 
-        conversions = (pipeline
-                       | 'Read Conversions Table' >> beam.io.Read(beam.io.BigQuerySource('megalist.conversions')))
+        # conversions = (pipeline
+        #                | 'Read Conversions Table' >> beam.io.Read(beam.io.BigQuerySource('megalist.conversions')))
 
-        google_ads_ssd = (conversions
-                      | 'Map Conversions' >> beam.Map(ssd_mapper.map_conversions)
-                      | 'Upload SSD to Ads' >> beam.ParDo(GoogleAdsSSDUploaderDoFn(oauth_credentials, dataflow_options.developer_token, dataflow_options.customer_id, dataflow_options.ssd_conversion_name, dataflow_options.ssd_external_upload_id)))
+        # google_ads_ssd = (conversions
+        #               | 'Map Conversions' >> beam.Map(ssd_mapper.map_conversions)
+        #               | 'Upload SSD to Ads' >> beam.ParDo(GoogleAdsSSDUploaderDoFn(oauth_credentials, dataflow_options.developer_token, dataflow_options.customer_id, dataflow_options.ssd_conversion_name, dataflow_options.ssd_external_upload_id)))
 
         result = pipeline.run()
         result.wait_until_finish()

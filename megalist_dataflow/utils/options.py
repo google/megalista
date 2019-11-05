@@ -44,6 +44,9 @@ class DataflowOptions(PipelineOptions):
         parser.add_value_provider_argument(
             '--ssd_external_upload_id',
             help='Google Ads Store Sales Direct External Upload Id')
+        parser.add_value_provider_argument(
+            '--app_id',
+            help='Id for the App in the Play Store')
         # Google Analytics
         parser.add_value_provider_argument(
             '--google_analytics_account_id',

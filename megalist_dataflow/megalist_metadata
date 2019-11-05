@@ -33,6 +33,11 @@
             "help_text": "Refresh Token for the Google APIs"
         },
         {
+            "name": "app_id",
+            "label": "Id for the App in the Play Store",
+            "help_text": "Id for the App in the Play Store"
+        },
+        {
             "name": "google_analytics_account_id",
             "label": "Account Id for Google Analytics",
             "help_text": "Account Id for Google Analytics",

@@ -29,11 +29,12 @@ def uploader(mocker):
     access = StaticValueProvider(str, "access")
     refresh = StaticValueProvider(str, "refresh")
     credentials = OAuthCredentials(id, secret, access, refresh)
-    return GoogleAdsUserListUploaderDoFn(credentials, StaticValueProvider(str,"devtoken"), StaticValueProvider(str,"123-456-7890"))
+    return GoogleAdsUserListUploaderDoFn(credentials, StaticValueProvider(str, "devtoken"), StaticValueProvider(str, "123-456-7890"), StaticValueProvider(str, "com.app.id"))
 
 
 def test_get_service(mocker, uploader):
     assert uploader._get_user_list_service() != None
+
 
 def test_not_active(mocker):
     id = StaticValueProvider(str, "id")
@@ -41,7 +42,8 @@ def test_not_active(mocker):
     access = StaticValueProvider(str, "access")
     refresh = StaticValueProvider(str, "refresh")
     credentials = OAuthCredentials(id, secret, access, refresh)
-    uploader = GoogleAdsUserListUploaderDoFn(credentials, None, "123-456-7890")
+    uploader = GoogleAdsUserListUploaderDoFn(
+        credentials, None, "123-456-7890", "com.app.id")
     mocker.patch.object(uploader, '_get_user_list_service')
     uploader.start_bundle()
     uploader.process([])
@@ -62,13 +64,16 @@ def test_list_creation(mocker, uploader):
     uploader.start_bundle()
     uploader._get_user_list_service().mutate.assert_any_call([{'operator': 'ADD', 'operand': {
         'xsi_type': 'CrmBasedUserList', 'name': 'Megalist - CRM - Buyers', 'description': 'Megalist - CRM - Buyers', 'membershipLifeSpan': 10000, 'uploadKeyType': 'CONTACT_INFO'}}])
-    uploader._get_user_list_service().mutate.assert_any_call([{'operator': 'ADD', 'operand': {'xsi_type': 'LogicalUserList', 'name': 'Megalist - CRM - Potential New Buyers',
-                                                                                              'description': 'Megalist - CRM - Potential New Buyers', 'status': 'OPEN', 'rules': [{'operator': 'NONE', 'ruleOperands': [{'UserList': {'id': mocker.ANY, 'xsi_type': 'CrmBasedUserList'}}]}]}}])
+    uploader._get_user_list_service().mutate.assert_any_call([{'operator': 'ADD', 'operand': {'xsi_type': 'LogicalUserList', 'name': 'Megalist - Potential New Buyers',
+                                                                                              'description': 'Megalist - Potential New Buyers', 'status': 'OPEN', 'rules': [{'operator': 'NONE', 'ruleOperands': [{'UserList': {'id': mocker.ANY, 'xsi_type': 'CrmBasedUserList'}}, {'UserList': {'id': mocker.ANY, 'xsi_type': 'CrmBasedUserList'}}]}]}}])
 
 
 def test_element_uploading(mocker, uploader):
     mocker.patch.object(uploader, '_get_user_list_service')
     uploader.user_list_id = 123
-    uploader.process(['a', 'b'])
+    uploader.mobile_user_list_id = 234
+    uploader.process([{'mobileId': 'a', 'email': 'x@x.com'}, {'mobileId': 'b', 'email': 'y@y.com'}])
     uploader._get_user_list_service().mutateMembers.assert_any_call(
-        [{'operand': {'membersList': ['a', 'b'], 'userListId': 123}, 'operator': 'ADD'}])
+        [{'operand': {'membersList': [{'mobileId': 'a'}, {'mobileId': 'b'}], 'userListId': 234}, 'operator': 'ADD'}])
+    uploader._get_user_list_service().mutateMembers.assert_any_call(
+        [{'operand': {'membersList': [{'email': 'x@x.com'}, {'email': 'y@y.com'}], 'userListId': 123}, 'operator': 'ADD'}])
