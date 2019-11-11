@@ -27,9 +27,8 @@ class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
         self.google_ads_account = google_ads_account
         self.user_id_custom_dim = user_id_custom_dim
         self.buyer_custom_dim = buyer_custom_dim
-        self.list_name = 'Megalist - GA - GCLID - Buyers'
-        self.user_id_list_name = 'Megalist - GA - InternalId - Buyers'
-        self.rev_list_name = 'Megalist - GA - Potential New Buyers'
+        self.list_name = 'Megalist - gclid - Buyers'
+        self.user_id_list_name = 'Megalist - InternalId - Buyers'
         self.data_source_import_name = 'Megalist - Import'
         self.active = True
         if self.accountId is None or self.webPropertyId is None or self.google_ads_account is None:
@@ -101,21 +100,6 @@ class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
                     'isSmartList': False,
                     'segment': 'users::condition::%s==buyer' % self.buyer_custom_dim,
                     'membershipDurationDays': 365
-                }
-            }
-        })
-        self._create_list_if_doesnt_exist(analytics, view_ids, self.rev_list_name, {
-            'audienceType': 'STATE_BASED',
-            'stateBasedAudienceDefinition': {
-                'includeConditions': {
-                    'daysToLookBack': 30,
-                    'segment': '',
-                    'membershipDurationDays': 365,
-                    'isSmartList': False
-                },
-                'excludeConditions': {
-                    'exclusionDuration': 'TEMPORARY',
-                    'segment': 'users::condition::ga:goalCompletionsAll>0,ga:transactions>0'
                 }
             }
         })
