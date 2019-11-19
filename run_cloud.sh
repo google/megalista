@@ -14,11 +14,11 @@
 # limitations under the License.
 
 
-if [ $# != 2 ]; then
-    echo "Usage: $0 gcp_project_id bucket_name"
+if [ $# != 3 ]; then
+    echo "Usage: $0 gcp_project_id bucket_name region"
     exit 1
 fi
 
 gcloud config set project $1
 token=$(gcloud auth application-default print-access-token)
-curl -H "Authorization: Bearer $token" -H "Content-Type:application/json" "https://dataflow.googleapis.com/v1b3/projects/$1/templates:launch?gcsPath=gs://$2/templates/megalist" --data-binary "@cloud_config/scheduler.json"
+curl -H "Authorization: Bearer $token" -H "Content-Type:application/json" "https://dataflow.googleapis.com/v1b3/projects/$1/locations/$3/templates:launch?gcsPath=gs://$2/templates/megalist" --data-binary "@cloud_config/scheduler.json"
