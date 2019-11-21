@@ -54,8 +54,8 @@ class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
         if len(results) == 0:
             logging.getLogger().info('%s list does not exist, creating...' % list_name)
             response = analytics.management().remarketingAudience().insert(
-                accountId=self.accountId,
-                webPropertyId=self.webPropertyId,
+                accountId=self.accountId.get(),
+                webPropertyId=self.webPropertyId.get(),
                 body={
                     'name': list_name,
                     'linkedViews': view_ids,
