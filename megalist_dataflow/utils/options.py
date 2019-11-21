@@ -60,6 +60,9 @@ class DataflowOptions(PipelineOptions):
         parser.add_value_provider_argument(
             '--google_analytics_buyer_custom_dim',
             help='Google Analytics Buyer Custom Dimension')
+        parser.add_value_provider_argument(
+            '--google_analytics_view_id',
+            help='Google Analytics View Id')
         # Campaign Manager
         parser.add_value_provider_argument(
             '--dcm_profile_id',

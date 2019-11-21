@@ -62,6 +62,12 @@
             "is_optional": true
         },
         {
+            "name": "google_analytics_view_id",
+            "label": "Google Analytics View Id",
+            "help_text": "Google Analytics View Id",
+            "is_optional": true
+        },
+        {
             "name": "dcm_profile_id",
             "label": "Profile id for Campaign Manager",
             "help_text": "Profile id for Campaign Manager",

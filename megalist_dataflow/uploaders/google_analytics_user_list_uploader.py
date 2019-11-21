@@ -20,13 +20,14 @@ from google.oauth2.credentials import Credentials
 
 
 class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
-    def __init__(self, oauth_credentials, accountId, webPropertyId, google_ads_account, user_id_custom_dim, buyer_custom_dim):
+    def __init__(self, oauth_credentials, accountId, webPropertyId, view_id, google_ads_account, user_id_custom_dim, buyer_custom_dim):
         self.oauth_credentials = oauth_credentials
         self.accountId = accountId
         self.webPropertyId = webPropertyId
         self.google_ads_account = google_ads_account
         self.user_id_custom_dim = user_id_custom_dim
         self.buyer_custom_dim = buyer_custom_dim
+        self.view_id = view_id
         self.list_name = 'Megalist - gclid - Buyers'
         self.user_id_list_name = 'Megalist - InternalId - Buyers'
         self.data_source_import_name = 'Megalist - Import'
@@ -78,9 +79,7 @@ class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
                 "Skipping upload to Google Analytics, parameters not configured.")
             return
         analytics = self._get_analytics_service()
-        list_profiles = analytics.management().profiles().list(
-            accountId=self.accountId.get(), webPropertyId=self.webPropertyId.get()).execute()
-        view_ids = [item['id'] for item in list_profiles['items']]
+        view_ids = [self.view_id.get()]
         self._create_list_if_doesnt_exist(analytics, view_ids, self.list_name, {
             'audienceType': 'SIMPLE',
             'audienceDefinition': {

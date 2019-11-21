@@ -51,8 +51,8 @@ def run(argv=None):
                       | 'Hash Users' >> beam.Map(hasher.hash_users)
                       | 'Upload to Ads' >> beam.ParDo(GoogleAdsUserListUploaderDoFn(oauth_credentials, dataflow_options.developer_token, dataflow_options.customer_id, dataflow_options.app_id)))
 
-        # google_analytics = (batched_users
-        #                     | 'Upload to Analytics' >> beam.ParDo(GoogleAnalyticsUserListUploaderDoFn(oauth_credentials, dataflow_options.google_analytics_account_id, dataflow_options.google_analytics_web_property_id, dataflow_options.customer_id, dataflow_options.google_analytics_user_id_custom_dim, dataflow_options.google_analytics_buyer_custom_dim)))
+         google_analytics = (batched_users
+                             | 'Upload to Analytics' >> beam.ParDo(GoogleAnalyticsUserListUploaderDoFn(oauth_credentials, dataflow_options.google_analytics_account_id, dataflow_options.google_analytics_web_property_id, dataflow_options.view_id, dataflow_options.customer_id, dataflow_options.google_analytics_user_id_custom_dim, dataflow_options.google_analytics_buyer_custom_dim)))
 
         # campaign_manager = (users
         #                     | beam.util.BatchElements(min_batch_size=1000, max_batch_size=1000)
