@@ -26,6 +26,7 @@ from mappers.ssd_hashing_mapper import SSDHashingMapper
 from mappers.datastore_entity_mapper import DatastoreEntityMapper
 from reducers.bloom_filter_reducer import BloomFilterReducer
 from uploaders.google_ads_user_list_uploader import GoogleAdsUserListUploaderDoFn
+from uploaders.google_ads_user_list_remover import GoogleAdsUserListRemoverDoFn
 from uploaders.google_analytics_user_list_uploader import GoogleAnalyticsUserListUploaderDoFn
 from uploaders.campaign_manager_conversion_uploader import CampaignManagerConversionUploaderDoFn
 from uploaders.google_ads_ssd_uploader import GoogleAdsSSDUploaderDoFn
@@ -51,8 +52,19 @@ def run(argv=None):
                       | 'Hash Users' >> beam.Map(hasher.hash_users)
                       | 'Upload to Ads' >> beam.ParDo(GoogleAdsUserListUploaderDoFn(oauth_credentials, dataflow_options.developer_token, dataflow_options.customer_id, dataflow_options.app_id)))
 
-         google_analytics = (batched_users
-                             | 'Upload to Analytics' >> beam.ParDo(GoogleAnalyticsUserListUploaderDoFn(oauth_credentials, dataflow_options.google_analytics_account_id, dataflow_options.google_analytics_web_property_id, dataflow_options.view_id, dataflow_options.customer_id, dataflow_options.google_analytics_user_id_custom_dim, dataflow_options.google_analytics_buyer_custom_dim)))
+
+        users_to_remove = (pipeline
+                        | 'Read Users to Remove Table' >> beam.io.Read(beam.io.BigQuerySource('megalist.removers')))
+
+        batched_removal = (users_to_remove
+            | 'Batch Removal Users' >> beam.util.BatchElements(min_batch_size=5000, max_batch_size=5000))
+
+        google_ads = (batched_removal
+            | 'Hash Removal Users' >> beam.Map(hasher.hash_users)
+            | 'Remove from to Ads' >> beam.ParDo(GoogleAdsUserListRemoverDoFn(oauth_credentials, dataflow_options.developer_token, dataflow_options.customer_id, dataflow_options.app_id)))
+
+        #  google_analytics = (batched_users
+        #                      | 'Upload to Analytics' >> beam.ParDo(GoogleAnalyticsUserListUploaderDoFn(oauth_credentials, dataflow_options.google_analytics_account_id, dataflow_options.google_analytics_web_property_id, dataflow_options.view_id, dataflow_options.customer_id, dataflow_options.google_analytics_user_id_custom_dim, dataflow_options.google_analytics_buyer_custom_dim)))
 
         # campaign_manager = (users
         #                     | beam.util.BatchElements(min_batch_size=1000, max_batch_size=1000)
