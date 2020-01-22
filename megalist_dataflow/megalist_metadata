@@ -96,6 +96,24 @@
             "label": "Google Ads Store Sales Direct External Upload Id",
             "help_text": "Google Ads Store Sales Direct External Upload Id",
             "is_optional": true
+        },
+        {
+            "name": "cp_sheet_id",
+            "label": "Conversion Plus Sheet Id",
+            "help_text": "Conversion Plus Sheet Id",
+            "is_optional": true
+        },
+        {
+            "name": "cp_sheet_range",
+            "label": "Name of the Conversion Plus Sheet config range",
+            "help_text": "Name of the Conversion Plus Sheet config range",
+            "is_optional": true
+        },
+        {
+            "name": "cp_conversion_name",
+            "label": "Google Ads Conversion Name",
+            "help_text": "Google Ads Conversion Name",
+            "is_optional": true
         }
     ]
 }

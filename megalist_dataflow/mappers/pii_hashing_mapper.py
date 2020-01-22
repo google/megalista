@@ -48,7 +48,7 @@ class PIIHashingMapper():
                 hashed['mobileId'] = user['mobile_device_id']
         except:
             print("Error hashing mobile_device_id for user: %s" % user)
-        
+
         return hashed
 
     def hash_users(self, users):

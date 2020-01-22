@@ -24,13 +24,12 @@ timezone = pytz.timezone('America/Sao_Paulo')
 
 class GoogleAdsSSDUploaderDoFn(beam.DoFn):
 
-    def __init__(self, oauth_credentials, developer_token, customer_id, conversion_name, external_upload_id):
+    def __init__(self, oauth_credentials, developer_token, customer_id, conversion_name):
         self.oauth_credentials = oauth_credentials
         self.developer_token = developer_token
         self.customer_id = customer_id
         self.active = True
         self.conversion_name = conversion_name
-        self.external_upload_id = external_upload_id
         if self.developer_token is None or self.customer_id is None:
             self.active = False
 
@@ -75,7 +74,6 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
         } for conversion in elements_batch]
 
         offline_data_upload = {
-            'externalUploadId': self.external_upload_id.get(),
             'offlineDataList': upload_data,
             'uploadType': 'STORE_SALES_UPLOAD_FIRST_PARTY',
             'uploadMetadata': {

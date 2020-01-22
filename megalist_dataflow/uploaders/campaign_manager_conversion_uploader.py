@@ -47,7 +47,8 @@ class CampaignManagerConversionUploaderDoFn(beam.DoFn):
 
     def start_bundle(self):
         if self._disabled():
-            logging.getLogger().warn("Skipping upload to Campaign Manager, parameters not configured.")
+            logging.getLogger().warn(
+                "Skipping upload to Campaign Manager, parameters not configured.")
 
     def process(self, elements):
         if self._disabled():
@@ -72,5 +73,5 @@ class CampaignManagerConversionUploaderDoFn(beam.DoFn):
             logging.getLogger().error('Error(s) inserting conversions:')
             status = response['status'][0]
             for error in status['errors']:
-                logging.getLogger().error('\t[%s]: %s' % (error['code'], error['message']))
-    
+                logging.getLogger().error('\t[%s]: %s' % (
+                    error['code'], error['message']))

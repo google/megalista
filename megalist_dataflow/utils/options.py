@@ -42,9 +42,6 @@ class DataflowOptions(PipelineOptions):
             '--ssd_conversion_name',
             help='Google Ads Store Sales Direct Conversion Name')
         parser.add_value_provider_argument(
-            '--ssd_external_upload_id',
-            help='Google Ads Store Sales Direct External Upload Id')
-        parser.add_value_provider_argument(
             '--app_id',
             help='Id for the App in the Play Store')
         # Google Analytics
@@ -73,6 +70,16 @@ class DataflowOptions(PipelineOptions):
         parser.add_value_provider_argument(
             '--floodlight_configuration_id',
             help='Floodlight Configuration Id')
+        # Conversion Plus
+        parser.add_value_provider_argument(
+            '--cp_sheet_id',
+            help='Conversion Plus Sheet Id')
+        parser.add_value_provider_argument(
+            '--cp_sheet_range',
+            help='Name of the Conversion Plus Sheet config range')
+        parser.add_value_provider_argument(
+            '--cp_conversion_name',
+            help='Google Ads Conversion Name')
         # GCP
         parser.add_value_provider_argument(
             '--dataset_id',
