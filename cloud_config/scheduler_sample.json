@@ -13,7 +13,10 @@
         "google_analytics_buyer_custom_dim": "Google Analytics Custom Dimension for buyer",
         "ssd_conversion_name": "Google Ads Store Sales Direct Conversion Name",
         "ssd_external_upload_id": "Google Ads Store Sales Direct External Upload Id",
-        "gcp_project_id": "GCP Project Id"
+        "app_id": "Play store app id for importing mobile device ids",
+        "cp_sheet_id": "Config sheet for Conversion Plus",
+        "cp_sheet_range": "Config range for Conversion Plus",
+        "cp_conversion_name": "Boosted Conversion for Conversion Plus"
     },
     "environment": {
         "tempLocation": "gs://megalist-data/temp",
