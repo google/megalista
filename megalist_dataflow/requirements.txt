@@ -9,3 +9,5 @@ pytest==5.1.2
 pytest-cov==2.7.1
 pytest-mock==1.10.4
 pytz==2019.3
+wheel==0.34.2
+pyarrow==0.16.0
