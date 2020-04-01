@@ -3,13 +3,6 @@ from google.cloud import bigquery
 from sources.base_bounded_source import BaseBoundedSource
 
 
-def _get_max_results(start_position, stop_position, query_batch_size):
-  positions_diff = stop_position - start_position
-  if positions_diff < query_batch_size:
-    return positions_diff
-  return query_batch_size
-
-
 class BigQueryApiSource(BaseBoundedSource):
   """
   Source implemented using BigQuery's API.
