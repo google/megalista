@@ -39,12 +39,10 @@ class BigQueryApiSource(BaseBoundedSource):
     start_position = range_tracker.start_position()
     stop_position = range_tracker.stop_position()
 
-    while start_position < stop_position:
-      max_results = _get_max_results(start_position, stop_position, self._query_batch_size)
-
-      print('---------- reading from position ' + str(start_position) + ' to ' + str(start_position + max_results))
-
-      rows_iterator = client.list_rows(self._table_name, start_index=start_position, max_results=max_results)
-      for row in rows_iterator:
-        yield row
-      start_position = start_position + max_results
+    rows_iterator = client.list_rows(
+        self._table_name,
+        start_index=start_position,
+        max_results=stop_position - start_position,
+        page_size=self._query_batch_size)
+    for row in rows_iterator:
+      yield row
