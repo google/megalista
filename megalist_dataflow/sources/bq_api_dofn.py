@@ -48,4 +48,4 @@ class BigQueryApiDoFn(DoFn):
 
     rows_iterator = client.list_rows(table_name, page_size=self._query_batch_size)
     for row in rows_iterator:
-      yield (execution, row)
+      yield {"execution": execution, "row": row}

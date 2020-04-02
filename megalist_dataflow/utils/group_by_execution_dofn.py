@@ -18,7 +18,7 @@ from apache_beam import DoFn
 class GroupByExecutionDoFn(DoFn):
   """
   Group elements received in batches.
-  Elements must by tuples were [0] is and Execution.
+  Elements must by dictionaries with an Execution on key 'execution'.
   When an Execution changes between elements, a batch is returned if it hasn't archived batch size
   """
 
@@ -34,7 +34,7 @@ class GroupByExecutionDoFn(DoFn):
     self._batch = []
 
   def process(self, element, *args, **kwargs):
-    execution = element[0]
+    execution = element['execution']
     if self._last_execution is not None and self._last_execution != execution:
       yield self._batch
       self._batch = []
