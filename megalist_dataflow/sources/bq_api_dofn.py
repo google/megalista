@@ -27,7 +27,8 @@ class BigQueryApiDoFn(DoFn):
   DoFn with Execution as input and lines read from BigQuery as output.
   """
 
-  def __init__(self,
+  def __init__(
+      self,
       query_batch_size=20000  # type: int
   ):
     super().__init__()
@@ -48,4 +49,11 @@ class BigQueryApiDoFn(DoFn):
 
     rows_iterator = client.list_rows(table_name, page_size=self._query_batch_size)
     for row in rows_iterator:
-      yield {"execution": execution, "row": row}
+      yield {'execution': execution, 'row': self._convert_row_to_dict(row)}
+
+  @staticmethod
+  def _convert_row_to_dict(row):
+    dict = {}
+    for key, value in row.items():
+      dict[key] = value
+    return dict
