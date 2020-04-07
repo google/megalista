@@ -36,13 +36,13 @@ class OriginType(Enum):
 class Execution:
 
   def __init__(self,
-      origin_name,  # type: str,
-      origin_type,  # type: OriginType
-      origin_metadata,  # type: str,
-      action,  # type: Action
-      destination_name,  # type str
-      destination_metadata,  # type: Iterable[str]
-  ):
+               origin_name,  # type: str,
+               origin_type,  # type: OriginType
+               origin_metadata,  # type: str,
+               action,  # type: Action
+               destination_name,  # type str
+               destination_metadata,  # type: Iterable[str]
+               ):
     self._origin_name = origin_name
     self._origin_type = origin_type
     self._origin_metadata = origin_metadata
@@ -75,7 +75,8 @@ class Execution:
     return self._destination_metadata
 
   def __str__(self):
-    return 'Origin name: {}. Action: {}. Destination name: {}'.format(self.origin_name, self.action, self.destination_name)
+    return 'Origin name: {}. Action: {}. Destination name: {}'.format(self.origin_name, self.action,
+                                                                      self.destination_name)
 
   def __eq__(self, other):
     return self.origin_name == other.origin_name \
@@ -84,3 +85,7 @@ class Execution:
            and self.action == other.action \
            and self.destination_name == other.destination_name \
            and self.destination_metadata == other.destination_metadata
+
+  def __hash__(self):
+    return hash((self.origin_name, self.origin_type, self.origin_metadata, self.action, self.destination_name,
+                 self.destination_metadata))
