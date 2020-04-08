@@ -27,7 +27,7 @@ class Action(Enum):
   GA_USER_LIST_UPLOAD = range(6)
 
 
-class OriginType(Enum):
+class SourceType(Enum):
   BIG_QUERY, \
   CSV = range(2)
   # TODO: CSV not yet implemented
@@ -35,32 +35,33 @@ class OriginType(Enum):
 
 class Execution:
 
-  def __init__(self,
-               origin_name,  # type: str,
-               origin_type,  # type: OriginType
-               origin_metadata,  # type: str,
-               action,  # type: Action
-               destination_name,  # type str
-               destination_metadata,  # type: Iterable[str]
-               ):
-    self._origin_name = origin_name
-    self._origin_type = origin_type
-    self._origin_metadata = origin_metadata
+  def __init__(
+      self,
+      source_name,  # type: str,
+      source_type,  # type: SourceType
+      source_metadata,  # type: str,
+      action,  # type: Action
+      destination_name,  # type str
+      destination_metadata,  # type: Iterable[str]
+  ):
+    self._source_name = source_name
+    self._source_type = source_type
+    self._source_metadata = source_metadata
     self._action = action
     self._destination_name = destination_name
     self._destination_metadata = destination_metadata
 
   @property
-  def origin_name(self):
-    return self._origin_name
+  def source_name(self):
+    return self._source_name
 
   @property
-  def origin_type(self):
-    return self._origin_type
+  def source_type(self):
+    return self._source_type
 
   @property
-  def origin_metadata(self):
-    return self._origin_metadata
+  def source_metadata(self):
+    return self._source_metadata
 
   @property
   def action(self):
@@ -75,17 +76,17 @@ class Execution:
     return self._destination_metadata
 
   def __str__(self):
-    return 'Origin name: {}. Action: {}. Destination name: {}'.format(self.origin_name, self.action,
+    return 'Origin name: {}. Action: {}. Destination name: {}'.format(self.source_name, self.action,
                                                                       self.destination_name)
 
   def __eq__(self, other):
-    return self.origin_name == other.origin_name \
-           and self.origin_type == other.origin_type \
-           and self.origin_metadata == other.origin_metadata \
+    return self.source_name == other.source_name \
+           and self.source_type == other.source_type \
+           and self.source_metadata == other.source_metadata \
            and self.action == other.action \
            and self.destination_name == other.destination_name \
            and self.destination_metadata == other.destination_metadata
 
   def __hash__(self):
-    return hash((self.origin_name, self.origin_type, self.origin_metadata, self.action, self.destination_name,
+    return hash((self.source_name, self.source_type, self.source_metadata, self.action, self.destination_name,
                  self.destination_metadata))

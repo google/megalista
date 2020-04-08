@@ -17,7 +17,7 @@ from megalist_dataflow.utils.oauth_credentials import OAuthCredentials
 from apache_beam.options.value_provider import StaticValueProvider
 import pytest
 
-from utils.execution import Execution, OriginType, Action
+from utils.execution import Execution, SourceType, Action
 
 
 @pytest.fixture
@@ -72,9 +72,9 @@ def test_fail_having_more_than_one_execution(mocker):
   uploader = GoogleAdsUserListUploaderDoFn(credentials, "123", "123-456-7890", "com.app.id")
   mocker.patch.object(uploader, '_get_user_list_service')
 
-  exec1 = Execution('orig1', OriginType.BIG_QUERY, ('dt1', 'buyers'), Action.ADS_USER_LIST_UPLOAD, 'dest1',
+  exec1 = Execution('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'), Action.ADS_USER_LIST_UPLOAD, 'dest1',
                     ('a', 'b', 'c'))
-  exec2 = Execution('origi2', OriginType.BIG_QUERY, ('dt2', 'buyers2'), Action.ADS_USER_LIST_UPLOAD, 'dest2',
+  exec2 = Execution('origi2', SourceType.BIG_QUERY, ('dt2', 'buyers2'), Action.ADS_USER_LIST_UPLOAD, 'dest2',
                     ('a', 'b', 'c'))
 
   with pytest.raises(ValueError, match='At least two Execution in a single call'):
@@ -144,7 +144,7 @@ def assert_logical_list_creation(mocker, user_list_service, list_name):
 
 
 def test_fail_missing_destination_metadata(uploader):
-  execution = Execution('orig1', OriginType.BIG_QUERY, ('dt1', 'buyers'), Action.ADS_USER_LIST_UPLOAD, 'dest1',
+  execution = Execution('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'), Action.ADS_USER_LIST_UPLOAD, 'dest1',
                         ('a', 'b'))
   with pytest.raises(ValueError, match='Missing destination information'):
     uploader.process([{'execution': execution}])
@@ -162,7 +162,7 @@ def test_fail_empty_first_metadata(uploader):
 
 
 def assert_empty_destination_metadata(uploader, destination_metadata):
-  execution = Execution('orig1', OriginType.BIG_QUERY, ('dt1', 'buyers'), Action.ADS_USER_LIST_UPLOAD, 'dest1',
+  execution = Execution('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'), Action.ADS_USER_LIST_UPLOAD, 'dest1',
                         destination_metadata)
   with pytest.raises(ValueError, match='Missing destination information'):
     uploader.process([{'execution': execution}])
@@ -176,7 +176,7 @@ def test_element_uploading(mocker, uploader):
   uploader._create_lists.return_value = (user_list, mobile_list)
 
 
-  execution = Execution('orig1', OriginType.BIG_QUERY, ('dt1', 'buyers'), Action.ADS_USER_LIST_UPLOAD, 'dest1',
+  execution = Execution('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'), Action.ADS_USER_LIST_UPLOAD, 'dest1',
                         (user_list, mobile_list, 'c'))
   uploader.process([{'execution': execution, "row": {'mobileId': 'a', 'email': 'x@x.com'}},
                     {'execution': execution, 'row': {'mobileId': 'b', 'email': 'y@y.com'}}])
