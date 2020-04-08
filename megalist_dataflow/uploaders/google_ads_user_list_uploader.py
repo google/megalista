@@ -15,6 +15,8 @@
 import apache_beam as beam
 import logging
 
+from uploaders import google_ads_user_list_utils as utils
+
 
 class GoogleAdsUserListUploaderDoFn(beam.DoFn):
 
@@ -31,16 +33,6 @@ class GoogleAdsUserListUploaderDoFn(beam.DoFn):
 
   def start_bundle(self):
     pass
-
-  def _get_user_list_service(self):
-    from googleads import adwords
-    from googleads import oauth2
-    oauth2_client = oauth2.GoogleRefreshTokenClient(
-      self.oauth_credentials.get_client_id(), self.oauth_credentials.get_client_secret(),
-      self.oauth_credentials.get_refresh_token())
-    client = adwords.AdWordsClient(self.developer_token.get(), oauth2_client, 'MegaList Dataflow',
-                                   client_customer_id=self.customer_id.get())
-    return client.GetService('AdwordsUserListService', 'v201809')
 
   def _create_list_if_it_does_not_exist(self, user_list_service, list_name, list_definition):
     if self._user_list_id_cache.get(list_name) is None:
@@ -71,6 +63,10 @@ class GoogleAdsUserListUploaderDoFn(beam.DoFn):
       id = response.entries[0]['id']
       logging.getLogger().info('List found %s with id: %d' % (list_name, id))
     return id
+
+  # just to facilitate mocking
+  def _get_user_list_service(self):
+    return utils.get_user_list_service(self.oauth_credentials, self.developer_token.get(), self.customer_id.get())
 
   def _create_lists(self, crm_list_name, mobile_list_name, rev_list_name):
     return self._do_create_lists(
@@ -132,16 +128,6 @@ class GoogleAdsUserListUploaderDoFn(beam.DoFn):
     return user_list_id, mobile_user_list_id
 
   @staticmethod
-  def _assert_elements_have_same_execution(elements):
-    last_execution = elements[0]['execution']
-    for element in elements:
-      current_execution = element['execution']
-      if current_execution != last_execution:
-        raise ValueError(
-          'At least two Execution in a single call ({}) and ({})'.format(str(current_execution), str(last_execution)))
-      last_execution = current_execution
-
-  @staticmethod
   def _assert_all_list_names_are_present(any_execution):
     destination = any_execution.destination_metadata
     if len(destination) is not 3:
@@ -165,7 +151,7 @@ class GoogleAdsUserListUploaderDoFn(beam.DoFn):
       logging.getLogger().warning('Skipping upload to ads, received no elements.')
       return
 
-    self._assert_elements_have_same_execution(elements)
+    utils.assert_elements_have_same_execution(elements)
     any_execution = elements[0]['execution']
     self._assert_all_list_names_are_present(any_execution)
 
@@ -175,14 +161,14 @@ class GoogleAdsUserListUploaderDoFn(beam.DoFn):
 
     user_list_service = self._get_user_list_service()
 
-    self._do_upload(user_list_service, self._extract_rows(elements), mobile_user_list_id, user_list_id)
+    self._do_upload(user_list_service, self._extract_rows(elements), user_list_id, mobile_user_list_id)
 
   @staticmethod
   def _extract_rows(elements):
     return [dict['row'] for dict in elements]
 
   @staticmethod
-  def _do_upload(user_list_service, rows, mobile_user_list_id, user_list_id):
+  def _do_upload(user_list_service, rows, user_list_id, mobile_user_list_id):
     mobile_ids = [{'mobileId': row['mobileId']} for row in rows]
 
     mutate_mobile_members_operation = {

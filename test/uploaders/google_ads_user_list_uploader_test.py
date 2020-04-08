@@ -147,7 +147,7 @@ def test_fail_missing_destination_metadata(uploader):
   execution = Execution('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'), 'dest1', Action.ADS_USER_LIST_UPLOAD,
                         ('a', 'b'))
   with pytest.raises(ValueError, match='Missing destination information'):
-    uploader.process([{'execution': execution}])
+    uploader.process([{'execution': execution}], )
 
 
 def test_fail_empty_first_metadata(uploader):
@@ -165,7 +165,7 @@ def assert_empty_destination_metadata(uploader, destination_metadata):
   execution = Execution('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'), 'dest1', Action.ADS_USER_LIST_UPLOAD,
                         destination_metadata)
   with pytest.raises(ValueError, match='Missing destination information'):
-    uploader.process([{'execution': execution}])
+    uploader.process([{'execution': execution}], )
 
 
 def test_element_uploading(mocker, uploader):
@@ -178,7 +178,7 @@ def test_element_uploading(mocker, uploader):
   execution = Execution('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'), 'dest1', Action.ADS_USER_LIST_UPLOAD,
                         (user_list, mobile_list, 'c'))
   uploader.process([{'execution': execution, "row": {'mobileId': 'a', 'email': 'x@x.com'}},
-                    {'execution': execution, 'row': {'mobileId': 'b', 'email': 'y@y.com'}}])
+                    {'execution': execution, 'row': {'mobileId': 'b', 'email': 'y@y.com'}}], )
   uploader._get_user_list_service().mutateMembers.assert_any_call(
     [{'operand': {
       'membersList': [
