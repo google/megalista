@@ -19,7 +19,7 @@ from apache_beam.options.pipeline_options import PipelineOptions
 
 from mappers.pii_hashing_mapper import PIIHashingMapper
 from sources.bq_api_dofn import BigQueryApiDoFn
-from sources.executions_source import ExecutionsSource
+from sources.spreadsheet_execution_source import SpreadsheetExecutionSource
 
 from uploaders.google_ads_user_list_uploader import GoogleAdsUserListUploaderDoFn
 from utils.execution import Action
@@ -44,7 +44,7 @@ def run(argv=None):
 
   with beam.Pipeline(options=pipeline_options) as pipeline:
     executions = (pipeline | 'Load executions' >> beam.io.Read(
-      ExecutionsSource(sheets_config, dataflow_options.setup_sheet_id)))
+      SpreadsheetExecutionSource(sheets_config, dataflow_options.setup_sheet_id)))
 
     _add_google_ads_user_list_upload(executions, hasher, oauth_credentials, dataflow_options)
 

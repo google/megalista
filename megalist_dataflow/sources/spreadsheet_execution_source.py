@@ -21,7 +21,7 @@ from utils.execution import SourceType
 from utils.sheets_config import SheetsConfig
 
 
-class ExecutionsSource(BaseBoundedSource):
+class SpreadsheetExecutionSource(BaseBoundedSource):
   """
   Read Execution data from a sheet. The sheet id is set-up in the parameter "setup_sheet_id"
   """
