@@ -39,27 +39,28 @@ class ExecutionsSource(BaseBoundedSource):
     return 3
 
   def read(self, range_tracker):
-    sources = self._read_sources(self._sheets_config)
-    destinations = self._read_destination(self._sheets_config)
+    sheet_id = self._setup_sheet_id.get()
+
+    sources = self._read_sources(self._sheets_config, sheet_id)
+    destinations = self._read_destination(self._sheets_config, sheet_id)
 
     schedules = \
-      self._sheets_config.get_range(self._setup_sheet_id.get(), 'Schedules!A2:D')['values']
+      self._sheets_config.get_range(sheet_id, 'Schedules!A2:D')['values']
 
     for schedule in schedules:
       if schedule[0] == 'YES':
         source_metadata = sources[schedule[1]]
-        action = Action[schedule[2]]
-        destination_metadata = destinations[schedule[3]]
+        destination_metadata = destinations[schedule[2]]
         yield Execution(schedule[1],
                         source_metadata['type'],
                         source_metadata['metadata'],
-                        action,
-                        schedule[3],
-                        destination_metadata)
+                        schedule[2],
+                        destination_metadata['action'],
+                        destination_metadata['metadata'])
 
   @staticmethod
-  def _read_sources(sheets_config):
-    range = sheets_config.get_range('1Z0SC50DUc-w60ERkF1T4ZdXZibwg2r1sYtw_YMAiGeM', 'Sources!A2:E')
+  def _read_sources(sheets_config, sheet_id):
+    range = sheets_config.get_range(sheet_id, 'Sources!A2:E')
 
     sources = {}
     for row in range['values']:
@@ -68,11 +69,11 @@ class ExecutionsSource(BaseBoundedSource):
     return sources
 
   @staticmethod
-  def _read_destination(sheets_config):
-    range = sheets_config.get_range('1Z0SC50DUc-w60ERkF1T4ZdXZibwg2r1sYtw_YMAiGeM', 'Destinations!A2:D')
+  def _read_destination(sheets_config, sheet_id):
+    range = sheets_config.get_range(sheet_id, 'Destinations!A2:E')
 
     destinations = {}
     for row in range['values']:
-      destinations[row[0]] = row[1:]
+      destinations[row[0]] = {'action': Action[row[1]], 'metadata': row[2:]}
 
     return destinations

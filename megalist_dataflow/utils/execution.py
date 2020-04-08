@@ -40,15 +40,15 @@ class Execution:
       source_name,  # type: str,
       source_type,  # type: SourceType
       source_metadata,  # type: str,
-      action,  # type: Action
       destination_name,  # type str
+      action,  # type: Action
       destination_metadata,  # type: Iterable[str]
   ):
     self._source_name = source_name
     self._source_type = source_type
     self._source_metadata = source_metadata
-    self._action = action
     self._destination_name = destination_name
+    self._action = action
     self._destination_metadata = destination_metadata
 
   @property
@@ -64,12 +64,12 @@ class Execution:
     return self._source_metadata
 
   @property
-  def action(self):
-    return self._action
-
-  @property
   def destination_name(self):
     return self._destination_name
+
+  @property
+  def action(self):
+    return self._action
 
   @property
   def destination_metadata(self):
@@ -83,10 +83,10 @@ class Execution:
     return self.source_name == other.source_name \
            and self.source_type == other.source_type \
            and self.source_metadata == other.source_metadata \
-           and self.action == other.action \
            and self.destination_name == other.destination_name \
+           and self.action == other.action \
            and self.destination_metadata == other.destination_metadata
 
   def __hash__(self):
-    return hash((self.source_name, self.source_type, self.source_metadata, self.action, self.destination_name,
+    return hash((self.source_name, self.source_type, self.source_metadata, self.destination_name, self.action,
                  self.destination_metadata))
