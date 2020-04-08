@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from apache_beam import DoFn
+from apache_beam.transforms import window
 
 
 class GroupByExecutionDoFn(DoFn):
@@ -22,7 +23,8 @@ class GroupByExecutionDoFn(DoFn):
   When an Execution changes between elements, a batch is returned if it hasn't archived batch size
   """
 
-  def __init__(self,
+  def __init__(
+      self,
       batch_size=5000  # type: int
   ):
     super().__init__()
@@ -35,6 +37,8 @@ class GroupByExecutionDoFn(DoFn):
 
   def process(self, element, *args, **kwargs):
     execution = element['execution']
+
+    # Finish a batch if the Execution changes from last element
     if self._last_execution is not None and self._last_execution != execution:
       yield self._batch
       self._batch = []
@@ -44,4 +48,9 @@ class GroupByExecutionDoFn(DoFn):
     self._batch.append(element)
     if len(self._batch) >= self._batch_size:
       yield self._batch
+      self._batch = []
+
+  def finish_bundle(self):
+    if len(self._batch) > 0:
+      yield window.GlobalWindows.windowed_value(self._batch)
       self._batch = []
