@@ -14,8 +14,8 @@
 
 import logging
 import apache_beam as beam
-from apiclient.discovery import build
-from apiclient.http import MediaInMemoryUpload
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaInMemoryUpload
 from google.oauth2.credentials import Credentials
 
 
