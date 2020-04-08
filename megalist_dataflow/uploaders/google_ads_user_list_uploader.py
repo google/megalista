@@ -27,6 +27,7 @@ class GoogleAdsUserListUploaderDoFn(beam.DoFn):
     self.active = True
     if self.developer_token is None or self.customer_id is None:
       self.active = False
+    self._user_list_id_cache = {}
 
   def start_bundle(self):
     pass
@@ -41,8 +42,15 @@ class GoogleAdsUserListUploaderDoFn(beam.DoFn):
                                    client_customer_id=self.customer_id.get())
     return client.GetService('AdwordsUserListService', 'v201809')
 
+  def _create_list_if_it_does_not_exist(self, user_list_service, list_name, list_definition):
+    if self._user_list_id_cache.get(list_name) is None:
+      self._user_list_id_cache[list_name] = \
+        self._do_create_list_if_it_does_not_exist(user_list_service, list_name, list_definition)
+
+    return self._user_list_id_cache[list_name]
+
   @staticmethod
-  def _create_list_if_it_does_not_exist(user_list_service, list_name, list_definition):
+  def _do_create_list_if_it_does_not_exist(user_list_service, list_name, list_definition):
     response = user_list_service.get([{
       'fields': ['Id', 'Name'],
       'predicates': [{
@@ -72,11 +80,9 @@ class GoogleAdsUserListUploaderDoFn(beam.DoFn):
       mobile_list_name,
       rev_list_name)
 
-  @staticmethod
-  def _do_create_lists(user_list_service, app_id, crm_list_name, mobile_list_name, rev_list_name):
-    _create_list_if_it_does_not_exist = GoogleAdsUserListUploaderDoFn._create_list_if_it_does_not_exist
+  def _do_create_lists(self, user_list_service, app_id, crm_list_name, mobile_list_name, rev_list_name):
 
-    user_list_id = _create_list_if_it_does_not_exist(user_list_service, crm_list_name, {
+    user_list_id = self._create_list_if_it_does_not_exist(user_list_service, crm_list_name, {
       'operand': {
         'xsi_type': 'CrmBasedUserList',
         'name': crm_list_name,
@@ -88,7 +94,7 @@ class GoogleAdsUserListUploaderDoFn(beam.DoFn):
       }
     })
 
-    mobile_user_list_id = _create_list_if_it_does_not_exist(user_list_service, mobile_list_name, {
+    mobile_user_list_id = self._create_list_if_it_does_not_exist(user_list_service, mobile_list_name, {
       'operand': {
         'xsi_type': 'CrmBasedUserList',
         'name': mobile_list_name,
@@ -101,7 +107,7 @@ class GoogleAdsUserListUploaderDoFn(beam.DoFn):
       }
     })
 
-    _create_list_if_it_does_not_exist(user_list_service, rev_list_name, {
+    self._create_list_if_it_does_not_exist(user_list_service, rev_list_name, {
       'operand': {
         'xsi_type': 'LogicalUserList',
         'name': rev_list_name,
