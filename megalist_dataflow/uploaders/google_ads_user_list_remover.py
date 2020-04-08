@@ -1,4 +1,4 @@
-# Copyright 2019 Google LLC
+# Copyright 2020 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,102 +15,102 @@
 import apache_beam as beam
 import logging
 
+from uploaders import google_ads_user_list_utils as utils
+
 
 class GoogleAdsUserListRemoverDoFn(beam.DoFn):
-    crm_list_name = 'Megalist - CRM - Buyers'
-    mobile_list_name = 'Megalist - Mobile - Buyers'
-    rev_list_name = 'Megalist - Potential New Buyers'
 
-    def __init__(self, oauth_credentials, developer_token, customer_id, app_id):
-        self.oauth_credentials = oauth_credentials
-        self.developer_token = developer_token
-        self.customer_id = customer_id
-        self.app_id = app_id
-        self.active = True
-        if self.developer_token is None or self.customer_id is None:
-            self.active = False
+  def __init__(self, oauth_credentials, developer_token, customer_id, app_id):
+    super().__init__()
+    self.oauth_credentials = oauth_credentials
+    self.developer_token = developer_token
+    self.customer_id = customer_id
+    self.app_id = app_id
+    self.active = True
+    if self.developer_token is None or self.customer_id is None:
+      self.active = False
+    self._user_list_id_cache = {}
 
-    def _get_user_list_service(self):
-        from googleads import adwords
-        from googleads import oauth2
-        oauth2_client = oauth2.GoogleRefreshTokenClient(
-            self.oauth_credentials.get_client_id(), self.oauth_credentials.get_client_secret(), self.oauth_credentials.get_refresh_token())
-        client = adwords.AdWordsClient(
-            self.developer_token.get(), oauth2_client, 'MegaList Dataflow', client_customer_id=self.customer_id.get())
-        return client.GetService(
-            'AdwordsUserListService', 'v201809')
+  # just to facilitate mocking
+  def _get_user_list_service(self):
+    return utils.get_user_list_service(self.oauth_credentials, self.developer_token.get(), self.customer_id.get())
 
-    def _create_list_if_it_does_not_exist(self, user_list_service, list_name, list_definition):
-        response = user_list_service.get([{
-            'fields': ['Id', 'Name'],
-            'predicates': [{
-                'field': 'Name',
-                'operator': 'EQUALS',
-                'values': [list_name]
-            }]
-        }])
-        if (len(response.entries) == 0):
-            logging.getLogger().info('%s list does not exist, creating...' % list_name)
-            result = user_list_service.mutate([{
-                'operator': 'ADD',
-                **list_definition
-            }])
-            id = result['value'][0]['id']
-            logging.getLogger().info('%s created with id: %d' % (list_name, id))
-        else:
-            id = response.entries[0]['id']
-            logging.getLogger().info('Found %s with id: %d' % (list_name, id))
-        return id
+  def start_bundle(self):
+    pass
 
-    def start_bundle(self):
-        if self.active == False:
-            logging.getLogger().warning("Skipping upload to ads, parameters not configured.")
-            return
-        user_list_service = self._get_user_list_service()
-        self.user_list_id = user_list_service.get([{
-            'fields': ['Id', 'Name'],
-            'predicates': [{
-                'field': 'Name',
-                'operator': 'EQUALS',
-                'values': [self.crm_list_name]
-            }]
-        }]).entries[0]['id']
+  def _get_list_id(self, list_name):
+    if self._user_list_id_cache.get(list_name) is None:
+      self._user_list_id_cache[list_name] = self._do_get_list_id(list_name)
 
-        self.mobile_user_list_id = user_list_service.get([{
-            'fields': ['Id', 'Name'],
-            'predicates': [{
-                'field': 'Name',
-                'operator': 'EQUALS',
-                'values': [self.mobile_list_name]
-            }]
-        }]).entries[0]['id']
+    return self._user_list_id_cache[list_name]
 
-    def process(self, element):
-        if self.active == False:
-            return
-        user_list_service = self._get_user_list_service()
+  def _do_get_list_id(self, list_name):
+    user_list_service = self._get_user_list_service()
+    return user_list_service.get([{
+      'fields': ['Id', 'Name'],
+      'predicates': [{
+        'field': 'Name',
+        'operator': 'EQUALS',
+        'values': [list_name]
+      }]
+    }]).entries[0]['id']
 
-        mobile_ids = [{'mobileId': row['mobileId']} for row in element]
+  @staticmethod
+  def _assert_all_list_names_are_present(any_execution):
+    destination = any_execution.destination_metadata
+    if len(destination) is not 2:
+      raise ValueError('Missing destination information. Found {}'.format(len(destination)))
 
-        mutate_mobile_members_operation = {
-            'operand': {
-                'userListId': self.mobile_user_list_id,
-                'membersList': mobile_ids
-            },
-            'operator': 'REMOVE'
-        }
-        user_list_service.mutateMembers([mutate_mobile_members_operation])
+    if not destination[0] \
+        or not destination[1]:
+      raise ValueError('Missing destination information. Received {}'.format(str(destination)))
 
-        for row in element:
-            row.pop('mobileId', None)
+  def process(self, elements, **kwargs):
+    if not self.active:
+      logging.getLogger().warning("Skipping upload to ads, parameters not configured.")
+      return
 
-        mutate_members_operation = {
-            'operand': {
-                'userListId': self.user_list_id,
-                'membersList': element
-            },
-            'operator': 'REMOVE'
-        }
-        user_list_service.mutateMembers([mutate_members_operation])
+    if len(elements) == 0:
+      logging.getLogger().warning('Skipping upload to ads, received no elements.')
+      return
 
-        return element
+    utils.assert_elements_have_same_execution(elements)
+    any_execution = elements[0]['execution']
+    self._assert_all_list_names_are_present(any_execution)
+
+    user_list_id = self._get_list_id(any_execution.destination_metadata[0])
+    mobile_user_list_id = self._get_list_id(any_execution.destination_metadata[1])
+
+    user_list_service = self._get_user_list_service()
+
+    self._do_upload(user_list_service, self._extract_rows(elements), user_list_id, mobile_user_list_id)
+
+  @staticmethod
+  def _extract_rows(elements):
+    return [dict['row'] for dict in elements]
+
+  @staticmethod
+  def _do_upload(user_list_service, rows, user_list_id, mobile_user_list_id):
+
+    mobile_ids = [{'mobileId': row['mobileId']} for row in rows]
+
+    mutate_mobile_members_operation = {
+      'operand': {
+        'userListId': mobile_user_list_id,
+        'membersList': mobile_ids
+      },
+      'operator': 'REMOVE'
+    }
+    user_list_service.mutateMembers([mutate_mobile_members_operation])
+
+    for row in rows:
+      row.pop('mobileId', None)
+
+    mutate_members_operation = {
+      'operand': {
+        'userListId': user_list_id,
+        'membersList': rows
+      },
+      'operator': 'REMOVE'
+    }
+    user_list_service.mutateMembers([mutate_members_operation])
