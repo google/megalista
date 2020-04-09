@@ -1,4 +1,4 @@
-# Copyright 2019 Google LLC
+# Copyright 2020 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,55 +16,77 @@ import apache_beam as beam
 import logging
 import pytz
 import datetime
-from utils.oauth_credentials import OAuthCredentials
-from apache_beam.options.value_provider import StaticValueProvider
+
+from uploaders import google_ads_utils as utils
+from utils.execution import Action
 
 timezone = pytz.timezone('America/Sao_Paulo')
 
 
 class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
-    def __init__(self, oauth_credentials, developer_token, customer_id, conversion_name):
-        self.oauth_credentials = oauth_credentials
-        self.developer_token = developer_token
-        self.customer_id = customer_id
-        self.active = True
-        self.conversion_name = conversion_name
-        if self.developer_token is None or self.customer_id is None:
-            self.active = False
+  def __init__(self, oauth_credentials, developer_token, customer_id):
+    super().__init__()
+    self.oauth_credentials = oauth_credentials
+    self.developer_token = developer_token
+    self.customer_id = customer_id
+    self.active = True
+    if self.developer_token is None or self.customer_id is None:
+      self.active = False
 
-    def _get_oc_service(self):
-        from googleads import adwords
-        from googleads import oauth2
-        oauth2_client = oauth2.GoogleRefreshTokenClient(
-            self.oauth_credentials.get_client_id(), self.oauth_credentials.get_client_secret(), self.oauth_credentials.get_refresh_token())
-        client = adwords.AdWordsClient(
-            self.developer_token.get(), oauth2_client, 'MegaList Dataflow', client_customer_id=self.customer_id.get())
-        return client.GetService('OfflineConversionFeedService', version='v201809')
+  def _get_oc_service(self):
+    return utils.get_ads_service('OfflineConversionFeedService', 'v201809', self.oauth_credentials,
+                                 self.developer_token.get(), self.customer_id.get())
 
-    def _format_date(self, date):
-        pdate = datetime.datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.%f")
-        return '%s %s' % (datetime.datetime.strftime(pdate, '%Y%m%d %H%M%S'), timezone.zone)
+  @staticmethod
+  def _format_date(date):
+    pdate = datetime.datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.%f")
+    return '%s %s' % (datetime.datetime.strftime(pdate, '%Y%m%d %H%M%S'), timezone.zone)
 
-    def start_bundle(self):
-        pass
+  def start_bundle(self):
+    pass
 
-    def process(self, elements_batch):
-        print("here")
-        if self.active == False:
-            return
-        oc_service = self._get_oc_service()
+  @staticmethod
+  def _assert_convertion_name_is_present(execution):
+    destination = execution.destination_metadata
+    if len(destination) is not 1:
+      raise ValueError('Missing destination information. Found {}'.format(len(destination)))
 
-        upload_data = [
-            {
-                'operator': 'ADD',
-                'operand': {
-                    'conversionName': self.conversion_name.get(),
-                    'conversionTime': self._format_date(conversion['time']),
-                    'conversionValue': conversion['amount'],
-                    'googleClickId': conversion['gclid']
-                }
-            } for conversion in elements_batch]
+    if not destination[0]:
+      raise ValueError('Missing destination information. Received {}'.format(str(destination)))
 
-        oc_service.mutate(upload_data)
+  def process(self, elements_batch, **kwargs):
+    if not self.active:
+      logging.getLogger().warning("Skipping upload to ads, parameters not configured.")
+      return
 
-        return elements_batch
+    if len(elements_batch) == 0:
+      logging.getLogger().warning('Skipping upload to ads, received no elements.')
+      return
+
+    utils.assert_elements_have_same_execution(elements_batch)
+    any_execution = elements_batch[0]['execution']
+    utils.assert_right_type_action(any_execution, Action.ADS_OFFLINE_CONVERSION)
+    self._assert_convertion_name_is_present(any_execution)
+
+    oc_service = self._get_oc_service()
+
+    self._do_upload(oc_service, any_execution.destination_metadata[0], self._extract_rows(elements_batch))
+
+  @staticmethod
+  def _extract_rows(elements):
+    return [dict['row'] for dict in elements]
+
+  @staticmethod
+  def _do_upload(oc_service, conversion_name, rows):
+    upload_data = [
+      {
+        'operator': 'ADD',
+        'operand': {
+          'conversionName': conversion_name,
+          'conversionTime': GoogleAdsOfflineUploaderDoFn._format_date(conversion['time']),
+          'conversionValue': conversion['amount'],
+          'googleClickId': conversion['gclid']
+        }
+      } for conversion in rows]
+
+    oc_service.mutate(upload_data)

@@ -15,7 +15,7 @@
 import apache_beam as beam
 import logging
 
-from uploaders import google_ads_user_list_utils as utils
+from uploaders import google_ads_utils as utils
 from utils.execution import Action
 
 
@@ -34,7 +34,8 @@ class GoogleAdsUserListRemoverDoFn(beam.DoFn):
 
   # just to facilitate mocking
   def _get_user_list_service(self):
-    return utils.get_user_list_service(self.oauth_credentials, self.developer_token.get(), self.customer_id.get())
+    return utils.get_ads_service(
+      'AdwordsUserListService', 'v201809', self.oauth_credentials, self.developer_token.get(), self.customer_id.get())
 
   def start_bundle(self):
     pass

@@ -13,13 +13,13 @@
 # limitations under the License.
 
 
-def get_user_list_service(oauth_credentials, developer_token, customer_id):
+def get_ads_service(service_name, version, oauth_credentials, developer_token, customer_id):
   from googleads import adwords
   from googleads import oauth2
   oauth2_client = oauth2.GoogleRefreshTokenClient(
     oauth_credentials.get_client_id(), oauth_credentials.get_client_secret(), oauth_credentials.get_refresh_token())
   client = adwords.AdWordsClient(developer_token, oauth2_client, 'MegaList Dataflow', client_customer_id=customer_id)
-  return client.GetService('AdwordsUserListService', 'v201809')
+  return client.GetService(service_name, version=version)
 
 
 def assert_elements_have_same_execution(elements):

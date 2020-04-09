@@ -64,7 +64,7 @@ def test_fail_having_more_than_one_execution(uploader):
                     ('a', 'b'))
 
   with pytest.raises(ValueError, match='At least two Execution in a single call'):
-    uploader.process([{'execution': exec1}, {'execution': exec2}])
+    uploader.process([{'execution': exec1}, {'execution': exec2}], )
 
 
 def test_fail_with_wrong_action(mocker, uploader):
@@ -72,7 +72,7 @@ def test_fail_with_wrong_action(mocker, uploader):
                         ('a', 'b'))
 
   with pytest.raises(ValueError, match='Wrong Action received'):
-    uploader.process([{'execution': execution}])
+    uploader.process([{'execution': execution}], )
 
 
 def test_fail_missing_destination_metadata(uploader):

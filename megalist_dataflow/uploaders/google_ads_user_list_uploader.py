@@ -15,7 +15,7 @@
 import apache_beam as beam
 import logging
 
-from uploaders import google_ads_user_list_utils as utils
+from uploaders import google_ads_utils as utils
 from utils.execution import Action
 
 
@@ -67,7 +67,8 @@ class GoogleAdsUserListUploaderDoFn(beam.DoFn):
 
   # just to facilitate mocking
   def _get_user_list_service(self):
-    return utils.get_user_list_service(self.oauth_credentials, self.developer_token.get(), self.customer_id.get())
+    return utils.get_ads_service(
+      'AdwordsUserListService', 'v201809', self.oauth_credentials, self.developer_token.get(), self.customer_id.get())
 
   def _create_lists(self, crm_list_name, mobile_list_name, rev_list_name):
     return self._do_create_lists(

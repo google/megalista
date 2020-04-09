@@ -86,7 +86,7 @@ def test_fail_with_wrong_action(mocker, uploader):
                         ('a', 'b', 'c'))
 
   with pytest.raises(ValueError, match='Wrong Action received'):
-    uploader.process([{'execution': execution}])
+    uploader.process([{'execution': execution}], )
 
 
 def test_list_already_created(mocker, uploader):
