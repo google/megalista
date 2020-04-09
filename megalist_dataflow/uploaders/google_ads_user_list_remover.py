@@ -16,6 +16,7 @@ import apache_beam as beam
 import logging
 
 from uploaders import google_ads_user_list_utils as utils
+from utils.execution import Action
 
 
 class GoogleAdsUserListRemoverDoFn(beam.DoFn):
@@ -76,6 +77,7 @@ class GoogleAdsUserListRemoverDoFn(beam.DoFn):
 
     utils.assert_elements_have_same_execution(elements)
     any_execution = elements[0]['execution']
+    utils.assert_right_type_action(any_execution, Action.ADS_USER_LIST_REMOVE)
     self._assert_all_list_names_are_present(any_execution)
 
     user_list_id = self._get_list_id(any_execution.destination_metadata[0])

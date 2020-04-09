@@ -81,6 +81,14 @@ def test_fail_having_more_than_one_execution(mocker):
     uploader.process([{'execution': exec1}, {'execution': exec2}])
 
 
+def test_fail_with_wrong_action(mocker, uploader):
+  execution = Execution('origi2', SourceType.BIG_QUERY, ('dt2', 'buyers2'), 'dest2', Action.ADS_USER_LIST_REMOVE,
+                        ('a', 'b', 'c'))
+
+  with pytest.raises(ValueError, match='Wrong Action received'):
+    uploader.process([{'execution': execution}])
+
+
 def test_list_already_created(mocker, uploader):
   result = mocker.MagicMock()
   result.entries = [mocker.MagicMock()]

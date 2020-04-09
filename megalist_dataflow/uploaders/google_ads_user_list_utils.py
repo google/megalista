@@ -30,3 +30,8 @@ def assert_elements_have_same_execution(elements):
       raise ValueError(
         'At least two Execution in a single call ({}) and ({})'.format(str(current_execution), str(last_execution)))
     last_execution = current_execution
+
+
+def assert_right_type_action(execution, expected_action):
+  if execution.action is not expected_action:
+    raise ValueError('Wrong Action received: {}'.format(execution.action.name))
