@@ -78,6 +78,7 @@ class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
 
   @staticmethod
   def _do_upload(oc_service, conversion_name, rows):
+    logging.getLogger().warning('Uploading {} rows to Google Ads'.format(len(rows)))
     upload_data = [
       {
         'operator': 'ADD',

@@ -94,6 +94,7 @@ class GoogleAdsUserListRemoverDoFn(beam.DoFn):
 
   @staticmethod
   def _do_upload(user_list_service, rows, user_list_id, mobile_user_list_id):
+    logging.getLogger().warning('Uploading {} rows to Google Ads'.format(len(rows)))
 
     mobile_ids = [{'mobileId': row['mobileId']} for row in rows]
 
