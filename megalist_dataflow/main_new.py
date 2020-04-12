@@ -20,6 +20,7 @@ from apache_beam.options.pipeline_options import PipelineOptions
 from mappers.pii_hashing_mapper import PIIHashingMapper
 from sources.bq_api_dofn import BigQueryApiDoFn
 from sources.spreadsheet_execution_source import SpreadsheetExecutionSource
+from uploaders.google_ads_offline_conversions_uploader import GoogleAdsOfflineUploaderDoFn
 from uploaders.google_ads_user_list_remover import GoogleAdsUserListRemoverDoFn
 
 from uploaders.google_ads_user_list_uploader import GoogleAdsUserListUploaderDoFn
@@ -28,6 +29,9 @@ from utils.group_by_execution_dofn import GroupByExecutionDoFn
 from utils.oauth_credentials import OAuthCredentials
 from utils.options import DataflowOptions
 from utils.sheets_config import SheetsConfig
+
+
+# TODO: Do not fail the whole pipeline if a branch fail
 
 
 def filter_by_action(execution, action):
@@ -49,6 +53,7 @@ def run(argv=None):
 
     _add_google_ads_user_list_upload(executions, hasher, oauth_credentials, dataflow_options)
     _add_google_ads_user_list_removal(executions, hasher, oauth_credentials, dataflow_options)
+    _add_google_ads_offline_conversion(executions, oauth_credentials, dataflow_options)
 
     # todo: update trix at the end
 
@@ -74,6 +79,17 @@ def _add_google_ads_user_list_removal(pipeline, hasher, oauth_credentials, dataf
       | 'Upload - Google Ads user list remove' >> beam.ParDo(
     GoogleAdsUserListRemoverDoFn(oauth_credentials, dataflow_options.developer_token,
                                  dataflow_options.customer_id, dataflow_options.app_id))
+  )
+
+
+def _add_google_ads_offline_conversion(pipeline, oauth_credentials, dataflow_options):
+  (
+      pipeline | 'Filter - Google Ads offline conversion' >> beam.Filter(filter_by_action,
+                                                                         Action.ADS_OFFLINE_CONVERSION)
+      | 'Read users table - Google Ads offline conversion' >> beam.ParDo(BigQueryApiDoFn())
+      | 'Group elements - Google Ads offline conversion' >> beam.ParDo(GroupByExecutionDoFn())
+      | 'Upload - Google Ads offline conversion' >> beam.ParDo(
+    GoogleAdsOfflineUploaderDoFn(oauth_credentials, dataflow_options.developer_token, dataflow_options.customer_id))
   )
 
 
