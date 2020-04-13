@@ -39,7 +39,10 @@ class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
 
   @staticmethod
   def _format_date(date):
-    pdate = datetime.datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.%f")
+    if isinstance(date, datetime.datetime):
+      pdate = date
+    else:
+      pdate = datetime.datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.%f")
     return '%s %s' % (datetime.datetime.strftime(pdate, '%Y%m%d %H%M%S'), timezone.zone)
 
   def start_bundle(self):
