@@ -36,6 +36,7 @@ class SpreadsheetExecutionSource(BaseBoundedSource):
     self._setup_sheet_id = setup_sheet_id
 
   def _do_count(self):
+    # TODO: really count the number of lines in the sheet
     return 3
 
   def read(self, range_tracker):

@@ -2,6 +2,7 @@ from apache_beam import PTransform, DoFn
 
 import apache_beam as beam
 
+from sources.bq_api_dofn import BigQueryApiDoFn
 from utils.execution import Action
 from utils.group_by_execution_dofn import GroupByExecutionDoFn
 
@@ -18,14 +19,14 @@ class FilterLoadAndGroupData(PTransform):
 
   def __init__(
       self,
-      source_dofn,  # type: DoFn
       action  # type: Action
   ):
     super().__init__()
-    self._source_dofn = source_dofn
+    self._source_dofn = BigQueryApiDoFn()
     self._action = action
 
   def expand(self, input_or_inputs):
+    # todo: rotear a source baseado no tipo presente na Execution
     return input_or_inputs | \
            beam.Filter(filter_by_action, self._action) | \
            beam.ParDo(self._source_dofn) | \
