@@ -15,7 +15,8 @@
 import apache_beam as beam
 import logging
 
-from uploaders import google_ads_utils as utils
+from uploaders import google_ads_utils as ads_utils
+from uploaders import utils as utils
 from utils.execution import Action
 
 
@@ -34,7 +35,7 @@ class GoogleAdsUserListRemoverDoFn(beam.DoFn):
 
   # just to facilitate mocking
   def _get_user_list_service(self):
-    return utils.get_ads_service(
+    return ads_utils.get_ads_service(
       'AdwordsUserListService', 'v201809', self.oauth_credentials, self.developer_token.get(), self.customer_id.get())
 
   def start_bundle(self):
@@ -76,9 +77,9 @@ class GoogleAdsUserListRemoverDoFn(beam.DoFn):
       logging.getLogger().warning('Skipping upload to ads, received no elements.')
       return
 
-    utils.assert_elements_have_same_execution(elements)
+    ads_utils.assert_elements_have_same_execution(elements)
     any_execution = elements[0]['execution']
-    utils.assert_right_type_action(any_execution, Action.ADS_USER_LIST_REMOVE)
+    ads_utils.assert_right_type_action(any_execution, Action.ADS_USER_LIST_REMOVE)
     self._assert_all_list_names_are_present(any_execution)
 
     user_list_id = self._get_list_id(any_execution.destination_metadata[0])
@@ -86,11 +87,7 @@ class GoogleAdsUserListRemoverDoFn(beam.DoFn):
 
     user_list_service = self._get_user_list_service()
 
-    self._do_upload(user_list_service, self._extract_rows(elements), user_list_id, mobile_user_list_id)
-
-  @staticmethod
-  def _extract_rows(elements):
-    return [dict['row'] for dict in elements]
+    self._do_upload(user_list_service, utils.extract_rows(elements), user_list_id, mobile_user_list_id)
 
   @staticmethod
   def _do_upload(user_list_service, rows, user_list_id, mobile_user_list_id):

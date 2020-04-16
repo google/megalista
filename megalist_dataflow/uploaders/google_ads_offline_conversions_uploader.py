@@ -14,13 +14,10 @@
 
 import apache_beam as beam
 import logging
-import pytz
-import datetime
 
-from uploaders import google_ads_utils as utils
+from uploaders import google_ads_utils as ads_utils
+from uploaders import utils as utils
 from utils.execution import Action
-
-timezone = pytz.timezone('America/Sao_Paulo')
 
 
 class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
@@ -34,16 +31,8 @@ class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
       self.active = False
 
   def _get_oc_service(self):
-    return utils.get_ads_service('OfflineConversionFeedService', 'v201809', self.oauth_credentials,
-                                 self.developer_token.get(), self.customer_id.get())
-
-  @staticmethod
-  def _format_date(date):
-    if isinstance(date, datetime.datetime):
-      pdate = date
-    else:
-      pdate = datetime.datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.%f")
-    return '%s %s' % (datetime.datetime.strftime(pdate, '%Y%m%d %H%M%S'), timezone.zone)
+    return ads_utils.get_ads_service('OfflineConversionFeedService', 'v201809', self.oauth_credentials,
+                                     self.developer_token.get(), self.customer_id.get())
 
   def start_bundle(self):
     pass
@@ -66,18 +55,14 @@ class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
       logging.getLogger().warning('Skipping upload to ads, received no elements.')
       return
 
-    utils.assert_elements_have_same_execution(elements_batch)
+    ads_utils.assert_elements_have_same_execution(elements_batch)
     any_execution = elements_batch[0]['execution']
-    utils.assert_right_type_action(any_execution, Action.ADS_OFFLINE_CONVERSION)
+    ads_utils.assert_right_type_action(any_execution, Action.ADS_OFFLINE_CONVERSION)
     self._assert_convertion_name_is_present(any_execution)
 
     oc_service = self._get_oc_service()
 
-    self._do_upload(oc_service, any_execution.destination_metadata[0], self._extract_rows(elements_batch))
-
-  @staticmethod
-  def _extract_rows(elements):
-    return [dict['row'] for dict in elements]
+    self._do_upload(oc_service, any_execution.destination_metadata[0], utils.extract_rows(elements_batch))
 
   @staticmethod
   def _do_upload(oc_service, conversion_name, rows):
@@ -87,7 +72,7 @@ class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
         'operator': 'ADD',
         'operand': {
           'conversionName': conversion_name,
-          'conversionTime': GoogleAdsOfflineUploaderDoFn._format_date(conversion['time']),
+          'conversionTime': ads_utils.format_date(conversion['time']),
           'conversionValue': conversion['amount'],
           'googleClickId': conversion['gclid']
         }

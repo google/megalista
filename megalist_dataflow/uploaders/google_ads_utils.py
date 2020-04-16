@@ -12,6 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import datetime
+import pytz
+
+timezone = pytz.timezone('America/Sao_Paulo')
+
 
 def get_ads_service(service_name, version, oauth_credentials, developer_token, customer_id):
   from googleads import adwords
@@ -35,3 +40,11 @@ def assert_elements_have_same_execution(elements):
 def assert_right_type_action(execution, expected_action):
   if execution.action is not expected_action:
     raise ValueError('Wrong Action received: {}'.format(execution.action.name))
+
+
+def format_date(date):
+  if isinstance(date, datetime.datetime):
+    pdate = date
+  else:
+    pdate = datetime.datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.%f")
+  return '%s %s' % (datetime.datetime.strftime(pdate, '%Y%m%d %H%M%S'), timezone.zone)
