@@ -38,7 +38,7 @@ class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
     pass
 
   @staticmethod
-  def _assert_convertion_name_is_present(execution):
+  def _assert_conversion_name_is_present(execution):
     destination = execution.destination_metadata
     if len(destination) is not 1:
       raise ValueError('Missing destination information. Found {}'.format(len(destination)))
@@ -58,7 +58,7 @@ class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
     ads_utils.assert_elements_have_same_execution(elements_batch)
     any_execution = elements_batch[0]['execution']
     ads_utils.assert_right_type_action(any_execution, Action.ADS_OFFLINE_CONVERSION)
-    self._assert_convertion_name_is_present(any_execution)
+    self._assert_conversion_name_is_present(any_execution)
 
     oc_service = self._get_oc_service()
 
