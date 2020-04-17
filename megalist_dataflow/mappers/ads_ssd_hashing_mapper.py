@@ -1,4 +1,4 @@
-# Copyright 2019 Google LLC
+# Copyright 2020 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,18 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+class AdsSSDHashingMapper():
+  def _hash_field(self, s):
+    import hashlib
+    return hashlib.sha256(s.strip().lower().encode('utf-8')).hexdigest()
 
-class SSDHashingMapper():
-    def _hash_field(self, s):
-        import hashlib
-        return hashlib.sha256(s.strip().lower().encode('utf-8')).hexdigest()
+  def _map_conversion(self, conversion):
+    return {
+      'hashedEmail': self._hash_field(conversion['email']),
+      'time': conversion['time'],
+      'amount': conversion['amount']
+    }
 
-    def _map_conversion(self, conversion):
-        return {
-            'hashedEmail': self._hash_field(conversion['email']),
-            'time': conversion['time'],
-            'amount': conversion['amount']
-        }
-
-    def map_conversions(self, conversions):
-        return [self._map_conversion(conversion) for conversion in conversions]
+  def map_conversions(self, conversions):
+    return [{'execution': dict['execution'], 'row': self._map_conversion(dict['row'])} for dict in conversions]

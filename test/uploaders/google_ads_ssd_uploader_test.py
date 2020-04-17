@@ -30,7 +30,7 @@ def uploader(mocker):
   refresh = StaticValueProvider(str, "refresh")
   credentials = OAuthCredentials(id, secret, access, refresh)
   return GoogleAdsSSDUploaderDoFn(credentials, StaticValueProvider(str, "devtoken"),
-                                  StaticValueProvider(str, "123-456-7890"))
+                                  StaticValueProvider(str, "123-456-7890"), StaticValueProvider(str, "123"))
 
 
 def test_get_service(mocker, uploader):
@@ -43,7 +43,8 @@ def test_not_active(mocker, caplog):
   access = StaticValueProvider(str, "access")
   refresh = StaticValueProvider(str, "refresh")
   credentials = OAuthCredentials(id, secret, access, refresh)
-  uploader = GoogleAdsSSDUploaderDoFn(credentials, None, StaticValueProvider(str, "123-456-7890"))
+  uploader = GoogleAdsSSDUploaderDoFn(credentials, None, StaticValueProvider(str, "123-456-7890"),
+                                      StaticValueProvider(str, "123"))
   mocker.patch.object(uploader, '_get_ssd_service')
   uploader.process([], )
   uploader._get_ssd_service.assert_not_called()
@@ -99,8 +100,8 @@ def test_conversion_upload(uploader):
   time2 = '2020-04-09T13:13:55.0005'
   time2_result = '20200409 131355 America/Sao_Paulo'
 
-  uploader.process([{'execution': execution, "row": {'email': 'a@a.com', 'time': time1, 'amount': '123'}},
-                    {'execution': execution, 'row': {'email': 'b@b.com', 'time': time2, 'amount': '234'}}], )
+  uploader.process([{'execution': execution, "row": {'hashedEmail': 'a@a.com', 'time': time1, 'amount': '123'}},
+                    {'execution': execution, 'row': {'hashedEmail': 'b@b.com', 'time': time2, 'amount': '234'}}], )
 
   upload_data = [
     {
@@ -143,6 +144,7 @@ def test_conversion_upload(uploader):
 
   uploader._get_ssd_service().mutate.assert_any_call([{
     'operand': {
+      'externalUploadId': '123',
       'offlineDataList': upload_data,
       'uploadType': 'STORE_SALES_UPLOAD_FIRST_PARTY',
       'uploadMetadata': {

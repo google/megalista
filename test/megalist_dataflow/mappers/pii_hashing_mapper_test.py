@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from megalist_dataflow.mappers.pii_hashing_mapper import PIIHashingMapper
+from megalist_dataflow.mappers.ads_user_list_pii_hashing_mapper import AdsUserListPIIHashingMapper
 
 
 def test_pii_hashing():
-    hasher = PIIHashingMapper()
+    hasher = AdsUserListPIIHashingMapper()
     users = [{
         "email": "john@doe.com",
         "mailing_address_first_name": "John",

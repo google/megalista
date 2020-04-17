@@ -44,12 +44,6 @@ class ConversionPlusMapper():
   def boost_conversions(self, conversions):
     if self.config is None:
       self.config = self.sheets_config.get_config(self.sheet_id.get(), self.sheet_range.get())
-    boosted_conversions = [self._boost_conversion(conversion) for conversion in conversions]
-    return boosted_conversions
-
-  def boost_conversions_with_execution(self, conversions):
-    if self.config is None:
-      self.config = self.sheets_config.get_config(self.sheet_id.get(), self.sheet_range.get())
     boosted_conversions = [{'execution': conversion['execution'], 'row': self._boost_conversion(conversion['row'])}
                            for conversion in conversions]
     return boosted_conversions

@@ -1,4 +1,4 @@
-# Copyright 2019 Google LLC
+# Copyright 2020 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-class PIIHashingMapper():
+class AdsUserListPIIHashingMapper():
   def _hash_field(self, s):
     import hashlib
     return hashlib.sha256(s.strip().lower().encode('utf-8')).hexdigest()
@@ -51,9 +51,5 @@ class PIIHashingMapper():
 
     return hashed
 
-  def hash_users(self, users):
-    return [self._hash_user(user) for user in users]
-
-  def hash_users_with_execution(self, dicts):
+  def hash_users(self, dicts):
     return [{'execution': dict['execution'], 'row': self._hash_user(dict['row'])} for dict in dicts]
-    pass

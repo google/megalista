@@ -22,11 +22,12 @@ from utils.execution import Action
 
 class GoogleAdsSSDUploaderDoFn(beam.DoFn):
 
-  def __init__(self, oauth_credentials, developer_token, customer_id):
+  def __init__(self, oauth_credentials, developer_token, customer_id, ssd_external_upload_id):
     super().__init__()
     self.oauth_credentials = oauth_credentials
     self.developer_token = developer_token
     self.customer_id = customer_id
+    self.ssd_external_upload_id = ssd_external_upload_id
     self.active = True
     if self.developer_token is None or self.customer_id is None:
       self.active = False
@@ -67,16 +68,17 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
 
     ssd_service = self._get_ssd_service()
 
-    self._do_upload(ssd_service, any_execution.destination_metadata[0], utils.extract_rows(elements))
+    self._do_upload(ssd_service, any_execution.destination_metadata[0], self.ssd_external_upload_id.get(),
+                    utils.extract_rows(elements))
 
   @staticmethod
-  def _do_upload(ssd_service, conversion_name, rows):
+  def _do_upload(ssd_service, conversion_name, ssd_external_upload_id, rows):
     upload_data = [{
       'StoreSalesTransaction': {
         'userIdentifiers': [
           {
             'userIdentifierType': 'HASHED_EMAIL',
-            'value': conversion['email']
+            'value': conversion['hashedEmail']
           }
         ],
         'transactionTime': ads_utils.format_date(conversion['time']),
@@ -91,6 +93,7 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
     } for conversion in rows]
 
     offline_data_upload = {
+      'externalUploadId': ssd_external_upload_id,
       'offlineDataList': upload_data,
       'uploadType': 'STORE_SALES_UPLOAD_FIRST_PARTY',
       'uploadMetadata': {

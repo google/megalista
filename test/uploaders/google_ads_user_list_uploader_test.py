@@ -185,8 +185,8 @@ def test_element_uploading(mocker, uploader):
 
   execution = Execution('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'), 'dest1', Action.ADS_USER_LIST_UPLOAD,
                         (user_list, mobile_list, 'c'))
-  uploader.process([{'execution': execution, "row": {'mobileId': 'a', 'email': 'x@x.com'}},
-                    {'execution': execution, 'row': {'mobileId': 'b', 'email': 'y@y.com'}}], )
+  uploader.process([{'execution': execution, "row": {'mobileId': 'a', 'hashedEmail': 'x@x.com'}},
+                    {'execution': execution, 'row': {'mobileId': 'b', 'hashedEmail': 'y@y.com'}}], )
   uploader._get_user_list_service().mutateMembers.assert_any_call(
     [{'operand': {
       'membersList': [
@@ -197,7 +197,7 @@ def test_element_uploading(mocker, uploader):
   uploader._get_user_list_service().mutateMembers.assert_any_call(
     [{'operand': {
       'membersList': [
-        {'email': 'x@x.com'},
-        {'email': 'y@y.com'}],
+        {'hashedEmail': 'x@x.com'},
+        {'hashedEmail': 'y@y.com'}],
       'userListId': user_list},
       'operator': 'ADD'}])
