@@ -15,43 +15,96 @@
 from megalist_dataflow.uploaders.google_analytics_user_list_uploader import GoogleAnalyticsUserListUploaderDoFn
 from megalist_dataflow.utils.oauth_credentials import OAuthCredentials
 from apache_beam.options.value_provider import StaticValueProvider
-from googleads import adwords
-from googleads import oauth2
 import pytest
+
+from utils.execution import Execution, SourceType, Action
 
 
 @pytest.fixture
 def uploader(mocker):
-    mocker.patch('googleads.oauth2.GoogleRefreshTokenClient')
-    mocker.patch('googleads.adwords.AdWordsClient')
-    id = StaticValueProvider(str, "id")
-    secret = StaticValueProvider(str, "secret")
-    access = StaticValueProvider(str, "access")
-    refresh = StaticValueProvider(str, "refresh")
-    credentials = OAuthCredentials(id, secret, access, refresh)
-    account_id = StaticValueProvider(str, "acc")
-    web_property_id = StaticValueProvider(str, "1234")
-    google_ads_account = StaticValueProvider(str, "xxx-yyy-zzzz")
-    user_id_custom_dim = StaticValueProvider(str, "cd1")
-    buyer_custom_dim = StaticValueProvider(str, "cd2")
-    return GoogleAnalyticsUserListUploaderDoFn(credentials, account_id, web_property_id, google_ads_account, user_id_custom_dim, buyer_custom_dim)
+  mocker.patch('googleads.oauth2.GoogleRefreshTokenClient')
+  mocker.patch('googleads.adwords.AdWordsClient')
+  id = StaticValueProvider(str, "id")
+  secret = StaticValueProvider(str, "secret")
+  access = StaticValueProvider(str, "access")
+  refresh = StaticValueProvider(str, "refresh")
+  credentials = OAuthCredentials(id, secret, access, refresh)
+  account_id = StaticValueProvider(str, "acc")
+  google_ads_account = StaticValueProvider(str, "xxx-yyy-zzzz")
+  return GoogleAnalyticsUserListUploaderDoFn(credentials, account_id, google_ads_account)
 
 
 def test_get_service(mocker, uploader):
-    assert uploader._get_analytics_service() != None
+  assert uploader._get_analytics_service() != None
+
 
 def test_not_active(mocker):
-    id = StaticValueProvider(str, "id")
-    secret = StaticValueProvider(str, "secret")
-    access = StaticValueProvider(str, "access")
-    refresh = StaticValueProvider(str, "refresh")
-    credentials = OAuthCredentials(id, secret, access, refresh)
-    uploader = GoogleAnalyticsUserListUploaderDoFn(credentials, None, None, None, None, None)
-    mocker.patch.object(uploader, '_get_analytics_service')
-    uploader.start_bundle()
-    uploader.process([])
-    uploader._get_analytics_service.assert_not_called()
+  id = StaticValueProvider(str, "id")
+  secret = StaticValueProvider(str, "secret")
+  access = StaticValueProvider(str, "access")
+  refresh = StaticValueProvider(str, "refresh")
+  credentials = OAuthCredentials(id, secret, access, refresh)
+  uploader = GoogleAnalyticsUserListUploaderDoFn(credentials, None, None)
+  mocker.patch.object(uploader, '_get_analytics_service')
+  uploader.start_bundle()
+  uploader.process([], )
+  uploader._get_analytics_service.assert_not_called()
 
+
+def test_work_with_empty_elements(uploader, mocker, caplog):
+  mocker.patch.object(uploader, '_get_analytics_service')
+  uploader.process([], )
+  uploader._get_analytics_service.assert_not_called()
+  assert 'Skipping upload to GA, received no elements.' in caplog.text
+
+
+def test_fail_having_more_than_one_execution(uploader):
+  exec1 = Execution('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'), 'dest1', Action.GA_USER_LIST_UPLOAD,
+                    ('a', 'b', 'c', 'd', 'e', 'f'))
+  exec2 = Execution('origi2', SourceType.BIG_QUERY, ('dt2', 'buyers2'), 'dest2', Action.GA_USER_LIST_UPLOAD,
+                    ('a', 'b', 'c', 'd', 'e', 'f'))
+
+  with pytest.raises(ValueError, match='At least two Execution in a single call'):
+    uploader.process([{'execution': exec1}, {'execution': exec2}], )
+
+
+def test_fail_with_wrong_action(mocker, uploader):
+  execution = Execution('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'), 'dest1', Action.ADS_SSD_UPLOAD,
+                        ('a', 'b', 'c', 'd', 'e', 'f'))
+
+  with pytest.raises(ValueError, match='Wrong Action received'):
+    uploader.process([{'execution': execution}], )
+
+
+def test_fail_missing_destination_metadata(uploader):
+  execution = Execution('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'), 'dest1', Action.GA_USER_LIST_UPLOAD,
+                        ('a', 'b'))
+  with pytest.raises(ValueError, match='Missing destination information'):
+    uploader.process([{'execution': execution}], )
+
+  assert_empty_destination_metadata(uploader, ('a', '', 'c', 'd', 'e', 'f'))
+
+
+def assert_empty_destination_metadata(uploader, destination_metadata):
+  execution = Execution('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'), 'dest1', Action.GA_USER_LIST_UPLOAD,
+                        destination_metadata)
+  with pytest.raises(ValueError, match='Missing destination information'):
+    uploader.process([{'execution': execution}], )
+
+
+def test_list_already_exists(uploader):
+  # TODO
+  pass
+
+
+def test_list_creation(uploader):
+  # TODO
+  pass
+
+
+def test_elements_uploading(uploader):
+  # TODO
+  pass
 
 # def test_list_created(mocker, uploader):
 #     result = mocker.MagicMock()

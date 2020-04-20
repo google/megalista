@@ -88,6 +88,20 @@ class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
   def start_bundle(self):
     pass
 
+  @staticmethod
+  def _assert_all_list_names_are_present(any_execution):
+    destination = any_execution.destination_metadata
+    if len(destination) is not 6:
+      raise ValueError('Missing destination information. Found {}'.format(len(destination)))
+
+    if not destination[0] \
+        or not destination[1] \
+        or not destination[2] \
+        or not destination[3] \
+        or not destination[4] \
+        or not destination[5]:
+      raise ValueError('Missing destination information. Received {}'.format(str(destination)))
+
   def _create_list(self, web_property_id, view_id, user_id_list_name, buyer_custom_dim):
     analytics = self._get_analytics_service()
     view_ids = [view_id]
@@ -116,6 +130,7 @@ class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
     ads_utils.assert_elements_have_same_execution(elements)
     any_execution = elements[0]['execution']
     ads_utils.assert_right_type_action(any_execution, Action.GA_USER_LIST_UPLOAD)
+    self._assert_all_list_names_are_present(any_execution)
 
     web_property_id = any_execution.destination_metadata[0]
     view_id = any_execution.destination_metadata[1]
