@@ -75,7 +75,6 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
 
   def _assert_execution_is_valid(self, elements, any_execution) -> None:
     ads_utils.assert_elements_have_same_execution(elements)
-    ads_utils.assert_right_type_action(any_execution, self.get_action_type())
     destination= any_execution.destination_metadata
     if not destination[0]:
       raise ValueError(
@@ -93,24 +92,27 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
     if len(elements) == 0:
       logging.getLogger().warning('Skipping upload to ads, received no elements.')
       return
+      
     any_execution=elements[0]['execution']
-    self._assert_execution_is_valid(elements, any_execution)
-    user_list_service=self._get_user_list_service()
-    list_id=self._create_list_if_it_does_not_exist(user_list_service,
-                                                          any_execution.destination_metadata[0],
-                                                          self.get_list_definition(any_execution.destination_metadata[0]))
+    if any_execution.action is self.get_action_type():
+      self._assert_execution_is_valid(elements, any_execution)
+      user_list_service=self._get_user_list_service()
+      list_id=self._create_list_if_it_does_not_exist(user_list_service,
+                                                            any_execution.destination_metadata[0],
+                                                            self.get_list_definition(any_execution.destination_metadata[0]))
 
-    rows=self.get_filtered_rows(
-        utils.extract_rows(elements), self.get_row_keys())
-    logging.getLogger().warning('Uploading {} rows to Google Ads'.format(len(rows)))
-    mutate_members_operation={
-      'operand': {
-        'userListId': list_id,
-        'membersList': rows
-      },
-      'operator': any_execution.destination_metadata[1]
-    }
-    user_list_service.mutateMembers([mutate_members_operation])
+      rows=self.get_filtered_rows(
+          utils.extract_rows(elements), self.get_row_keys())
+      logging.getLogger().warning('Uploading {} rows to Google Ads'.format(len(rows)))
+      mutate_members_operation={
+        'operand': {
+          'userListId': list_id,
+          'membersList': rows
+        },
+        'operator': any_execution.destination_metadata[1]
+      }
+      user_list_service.mutateMembers([mutate_members_operation])
+    yield elements
 
   def get_filtered_rows(self, rows:List[Any], keys: List[str]) -> List[Dict[str, Any]]:
       return [{key: row.get(key) for key in keys} for row in rows]
