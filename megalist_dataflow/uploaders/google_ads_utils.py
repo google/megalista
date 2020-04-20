@@ -14,6 +14,8 @@
 
 import datetime
 import pytz
+from typing import List
+from utils.execution import Action
 
 timezone = pytz.timezone('America/Sao_Paulo')
 
@@ -37,10 +39,9 @@ def assert_elements_have_same_execution(elements):
     last_execution = current_execution
 
 
-def assert_right_type_action(execution, expected_action):
+def assert_right_type_action(execution: int, expected_action: Action) -> None:
   if execution.action is not expected_action:
     raise ValueError('Wrong Action received: {}'.format(execution.action.name))
-
 
 def format_date(date):
   if isinstance(date, datetime.datetime):

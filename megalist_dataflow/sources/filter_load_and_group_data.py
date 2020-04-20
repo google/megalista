@@ -16,13 +16,15 @@ from apache_beam import PTransform, DoFn
 
 import apache_beam as beam
 
+from typing import List
+
 from sources.bq_api_dofn import BigQueryApiDoFn
 from utils.execution import Action
 from utils.group_by_execution_dofn import GroupByExecutionDoFn
 
 
-def filter_by_action(execution, action):
-  return execution.action is action
+def filter_by_action(execution, actions: List[str]) -> bool:
+  return execution.action in actions
 
 
 class FilterLoadAndGroupData(PTransform):
@@ -33,15 +35,15 @@ class FilterLoadAndGroupData(PTransform):
 
   def __init__(
       self,
-      action  # type: Action
+      actions: List[Action]
   ):
     super().__init__()
     self._source_dofn = BigQueryApiDoFn()
-    self._action = action
+    self._actions = actions
 
   def expand(self, input_or_inputs):
     # todo: rotear a source baseado no tipo presente na Execution
     return input_or_inputs | \
-           beam.Filter(filter_by_action, self._action) | \
+           beam.Filter(filter_by_action, self._actions) | \
            beam.ParDo(self._source_dofn) | \
            beam.ParDo(GroupByExecutionDoFn())

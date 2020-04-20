@@ -15,14 +15,17 @@
 import apache_beam as beam
 import logging
 
+from typing import List
+
 from uploaders import google_ads_utils as ads_utils
 from uploaders.google_ads_customer_match.abstract_uploader import GoogleAdsCustomerMatchAbstractUploaderDoFn 
 from uploaders import utils as utils
 from utils.execution import Action
+from utils.oauth_credentials import OAuthCredentials
 
 
 class GoogleAdsCustomerMatchMobileUploaderDoFn(GoogleAdsCustomerMatchAbstractUploaderDoFn):
-  def __init__(self, oauth_credentials, developer_token, customer_id, app_id):
+  def __init__(self, oauth_credentials: OAuthCredentials, developer_token: str, customer_id: str, app_id: str):
     super().__init__(oauth_credentials, developer_token, customer_id)
     self.app_id = app_id
 
@@ -40,5 +43,8 @@ class GoogleAdsCustomerMatchMobileUploaderDoFn(GoogleAdsCustomerMatchAbstractUpl
       }
     }
 
-  def get_row_keys(self):
+  def get_row_keys(self) -> List[str]:
     return ['mobileId']
+
+  def get_action_type(self) -> Action:
+    return Action.ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD
