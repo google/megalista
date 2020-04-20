@@ -15,14 +15,16 @@
 import apache_beam as beam
 import logging
 
+from typing import Dict, Any, List
+
 from uploaders import google_ads_utils as ads_utils
 from uploaders.google_ads_customer_match.abstract_uploader import GoogleAdsCustomerMatchAbstractUploaderDoFn 
 from uploaders import utils as utils
 from utils.execution import Action
 
 
-class GoogleAdsCustomerMatchPIIUploaderDoFn(GoogleAdsCustomerMatchAbstractUploaderDoFn):
-  def get_list_definition(self, list_name):
+class GoogleAdsCustomerMatchContactInfoUploaderDoFn(GoogleAdsCustomerMatchAbstractUploaderDoFn):
+  def get_list_definition(self, list_name: str) -> Dict[str, Any]:
     return {
       'operand': {
         'xsi_type': 'CrmBasedUserList',
@@ -35,5 +37,8 @@ class GoogleAdsCustomerMatchPIIUploaderDoFn(GoogleAdsCustomerMatchAbstractUpload
       }
     }
 
-  def get_row_keys(self):
+  def get_row_keys(self) -> List[str]:
     return ['hashedEmail', 'addressInfo', 'hashedPhoneNumber']
+
+  def get_action_type(self) -> Action:
+    return Action.ADS_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD

@@ -15,6 +15,8 @@
 import apache_beam as beam
 import logging
 
+from typing import Dict, Any, List
+
 from uploaders import google_ads_utils as ads_utils
 from uploaders.google_ads_customer_match.abstract_uploader import GoogleAdsCustomerMatchAbstractUploaderDoFn 
 from uploaders import utils as utils
@@ -22,11 +24,7 @@ from utils.execution import Action
 
 
 class GoogleAdsCustomerMatchUserIdUploaderDoFn(GoogleAdsCustomerMatchAbstractUploaderDoFn):
-  def __init__(self, oauth_credentials, developer_token, customer_id, app_id):
-    super().__init__(oauth_credentials, developer_token, customer_id)
-    self.app_id = app_id
-
-  def get_list_definition(self, list_name):
+  def get_list_definition(self, list_name: str) -> Dict[str, Any]:
     return {
       'operand': {
         'xsi_type': 'CrmBasedUserList',
@@ -39,5 +37,8 @@ class GoogleAdsCustomerMatchUserIdUploaderDoFn(GoogleAdsCustomerMatchAbstractUpl
       }
     }
 
-  def get_row_keys(self):
+  def get_row_keys(self) -> List[str]:
     return ['userId']
+
+  def get_action_type(self) -> Action:
+    return Action.ADS_CUSTOMER_MATCH_USER_ID_UPLOAD

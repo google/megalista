@@ -25,8 +25,11 @@ from sources.spreadsheet_execution_source import SpreadsheetExecutionSource
 from uploaders.google_ads_offline_conversions_uploader import GoogleAdsOfflineUploaderDoFn
 from uploaders.google_ads_ssd_uploader import GoogleAdsSSDUploaderDoFn
 from uploaders.google_ads_user_list_remover import GoogleAdsUserListRemoverDoFn
-from uploaders.google_ads_user_list_uploader import GoogleAdsUserListUploaderDoFn
-from uploaders.google_ads_customer_match.pii_uploader import GoogleAdsCustomerMatchPIIUploaderDoFn
+
+from uploaders.google_ads_customer_match.contact_info_uploader import GoogleAdsCustomerMatchContactInfoUploaderDoFn
+from uploaders.google_ads_customer_match.mobile_uploader import GoogleAdsCustomerMatchMobileUploaderDoFn
+from uploaders.google_ads_customer_match.user_id_uploader import GoogleAdsCustomerMatchUserIdUploaderDoFn
+
 from utils.execution import Action
 from utils.oauth_credentials import OAuthCredentials
 from utils.options import DataflowOptions
@@ -56,7 +59,6 @@ def run(argv=None):
       SpreadsheetExecutionSource(sheets_config, dataflow_options.setup_sheet_id)))
 
     _add_google_ads_user_list_upload(executions, user_list_hasher, oauth_credentials, dataflow_options)
-    _add_google_ads_user_list_removal(executions, user_list_hasher, oauth_credentials, dataflow_options)
     _add_google_ads_offline_conversion(executions, conversion_plus_mapper, oauth_credentials, dataflow_options)
     _add_google_ads_ssd(executions, AdsSSDHashingMapper(), oauth_credentials, dataflow_options)
 
@@ -67,30 +69,27 @@ def _add_google_ads_user_list_upload(pipeline, hasher, oauth_credentials, datafl
   (
     # todo: separar mobileId de outros PIIs
       pipeline
-      | 'Load Data -  Google Ads user list add' >> FilterLoadAndGroupData(Action.ADS_USER_LIST_UPLOAD)
+      | 'Load Data -  Google Ads user list add' >> FilterLoadAndGroupData([
+        Action.ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD,
+        Action.ADS_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD,
+        Action.ADS_CUSTOMER_MATCH_USER_ID_UPLOAD])
       | 'Hash Users - Google Ads user list add' >> beam.Map(hasher.hash_users)
-      | 'Upload - Google Ads user list add' >> beam.ParDo(GoogleAdsCustomerMatchPIIUploaderDoFn(oauth_credentials,
+      | 'Upload - Google Ads Contact Info user list add' >> beam.ParDo(GoogleAdsCustomerMatchContactInfoUploaderDoFn(oauth_credentials,
+                                                                                        dataflow_options.developer_token,
+                                                                                        dataflow_options.customer_id))
+      | 'Upload - Google Ads Mobile Device Id list add' >> beam.ParDo(GoogleAdsCustomerMatchMobileUploaderDoFn(oauth_credentials,
+                                                                                        dataflow_options.developer_token,
+                                                                                        dataflow_options.customer_id,
+                                                                                        dataflow_options.app_id))
+      | 'Upload - Google Ads UserId list add' >> beam.ParDo(GoogleAdsCustomerMatchUserIdUploaderDoFn(oauth_credentials,
                                                                                         dataflow_options.developer_token,
                                                                                         dataflow_options.customer_id))
   )
 
-
-def _add_google_ads_user_list_removal(pipeline, hasher, oauth_credentials, dataflow_options):
-  (
-      pipeline
-      | 'Load Data -  Google Ads user list remove' >> FilterLoadAndGroupData(Action.ADS_USER_LIST_REMOVE)
-      | 'Hash Users - Google Ads user list remove' >> beam.Map(hasher.hash_users)
-      | 'Upload - Google Ads user list remove' >> beam.ParDo(GoogleAdsUserListRemoverDoFn(oauth_credentials,
-                                                                                          dataflow_options.developer_token,
-                                                                                          dataflow_options.customer_id,
-                                                                                          dataflow_options.app_id))
-  )
-
-
 def _add_google_ads_offline_conversion(pipeline, conversion_plus_mapper, oauth_credentials, dataflow_options):
   (
       pipeline
-      | 'Load Data -  Google Ads user list conversion' >> FilterLoadAndGroupData(Action.ADS_OFFLINE_CONVERSION)
+      | 'Load Data -  Google Ads user list conversion' >> FilterLoadAndGroupData([Action.ADS_OFFLINE_CONVERSION])
       | 'Boost Conversions' >> beam.Map(conversion_plus_mapper.boost_conversions)
       | 'Upload - Google Ads offline conversion' >> beam.ParDo(GoogleAdsOfflineUploaderDoFn(oauth_credentials,
                                                                                             dataflow_options.developer_token,
@@ -101,7 +100,7 @@ def _add_google_ads_offline_conversion(pipeline, conversion_plus_mapper, oauth_c
 def _add_google_ads_ssd(pipeline, hasher, oauth_credentials, dataflow_options):
   (
       pipeline
-      | 'Load Data -  Google Ads SSD conversion' >> FilterLoadAndGroupData(Action.ADS_SSD_UPLOAD)
+      | 'Load Data -  Google Ads SSD conversion' >> FilterLoadAndGroupData([Action.ADS_SSD_UPLOAD])
       | 'Hash Users - Google Ads SSD remove' >> beam.Map(hasher.map_conversions)
       | 'Upload - Google Ads SSD' >> beam.ParDo(GoogleAdsSSDUploaderDoFn(oauth_credentials,
                                                                          dataflow_options.developer_token,

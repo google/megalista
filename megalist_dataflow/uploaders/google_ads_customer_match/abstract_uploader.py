@@ -15,13 +15,17 @@
 import apache_beam as beam
 import logging
 
+from typing import Dict, Any, List
+
 from uploaders import google_ads_utils as ads_utils
 from uploaders import utils as utils
 from utils.execution import Action
+from utils.oauth_credentials import OAuthCredentials
+
 
 class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
 
-  def __init__(self, oauth_credentials, developer_token, customer_id):
+  def __init__(self, oauth_credentials: OAuthCredentials, developer_token: str, customer_id: str):
     super().__init__()
     self.oauth_credentials = oauth_credentials
     self.developer_token = developer_token
@@ -34,14 +38,15 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
   def start_bundle(self):
     pass
 
-  def _create_list_if_it_does_not_exist(self, user_list_service, list_name, list_definition):
+  def _create_list_if_it_does_not_exist(self, user_list_service, list_name: str, list_definition: Dict[str, Any]) -> str:
     if self._user_list_id_cache.get(list_name) is None:
       self._user_list_id_cache[list_name] = \
-        self._do_create_list_if_it_does_not_exist(user_list_service, list_name, list_definition)
+        self._do_create_list_if_it_does_not_exist(
+            user_list_service, list_name, list_definition)
 
     return self._user_list_id_cache[list_name]
 
-  def _do_create_list_if_it_does_not_exist(self, user_list_service, list_name, list_definition):
+  def _do_create_list_if_it_does_not_exist(self, user_list_service, list_name: str, list_definition: Dict[str, Any]) -> str:
     response = user_list_service.get([{
       'fields': ['Id', 'Name'],
       'predicates': [{
@@ -68,14 +73,15 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
     return ads_utils.get_ads_service(
       'AdwordsUserListService', 'v201809', self.oauth_credentials, self.developer_token.get(), self.customer_id.get())
 
-  def _assert_execution_is_valid(self, elements, any_execution):
+  def _assert_execution_is_valid(self, elements, any_execution) -> None:
     ads_utils.assert_elements_have_same_execution(elements)
-    ads_utils.assert_right_type_action(any_execution, Action.ADS_USER_LIST_UPLOAD)
-    destination = any_execution.destination_metadata
+    ads_utils.assert_right_type_action(any_execution, self.get_action_type())
+    destination= any_execution.destination_metadata
     if not destination[0]:
-      raise ValueError('Missing destination information. Received {}'.format(str(destination)))
+      raise ValueError(
+          'Missing destination information. Received {}'.format(str(destination)))
 
-  def process(self, elements, **kwargs):
+  def process(self, elements, **kwargs) -> None:
     """
     Args:
        elements: List of dict with two elements: 'execution' and 'row'. All executions must be equal.
@@ -87,29 +93,33 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
     if len(elements) == 0:
       logging.getLogger().warning('Skipping upload to ads, received no elements.')
       return
-    any_execution = elements[0]['execution']
+    any_execution=elements[0]['execution']
     self._assert_execution_is_valid(elements, any_execution)
-    user_list_service = self._get_user_list_service()
-    list_id = self._create_list_if_it_does_not_exist(user_list_service,
+    user_list_service=self._get_user_list_service()
+    list_id=self._create_list_if_it_does_not_exist(user_list_service,
                                                           any_execution.destination_metadata[0],
                                                           self.get_list_definition(any_execution.destination_metadata[0]))
 
-    rows = self.get_filtered_rows(utils.extract_rows(elements), self.get_row_keys())
+    rows=self.get_filtered_rows(
+        utils.extract_rows(elements), self.get_row_keys())
     logging.getLogger().warning('Uploading {} rows to Google Ads'.format(len(rows)))
-    mutate_members_operation = {
+    mutate_members_operation={
       'operand': {
         'userListId': list_id,
         'membersList': rows
       },
-      'operator': 'ADD'
+      'operator': any_execution.destination_metadata[1]
     }
     user_list_service.mutateMembers([mutate_members_operation])
 
-  def get_filtered_rows(self, rows, keys):
+  def get_filtered_rows(self, rows:List[Any], keys: List[str]) -> List[Dict[str, Any]]:
       return [{key: row.get(key) for key in keys} for row in rows]
 
-  def get_list_definition(self, list_name):
+  def get_list_definition(self, list_name:str) -> Dict[str, Any]:
     pass
 
-  def get_row_keys(self):
+  def get_row_keys(self) -> List[str]:
+    pass
+
+  def get_action_type(self) -> Action:
     pass
