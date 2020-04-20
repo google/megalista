@@ -71,7 +71,7 @@ class SpreadsheetExecutionSource(BaseBoundedSource):
 
   @staticmethod
   def _read_destination(sheets_config, sheet_id):
-    range = sheets_config.get_range(sheet_id, 'Destinations!A2:E')
+    range = sheets_config.get_range(sheet_id, 'Destinations!A2:H')
 
     destinations = {}
     for row in range['values']:

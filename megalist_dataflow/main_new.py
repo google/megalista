@@ -27,6 +27,7 @@ from uploaders.google_ads_ssd_uploader import GoogleAdsSSDUploaderDoFn
 from uploaders.google_ads_user_list_remover import GoogleAdsUserListRemoverDoFn
 from uploaders.google_ads_user_list_uploader import GoogleAdsUserListUploaderDoFn
 from uploaders.google_ads_customer_match.pii_uploader import GoogleAdsCustomerMatchPIIUploaderDoFn
+from uploaders.google_analytics_user_list_uploader import GoogleAnalyticsUserListUploaderDoFn
 from utils.execution import Action
 from utils.oauth_credentials import OAuthCredentials
 from utils.options import DataflowOptions
@@ -59,6 +60,7 @@ def run(argv=None):
     _add_google_ads_user_list_removal(executions, user_list_hasher, oauth_credentials, dataflow_options)
     _add_google_ads_offline_conversion(executions, conversion_plus_mapper, oauth_credentials, dataflow_options)
     _add_google_ads_ssd(executions, AdsSSDHashingMapper(), oauth_credentials, dataflow_options)
+    _add_ga_user_list(executions, oauth_credentials, dataflow_options)
 
     # todo: update trix at the end
 
@@ -70,8 +72,8 @@ def _add_google_ads_user_list_upload(pipeline, hasher, oauth_credentials, datafl
       | 'Load Data -  Google Ads user list add' >> FilterLoadAndGroupData(Action.ADS_USER_LIST_UPLOAD)
       | 'Hash Users - Google Ads user list add' >> beam.Map(hasher.hash_users)
       | 'Upload - Google Ads user list add' >> beam.ParDo(GoogleAdsCustomerMatchPIIUploaderDoFn(oauth_credentials,
-                                                                                        dataflow_options.developer_token,
-                                                                                        dataflow_options.customer_id))
+                                                                                                dataflow_options.developer_token,
+                                                                                                dataflow_options.customer_id))
   )
 
 
@@ -107,6 +109,16 @@ def _add_google_ads_ssd(pipeline, hasher, oauth_credentials, dataflow_options):
                                                                          dataflow_options.developer_token,
                                                                          dataflow_options.customer_id,
                                                                          dataflow_options.ssd_external_upload_id))
+  )
+
+
+def _add_ga_user_list(pipeline, oauth_credentials, dataflow_options):
+  (
+      pipeline
+      | 'Load Data -  GA User list' >> FilterLoadAndGroupData(Action.GA_USER_LIST_UPLOAD)
+      | 'Upload - GA User list' >> beam.ParDo(GoogleAnalyticsUserListUploaderDoFn(oauth_credentials,
+                                                                                    dataflow_options.google_analytics_account_id,
+                                                                                    dataflow_options.customer_id))
   )
 
 
