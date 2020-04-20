@@ -76,6 +76,8 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
   def _assert_execution_is_valid(self, elements, any_execution) -> None:
     ads_utils.assert_elements_have_same_execution(elements)
     destination= any_execution.destination_metadata
+
+    ## TODO: the number of parameters vary by upload. This test could be parameterized
     if not destination[0]:
       raise ValueError(
           'Missing destination information. Received {}'.format(str(destination)))
@@ -92,7 +94,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
     if len(elements) == 0:
       logging.getLogger().warning('Skipping upload to ads, received no elements.')
       return
-      
+
     any_execution=elements[0]['execution']
     if any_execution.action is self.get_action_type():
       self._assert_execution_is_valid(elements, any_execution)
