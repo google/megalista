@@ -5,3 +5,4 @@ temp
 .coverage
 htmlcov
 cloud_config/scheduler.json
+run_local.sh

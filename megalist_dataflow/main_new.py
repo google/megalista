@@ -25,8 +25,8 @@ from sources.spreadsheet_execution_source import SpreadsheetExecutionSource
 from uploaders.google_ads_offline_conversions_uploader import GoogleAdsOfflineUploaderDoFn
 from uploaders.google_ads_ssd_uploader import GoogleAdsSSDUploaderDoFn
 from uploaders.google_ads_user_list_remover import GoogleAdsUserListRemoverDoFn
-
 from uploaders.google_ads_user_list_uploader import GoogleAdsUserListUploaderDoFn
+from uploaders.google_ads_customer_match.pii_uploader import GoogleAdsCustomerMatchPIIUploaderDoFn
 from utils.execution import Action
 from utils.oauth_credentials import OAuthCredentials
 from utils.options import DataflowOptions
@@ -69,10 +69,9 @@ def _add_google_ads_user_list_upload(pipeline, hasher, oauth_credentials, datafl
       pipeline
       | 'Load Data -  Google Ads user list add' >> FilterLoadAndGroupData(Action.ADS_USER_LIST_UPLOAD)
       | 'Hash Users - Google Ads user list add' >> beam.Map(hasher.hash_users)
-      | 'Upload - Google Ads user list add' >> beam.ParDo(GoogleAdsUserListUploaderDoFn(oauth_credentials,
+      | 'Upload - Google Ads user list add' >> beam.ParDo(GoogleAdsCustomerMatchPIIUploaderDoFn(oauth_credentials,
                                                                                         dataflow_options.developer_token,
-                                                                                        dataflow_options.customer_id,
-                                                                                        dataflow_options.app_id))
+                                                                                        dataflow_options.customer_id))
   )
 
 
