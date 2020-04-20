@@ -19,6 +19,7 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaInMemoryUpload
 from google.oauth2.credentials import Credentials
 
+from uploaders import google_ads_utils as ads_utils
 from uploaders import utils as utils
 from utils.execution import Action
 
@@ -104,8 +105,6 @@ class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
 
   def process(self, elements, **kwargs):
 
-    # print('--------------- ' + str(elements[0]['execution'].destination_metadata))
-
     if not self.active:
       logging.getLogger().warning('Skipping upload to FA, parameters not configured.')
       return
@@ -114,9 +113,9 @@ class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
       logging.getLogger().warning('Skipping upload to GA, received no elements.')
       return
 
-    utils.assert_elements_have_same_execution(elements)
+    ads_utils.assert_elements_have_same_execution(elements)
     any_execution = elements[0]['execution']
-    utils.assert_right_type_action(any_execution, Action.GA_USER_LIST_UPLOAD)
+    ads_utils.assert_right_type_action(any_execution, Action.GA_USER_LIST_UPLOAD)
 
     web_property_id = any_execution.destination_metadata[0]
     view_id = any_execution.destination_metadata[1]
