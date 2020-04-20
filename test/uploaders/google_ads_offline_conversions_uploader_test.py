@@ -66,7 +66,7 @@ def test_fail_having_more_than_one_execution(uploader):
 
 
 def test_fail_with_wrong_action(mocker, uploader):
-  execution = Execution('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'), 'dest1', Action.ADS_USER_LIST_UPLOAD, ('a'))
+  execution = Execution('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'), 'dest1', Action.GA_USER_LIST_UPLOAD, ('a'))
 
   with pytest.raises(ValueError, match='Wrong Action received'):
     uploader.process([{'execution': execution}], )
