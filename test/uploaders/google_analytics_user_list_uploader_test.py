@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from googleapiclient.http import MediaInMemoryUpload
 
 from megalist_dataflow.uploaders.google_analytics_user_list_uploader import GoogleAnalyticsUserListUploaderDoFn
 from megalist_dataflow.utils.oauth_credentials import OAuthCredentials
@@ -92,44 +93,80 @@ def assert_empty_destination_metadata(uploader, destination_metadata):
     uploader.process([{'execution': execution}], )
 
 
-def test_list_already_exists(uploader):
-  # TODO
-  pass
+def test_list_already_exists(mocker, uploader):
+  service = mocker.MagicMock()
+  service.management().remarketingAudience().list().execute = mocker.Mock(
+    return_value={'items': [{'id': 1, 'name': 'list'}]})
+
+  mocker.patch.object(uploader, '_get_analytics_service')
+  uploader._get_analytics_service.return_value = service
+
+  execution = Execution('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'), 'dest1', Action.GA_USER_LIST_UPLOAD,
+                        ('a', 'b', 'c', 'list', 'd', 'e'))
+  uploader.process([{'execution': execution, 'row': ()}])
+
+  uploader._get_analytics_service().management().remarketingAudience().insert.assert_not_called()
 
 
-def test_list_creation(uploader):
-  # TODO
-  pass
+def test_list_creation(mocker, uploader):
+  service = mocker.MagicMock()
+
+  mocker.patch.object(uploader, '_get_analytics_service')
+  uploader._get_analytics_service.return_value = service
+
+  service.management().remarketingAudience().insert().execute.return_value = {'id': 1}
+
+  execution = Execution('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'), 'dest1', Action.GA_USER_LIST_UPLOAD,
+                        ('web_property', 'view', 'c', 'list', 'd', 'buyers_custom_dim'))
+  uploader.process([{'execution': execution, 'row': ()}])
+
+  service.management().remarketingAudience().insert.assert_any_call(
+    accountId="acc",
+    webPropertyId='web_property',
+    body={
+      'name': 'list',
+      'linkedViews': ['view'],
+      'linkedAdAccounts': [{
+        'type': 'ADWORDS_LINKS',
+        'linkedAccountId': 'xxx-yyy-zzzz'
+      }],
+      'audienceType': 'SIMPLE',
+      'audienceDefinition': {
+        'includeConditions': {
+          'kind': 'analytics#includeConditions',
+          'isSmartList': False,
+          'segment': 'users::condition::%s==buyer' % 'buyers_custom_dim',
+          'membershipDurationDays': 365
+        }
+      }
+    }
+  )
 
 
-def test_elements_uploading(uploader):
-  # TODO
-  pass
+def test_elements_uploading(mocker, uploader):
+  service = mocker.MagicMock()
 
-# def test_list_created(mocker, uploader):
-#     result = mocker.MagicMock()
-#     result.entries = [mocker.MagicMock()]
-#     mocker.patch.object(uploader, '_get_analytics_service')
-#     uploader._get_analytics_service().management = mocker.Mock(return_value=result)
-#     lists = {'items':[{'name': 'Megalist - GA - Buyers', 'id': '555'}, {'name': 'Megalist - GA - Buyers', 'id': '555'}]}
-#     uploader._get_analytics_service().management().remarketingAudience().list().execute= mocker.Mock(return_value=lists)
-#     uploader.start_bundle()
-#     uploader._get_analytics_service().management().remarketingAudience().insert.assert_not_called()
-#     assert False
+  mocker.patch.object(uploader, '_get_analytics_service')
+  uploader._get_analytics_service.return_value = service
 
+  service.management().customDataSources().list().execute.return_value = {
+    'items': [{'id': 1, 'name': 'data_import_name'}]}
 
-# def test_list_creation(mocker, uploader):
-#     mocker.patch.object(uploader, '_get_user_list_service')
-#     uploader.start_bundle()
-#     uploader._get_user_list_service().mutate.assert_any_call([{'operator': 'ADD', 'operand': {
-#         'xsi_type': 'CrmBasedUserList', 'name': 'Megalist - CRM - Buyers', 'description': 'Megalist - CRM - Buyers', 'membershipLifeSpan': 10000, 'uploadKeyType': 'CONTACT_INFO'}}])
-#     uploader._get_user_list_service().mutate.assert_any_call([{'operator': 'ADD', 'operand': {'xsi_type': 'LogicalUserList', 'name': 'Megalist - CRM - Potential New Buyers',
-#                                                                                               'description': 'Megalist - CRM - Potential New Buyers', 'status': 'OPEN', 'rules': [{'operator': 'NONE', 'ruleOperands': [{'UserList': {'id': mocker.ANY, 'xsi_type': 'CrmBasedUserList'}}]}]}}])
+  execution = Execution('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'), 'dest1', Action.GA_USER_LIST_UPLOAD,
+                        ('web_property', 'b', 'data_import_name', 'd', 'user_id_custom_dim', 'buyer_custom_dim'))
+  uploader.process([{'execution': execution, 'row': {'user_id': '12'}},
+                    {'execution': execution, 'row': {'user_id': '34'}}])
 
+  body = 'user_id_custom_dim, buyer_custom_dim\n' \
+         '12,buyer\n' \
+         '34,buyer'
 
-# def test_element_uploading(mocker, uploader):
-#     mocker.patch.object(uploader, '_get_user_list_service')
-#     uploader.user_list_id = 123
-#     uploader.process(['a', 'b'])
-#     uploader._get_user_list_service().mutateMembers.assert_any_call(
-#         [{'operand': {'membersList': ['a', 'b'], 'userListId': 123}, 'operator': 'ADD'}])
+  media = MediaInMemoryUpload(bytes(body, 'UTF-8'),
+                              mimetype='application/octet-stream',
+                              resumable=True)
+  # service.management().uploads().uploadData.assert_any_call(
+  #   accountId="acc",
+  #   webPropertyId='web_property',
+  #   customDataSourceId=1,
+  #   media_body=media
+  # )
