@@ -22,6 +22,7 @@ from mappers.conversion_plus_mapper import ConversionPlusMapper
 from mappers.ads_user_list_pii_hashing_mapper import AdsUserListPIIHashingMapper
 from sources.filter_load_and_group_data import FilterLoadAndGroupData
 from sources.spreadsheet_execution_source import SpreadsheetExecutionSource
+from uploaders.campaign_manager_conversion_uploader import CampaignManagerConversionUploaderDoFn
 from uploaders.google_ads_offline_conversions_uploader import GoogleAdsOfflineUploaderDoFn
 from uploaders.google_ads_ssd_uploader import GoogleAdsSSDUploaderDoFn
 
@@ -62,13 +63,13 @@ def run(argv=None):
     _add_google_ads_offline_conversion(executions, conversion_plus_mapper, oauth_credentials, dataflow_options)
     _add_google_ads_ssd(executions, AdsSSDHashingMapper(), oauth_credentials, dataflow_options)
     _add_ga_user_list(executions, oauth_credentials, dataflow_options)
+    _add_cm_conversion(executions, oauth_credentials, dataflow_options)
 
     # todo: update trix at the end
 
 
 def _add_google_ads_user_list_upload(pipeline, hasher, oauth_credentials, dataflow_options):
   (
-    # todo: separar mobileId de outros PIIs
       pipeline
       | 'Load Data -  Google Ads user list add' >> FilterLoadAndGroupData([
     Action.ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD,
@@ -120,6 +121,15 @@ def _add_ga_user_list(pipeline, oauth_credentials, dataflow_options):
       | 'Upload - GA user list' >> beam.ParDo(GoogleAnalyticsUserListUploaderDoFn(oauth_credentials,
                                                                                   dataflow_options.google_analytics_account_id,
                                                                                   dataflow_options.customer_id))
+  )
+
+
+def _add_cm_conversion(pipeline, oauth_credentials, dataflow_options):
+  (
+      pipeline
+      | 'Load Data -  CM conversion' >> FilterLoadAndGroupData([Action.CM_OFFLINE_CONVERSION])
+      | 'Upload - CM conversion' >> beam.ParDo(CampaignManagerConversionUploaderDoFn(oauth_credentials,
+                                                                                     dataflow_options.dcm_profile_id))
   )
 
 

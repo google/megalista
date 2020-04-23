@@ -1,4 +1,4 @@
-# Copyright 2019 Google LLC
+# Copyright 2020 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,62 +16,88 @@ import time
 import math
 import logging
 from google.oauth2.credentials import Credentials
-from apiclient.discovery import build
+from googleapiclient.discovery import build
 import apache_beam as beam
+
+from uploaders import google_ads_utils as ads_utils
+from uploaders import utils as utils
+from utils.execution import Action
 
 
 class CampaignManagerConversionUploaderDoFn(beam.DoFn):
-    def __init__(self, oauth_credentials, dcm_profile_id, floodlight_activity_id, floodlight_configuration_id):
-        self.dcm_profile_id = dcm_profile_id
-        self.floodlight_activity_id = floodlight_activity_id
-        self.floodlight_configuration_id = floodlight_configuration_id
-        self.oauth_credentials = oauth_credentials
+  def __init__(self, oauth_credentials, dcm_profile_id):
+    super().__init__()
+    self.oauth_credentials = oauth_credentials
+    self.dcm_profile_id = dcm_profile_id
+    self.active = True
+    if self.dcm_profile_id is None:
+      self.active = False
 
-    def _disabled(self):
-        return self.dcm_profile_id.get() is None or self.floodlight_activity_id.get() is None or self.floodlight_configuration_id.get() is None
+  def _get_dcm_service(self):
+    credentials = Credentials(
+      token=self.oauth_credentials.get_access_token(),
+      refresh_token=self.oauth_credentials.get_refresh_token(),
+      client_id=self.oauth_credentials.get_client_id(),
+      client_secret=self.oauth_credentials.get_client_secret(),
+      token_uri='https://accounts.google.com/o/oauth2/token',
+      scopes=['https://www.googleapis.com/auth/dfareporting',
+              'https://www.googleapis.com/auth/dfatrafficking',
+              'https://www.googleapis.com/auth/ddmconversions'])
 
-    def _get_dcm_service(self):
-        credentials = Credentials(
-            token=self.oauth_credentials.get_access_token(),
-            refresh_token=self.oauth_credentials.get_refresh_token(),
-            client_id=self.oauth_credentials.get_client_id(),
-            client_secret=self.oauth_credentials.get_client_secret(),
-            token_uri='https://accounts.google.com/o/oauth2/token',
-            scopes=['https://www.googleapis.com/auth/dfareporting',
-                    'https://www.googleapis.com/auth/dfatrafficking',
-                    'https://www.googleapis.com/auth/ddmconversions'])
+    return build('dfareporting', 'v3.3', credentials=credentials)
 
-        service = build('dfareporting', 'v3.2',
-                        credentials=credentials)
-        return service
+  def start_bundle(self):
+    pass
 
-    def start_bundle(self):
-        if self._disabled():
-            logging.getLogger().warn(
-                "Skipping upload to Campaign Manager, parameters not configured.")
+  @staticmethod
+  def _assert_all_list_names_are_present(any_execution):
+    destination = any_execution.destination_metadata
+    if len(destination) is not 2:
+      raise ValueError('Missing destination information. Found {}'.format(len(destination)))
 
-    def process(self, elements):
-        if self._disabled():
-            return
-        service = self._get_dcm_service()
-        conversions = [{
-            'gclid': conversion['gclid'],
-            'floodlightActivityId': self.floodlight_activity_id.get(),
-            'floodlightConfigurationId': self.floodlight_configuration_id.get(),
-            'ordinal': math.floor(time.time()*10e5),
-            'timestampMicros': math.floor(time.time()*10e5)
-        } for conversion in elements]
+    if not destination[0] \
+        or not destination[1]:
+      raise ValueError('Missing destination information. Received {}'.format(str(destination)))
 
-        request_body = {
-            'conversions': conversions,
-            'encryptionInfo': 'AD_SERVING'
-        }
-        request = service.conversions().batchinsert(profileId=self.dcm_profile_id.get(),
-                                                    body=request_body)
-        response = request.execute()
-        if response['hasFailures']:
-            logging.getLogger().error('Error(s) inserting conversions:')
-            status = response['status'][0]
-            for error in status['errors']:
-                logging.getLogger().error('\t[%s]: %s' % (
-                    error['code'], error['message']))
+  def process(self, elements, **kwargs):
+    if not self.active:
+      logging.getLogger().warning("Skipping upload to Campaign Manager, parameters not configured.")
+      return
+
+    if len(elements) == 0:
+      logging.getLogger().warning('Skipping upload to GA, received no elements.')
+      return
+
+    ads_utils.assert_elements_have_same_execution(elements)
+    any_execution = elements[0]['execution']
+    ads_utils.assert_right_type_action(any_execution, Action.CM_OFFLINE_CONVERSION)
+    self._assert_all_list_names_are_present(any_execution)
+
+    floodlight_activity_id = any_execution.destination_metadata[0]
+    floodlight_configuration_id = any_execution.destination_metadata[1]
+
+    self._do_upload_data(floodlight_activity_id, floodlight_configuration_id, utils.extract_rows(elements))
+
+  def _do_upload_data(self, floodlight_activity_id, floodlight_configuration_id, rows):
+
+    service = self._get_dcm_service()
+    conversions = [{
+      'gclid': conversion['gclid'],
+      'floodlightActivityId': floodlight_activity_id,
+      'floodlightConfigurationId': floodlight_configuration_id,
+      'ordinal': math.floor(time.time() * 10e5),
+      'timestampMicros': math.floor(time.time() * 10e5)
+    } for conversion in rows]
+
+    request_body = {
+      'conversions': conversions,
+      'encryptionInfo': 'AD_SERVING'
+    }
+    request = service.conversions().batchinsert(profileId=self.dcm_profile_id.get(), body=request_body)
+    response = request.execute()
+    if response['hasFailures']:
+      logging.getLogger().error('Error(s) inserting conversions:')
+      status = response['status'][0]
+      for error in status['errors']:
+        logging.getLogger().error('\t[%s]: %s' % (
+          error['code'], error['message']))
