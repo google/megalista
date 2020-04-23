@@ -43,9 +43,6 @@ class DataflowOptions(PipelineOptions):
       '--customer_id',
       help='Google Ads Customer ID')
     parser.add_value_provider_argument(
-      '--ssd_conversion_name',
-      help='Google Ads Store Sales Direct Conversion Name')
-    parser.add_value_provider_argument(
       '--ssd_external_upload_id',
       help='Google Ads Store Sales Direct External Upload Id')
     parser.add_value_provider_argument(
@@ -55,28 +52,10 @@ class DataflowOptions(PipelineOptions):
     parser.add_value_provider_argument(
       '--google_analytics_account_id',
       help='Google Analytics Account ID')
-    parser.add_value_provider_argument(
-      '--google_analytics_web_property_id',
-      help='Google Analytics Web Property ID')
-    parser.add_value_provider_argument(
-      '--google_analytics_user_id_custom_dim',
-      help='Google Analytics User Id Custom Dimension')
-    parser.add_value_provider_argument(
-      '--google_analytics_buyer_custom_dim',
-      help='Google Analytics Buyer Custom Dimension')
-    parser.add_value_provider_argument(
-      '--google_analytics_view_id',
-      help='Google Analytics View Id')
     # Campaign Manager
     parser.add_value_provider_argument(
       '--dcm_profile_id',
       help='Campaign Manager Profile Id')
-    parser.add_value_provider_argument(
-      '--floodlight_activity_id',
-      help='Floodlight Activity Id')
-    parser.add_value_provider_argument(
-      '--floodlight_configuration_id',
-      help='Floodlight Configuration Id')
     # Conversion Plus
     parser.add_value_provider_argument(
       '--cp_sheet_id',
@@ -84,18 +63,7 @@ class DataflowOptions(PipelineOptions):
     parser.add_value_provider_argument(
       '--cp_sheet_range',
       help='Name of the Conversion Plus Sheet config range')
-    parser.add_value_provider_argument(
-      '--cp_conversion_name',
-      help='Google Ads Conversion Name')
     # GCP
-    parser.add_value_provider_argument(
-      '--dataset_id',
-      default='megalist',
-      help='ID of BigQuery Dataset')
-    parser.add_value_provider_argument(
-      '--table_id',
-      default='crm_upload',
-      help='ID of BigQuery Table to read')
     parser.add_argument(
       '--gcp_project_id',
       help='ID Google Cloud Project to use')
