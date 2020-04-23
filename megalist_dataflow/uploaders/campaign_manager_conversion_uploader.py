@@ -60,12 +60,15 @@ class CampaignManagerConversionUploaderDoFn(beam.DoFn):
       raise ValueError('Missing destination information. Received {}'.format(str(destination)))
 
   def process(self, elements, **kwargs):
+    self._do_process(elements, time.time())
+
+  def _do_process(self, elements, time):
     if not self.active:
       logging.getLogger().warning("Skipping upload to Campaign Manager, parameters not configured.")
       return
 
     if len(elements) == 0:
-      logging.getLogger().warning('Skipping upload to GA, received no elements.')
+      logging.getLogger().warning('Skipping upload to Campaign Manager, received no elements.')
       return
 
     ads_utils.assert_elements_have_same_execution(elements)
@@ -76,17 +79,17 @@ class CampaignManagerConversionUploaderDoFn(beam.DoFn):
     floodlight_activity_id = any_execution.destination_metadata[0]
     floodlight_configuration_id = any_execution.destination_metadata[1]
 
-    self._do_upload_data(floodlight_activity_id, floodlight_configuration_id, utils.extract_rows(elements))
+    self._do_upload_data(floodlight_activity_id, floodlight_configuration_id, time, utils.extract_rows(elements))
 
-  def _do_upload_data(self, floodlight_activity_id, floodlight_configuration_id, rows):
+  def _do_upload_data(self, floodlight_activity_id, floodlight_configuration_id, time, rows):
 
     service = self._get_dcm_service()
     conversions = [{
       'gclid': conversion['gclid'],
       'floodlightActivityId': floodlight_activity_id,
       'floodlightConfigurationId': floodlight_configuration_id,
-      'ordinal': math.floor(time.time() * 10e5),
-      'timestampMicros': math.floor(time.time() * 10e5)
+      'ordinal': math.floor(time * 10e5),
+      'timestampMicros': math.floor(time * 10e5)
     } for conversion in rows]
 
     request_body = {
