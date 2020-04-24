@@ -25,7 +25,7 @@ class GroupByExecutionDoFn(DoFn):
 
   def __init__(
       self,
-      batch_size=5000  # type: int
+      batch_size: int
   ):
     super().__init__()
     self._batch_size = batch_size

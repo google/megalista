@@ -35,15 +35,17 @@ class FilterLoadAndGroupData(PTransform):
 
   def __init__(
       self,
-      actions: List[Action]
+      actions: List[Action],
+      batch_size: int = 5000
   ):
     super().__init__()
     self._source_dofn = BigQueryApiDoFn()
     self._actions = actions
+    self._batch_size = batch_size
 
   def expand(self, input_or_inputs):
     # todo: rotear a source baseado no tipo presente na Execution
     return input_or_inputs | \
            beam.Filter(filter_by_action, self._actions) | \
            beam.ParDo(self._source_dofn) | \
-           beam.ParDo(GroupByExecutionDoFn())
+           beam.ParDo(GroupByExecutionDoFn(self._batch_size))
