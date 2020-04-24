@@ -105,7 +105,7 @@ def _add_google_ads_offline_conversion(pipeline, conversion_plus_mapper, oauth_c
 def _add_google_ads_ssd(pipeline, hasher, oauth_credentials, dataflow_options):
   (
       pipeline
-      | 'Load Data -  Google Ads SSD conversion' >> FilterLoadAndGroupData([Action.ADS_SSD_UPLOAD])
+      | 'Load Data -  Google Ads SSD conversion' >> FilterLoadAndGroupData([Action.ADS_SSD_UPLOAD], 50)
       | 'Hash Users - Google Ads SSD remove' >> beam.Map(hasher.map_conversions)
       | 'Upload - Google Ads SSD' >> beam.ParDo(GoogleAdsSSDUploaderDoFn(oauth_credentials,
                                                                          dataflow_options.developer_token,
