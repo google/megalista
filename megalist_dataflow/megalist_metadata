@@ -8,11 +8,6 @@
             "help_text": "Google Ads Developer Token"
         },
         {
-            "name": "customer_id",
-            "label": "Google Ads Customer ID",
-            "help_text": "Google Ads Customer ID"
-        },
-        {
             "name": "client_id",
             "label": "Client Id for the Google APIs",
             "help_text": "Client Id for the Google APIs"
@@ -31,89 +26,6 @@
             "name": "refresh_token",
             "label": "Refresh Token for the Google APIs",
             "help_text": "Refresh Token for the Google APIs"
-        },
-        {
-            "name": "app_id",
-            "label": "Id for the App in the Play Store",
-            "help_text": "Id for the App in the Play Store"
-        },
-        {
-            "name": "google_analytics_account_id",
-            "label": "Account Id for Google Analytics",
-            "help_text": "Account Id for Google Analytics",
-            "is_optional": true
-        },
-        {
-            "name": "google_analytics_web_property_id",
-            "label": "Web Property Id for Google Analytics",
-            "help_text": "Web Property Id for Google Analytics",
-            "is_optional": true
-        },
-        {
-            "name": "google_analytics_user_id_custom_dim",
-            "label": "User Id Custom Dimension in Google Analytics",
-            "help_text": "User Id Custom Dimension in Google Analytics",
-            "is_optional": true
-        },
-        {
-            "name": "google_analytics_buyer_custom_dim",
-            "label": "User Id Custom Dimension in Google Analytics",
-            "help_text": "User Id Custom Dimension in Google Analytics",
-            "is_optional": true
-        },
-        {
-            "name": "google_analytics_view_id",
-            "label": "Google Analytics View Id",
-            "help_text": "Google Analytics View Id",
-            "is_optional": true
-        },
-        {
-            "name": "dcm_profile_id",
-            "label": "Profile id for Campaign Manager",
-            "help_text": "Profile id for Campaign Manager",
-            "is_optional": true
-        },
-        {
-            "name": "floodlight_activity_id",
-            "label": "Floodlight Activity id for Campaign Manager",
-            "help_text": "Floodlight Activity id for Campaign Manager",
-            "is_optional": true
-        },
-        {
-            "name": "floodlight_configuration_id",
-            "label": "Floodlight Configuration id for Campaign Manager",
-            "help_text": "Floodlight Configuration id for Campaign Manager",
-            "is_optional": true
-        },
-        {
-            "name": "ssd_conversion_name",
-            "label": "Conversion name for Store Sales Direct in Google Ads",
-            "help_text": "Conversion name for Store Sales Direct in Google Ads",
-            "is_optional": true
-        },
-        {
-            "name": "ssd_external_upload_id",
-            "label": "Google Ads Store Sales Direct External Upload Id",
-            "help_text": "Google Ads Store Sales Direct External Upload Id",
-            "is_optional": true
-        },
-        {
-            "name": "cp_sheet_id",
-            "label": "Conversion Plus Sheet Id",
-            "help_text": "Conversion Plus Sheet Id",
-            "is_optional": true
-        },
-        {
-            "name": "cp_sheet_range",
-            "label": "Name of the Conversion Plus Sheet config range",
-            "help_text": "Name of the Conversion Plus Sheet config range",
-            "is_optional": true
-        },
-        {
-            "name": "cp_conversion_name",
-            "label": "Google Ads Conversion Name",
-            "help_text": "Google Ads Conversion Name",
-            "is_optional": true
         }
     ]
 }
