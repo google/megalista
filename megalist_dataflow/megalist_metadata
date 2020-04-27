@@ -26,6 +26,11 @@
             "name": "refresh_token",
             "label": "Refresh Token for the Google APIs",
             "help_text": "Refresh Token for the Google APIs"
+        },
+        {
+            "name": "setup_sheet_id",
+            "label": "Google Sheets id for config",
+            "help_text": "Google Sheets id for config"
         }
     ]
 }
