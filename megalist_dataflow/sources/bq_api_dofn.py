@@ -38,12 +38,12 @@ class BigQueryApiDoFn(DoFn):
     pass
 
   def process(self, execution, *args, **kwargs):
-    if execution.source_type is not SourceType.BIG_QUERY:
+    if execution.source.source_type is not SourceType.BIG_QUERY:
       raise NotImplementedError
 
     client = bigquery.Client()
 
-    table_name = execution.source_metadata[0] + '.' + execution.source_metadata[1]
+    table_name = execution.source.source_metadata[0] + '.' + execution.source.source_metadata[1]
 
     logging.getLogger().info('Reading from table %s for Execution (%s)', table_name, str(execution))
 

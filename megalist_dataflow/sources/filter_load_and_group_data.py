@@ -19,12 +19,12 @@ import apache_beam as beam
 from typing import List
 
 from sources.bq_api_dofn import BigQueryApiDoFn
-from utils.execution import Action
+from utils.execution import DestinationType, Execution
 from utils.group_by_execution_dofn import GroupByExecutionDoFn
 
 
-def filter_by_action(execution, actions: List[str]) -> bool:
-  return execution.action in actions
+def filter_by_action(execution: Execution, actions: List[str]) -> bool:
+  return execution.destination.destination_type in actions
 
 
 class FilterLoadAndGroupData(PTransform):
@@ -35,7 +35,7 @@ class FilterLoadAndGroupData(PTransform):
 
   def __init__(
       self,
-      actions: List[Action],
+      actions: List[DestinationType],
       batch_size: int = 5000
   ):
     super().__init__()

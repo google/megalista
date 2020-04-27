@@ -15,21 +15,17 @@
 import apache_beam as beam
 import logging
 
-from typing import List
+from typing import List, Dict, Any
 
 from uploaders import google_ads_utils as ads_utils
 from uploaders.google_ads_customer_match.abstract_uploader import GoogleAdsCustomerMatchAbstractUploaderDoFn 
 from uploaders import utils as utils
-from utils.execution import Action
+from utils.execution import DestinationType, AccountConfig
 from utils.oauth_credentials import OAuthCredentials
 
 
 class GoogleAdsCustomerMatchMobileUploaderDoFn(GoogleAdsCustomerMatchAbstractUploaderDoFn):
-  def __init__(self, oauth_credentials: OAuthCredentials, developer_token: str, customer_id: str, app_id: str):
-    super().__init__(oauth_credentials, developer_token, customer_id)
-    self.app_id = app_id
-
-  def get_list_definition(self, list_name):
+  def get_list_definition(self, account_config: AccountConfig, list_name:str) -> Dict[str, Any]:
     return {
       'operand': {
         'xsi_type': 'CrmBasedUserList',
@@ -38,7 +34,7 @@ class GoogleAdsCustomerMatchMobileUploaderDoFn(GoogleAdsCustomerMatchAbstractUpl
         # CRM-based user list_name can use a membershipLifeSpan of 10000 to indicate
         # unlimited; otherwise normal values apply.
         'membershipLifeSpan': 10000,
-        'appId': self.app_id,
+        'appId': account_config.app_id,
         'uploadKeyType': 'MOBILE_ADVERTISING_ID'
       }
     }
@@ -46,5 +42,5 @@ class GoogleAdsCustomerMatchMobileUploaderDoFn(GoogleAdsCustomerMatchAbstractUpl
   def get_row_keys(self) -> List[str]:
     return ['mobileId']
 
-  def get_action_type(self) -> Action:
-    return Action.ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD
+  def get_action_type(self) -> DestinationType:
+    return DestinationType.ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD

@@ -17,32 +17,30 @@ import logging
 
 from uploaders import google_ads_utils as ads_utils
 from uploaders import utils as utils
-from utils.execution import Action
+from utils.execution import DestinationType
 
 
 class GoogleAdsSSDUploaderDoFn(beam.DoFn):
 
-  def __init__(self, oauth_credentials, developer_token, customer_id, ssd_external_upload_id):
+  def __init__(self, oauth_credentials, developer_token):
     super().__init__()
     self.oauth_credentials = oauth_credentials
     self.developer_token = developer_token
-    self.customer_id = customer_id
-    self.ssd_external_upload_id = ssd_external_upload_id
     self.active = True
-    if self.developer_token is None or self.customer_id is None:
+    if self.developer_token is None:
       self.active = False
 
-  def _get_ssd_service(self):
+  def _get_ssd_service(self, customer_id):
     return ads_utils.get_ads_service('OfflineDataUploadService', 'v201809', self.oauth_credentials,
-                                     self.developer_token.get(), self.customer_id.get())
+                                     self.developer_token.get(), customer_id)
 
   def start_bundle(self):
     pass
 
   @staticmethod
   def _assert_conversion_name_is_present(execution):
-    destination = execution.destination_metadata
-    if len(destination) is not 1:
+    destination = execution.destination.destination_metadata
+    if len(destination) is not 2:
       raise ValueError('Missing destination information. Found {}'.format(len(destination)))
 
     if not destination[0]:
@@ -63,12 +61,12 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
 
     ads_utils.assert_elements_have_same_execution(elements)
     any_execution = elements[0]['execution']
-    ads_utils.assert_right_type_action(any_execution, Action.ADS_SSD_UPLOAD)
+    ads_utils.assert_right_type_action(any_execution, DestinationType.ADS_SSD_UPLOAD)
     self._assert_conversion_name_is_present(any_execution)
 
-    ssd_service = self._get_ssd_service()
+    ssd_service = self._get_ssd_service(any_execution.account_config._google_ads_account_id)
 
-    self._do_upload(ssd_service, any_execution.destination_metadata[0], self.ssd_external_upload_id.get(),
+    self._do_upload(ssd_service, any_execution.destination.destination_metadata[0], any_execution.destination.destination_metadata[1],
                     utils.extract_rows(elements))
 
   @staticmethod

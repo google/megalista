@@ -20,11 +20,11 @@ from typing import Dict, Any, List
 from uploaders import google_ads_utils as ads_utils
 from uploaders.google_ads_customer_match.abstract_uploader import GoogleAdsCustomerMatchAbstractUploaderDoFn 
 from uploaders import utils as utils
-from utils.execution import Action
+from utils.execution import DestinationType, AccountConfig
 
 
 class GoogleAdsCustomerMatchUserIdUploaderDoFn(GoogleAdsCustomerMatchAbstractUploaderDoFn):
-  def get_list_definition(self, list_name: str) -> Dict[str, Any]:
+  def get_list_definition(self, account_config: AccountConfig, list_name: str) -> Dict[str, Any]:
     return {
       'operand': {
         'xsi_type': 'CrmBasedUserList',
@@ -40,5 +40,5 @@ class GoogleAdsCustomerMatchUserIdUploaderDoFn(GoogleAdsCustomerMatchAbstractUpl
   def get_row_keys(self) -> List[str]:
     return ['userId']
 
-  def get_action_type(self) -> Action:
-    return Action.ADS_CUSTOMER_MATCH_USER_ID_UPLOAD
+  def get_action_type(self) -> DestinationType:
+    return DestinationType.ADS_CUSTOMER_MATCH_USER_ID_UPLOAD

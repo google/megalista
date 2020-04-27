@@ -39,23 +39,6 @@ class DataflowOptions(PipelineOptions):
     parser.add_value_provider_argument(
       '--developer_token',
       help='Developer Token for Google Ads API')
-    parser.add_value_provider_argument(
-      '--customer_id',
-      help='Google Ads Customer ID')
-    parser.add_value_provider_argument(
-      '--ssd_external_upload_id',
-      help='Google Ads Store Sales Direct External Upload Id')
-    parser.add_value_provider_argument(
-      '--app_id',
-      help='Id for the App in the Play Store')
-    # Google Analytics
-    parser.add_value_provider_argument(
-      '--google_analytics_account_id',
-      help='Google Analytics Account ID')
-    # Campaign Manager
-    parser.add_value_provider_argument(
-      '--dcm_profile_id',
-      help='Campaign Manager Profile Id')
     # Conversion Plus
     parser.add_value_provider_argument(
       '--cp_sheet_id',

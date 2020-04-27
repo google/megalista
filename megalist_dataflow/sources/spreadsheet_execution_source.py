@@ -14,11 +14,12 @@
 from apache_beam.options.value_provider import ValueProvider
 
 from sources.base_bounded_source import BaseBoundedSource
-from utils.execution import Action
-from utils.execution import Execution
-
-from utils.execution import SourceType
+from utils.execution import Execution, AccountConfig
+from utils.execution import Destination, DestinationType
+from utils.execution import Source, SourceType
 from utils.sheets_config import SheetsConfig
+
+import logging
 
 
 class SpreadsheetExecutionSource(BaseBoundedSource):
@@ -28,8 +29,8 @@ class SpreadsheetExecutionSource(BaseBoundedSource):
 
   def __init__(
       self,
-      sheets_config,  # type: SheetsConfig
-      setup_sheet_id  # type: ValueProvider
+      sheets_config:SheetsConfig,
+      setup_sheet_id:ValueProvider
   ):
     super().__init__()
     self._sheets_config = sheets_config
@@ -42,39 +43,44 @@ class SpreadsheetExecutionSource(BaseBoundedSource):
   def read(self, range_tracker):
     sheet_id = self._setup_sheet_id.get()
 
+    google_ads_id = self._sheets_config.get_value(sheet_id, "GoogleAdsAccountId")
+    app_id = self._sheets_config.get_value(sheet_id, "AppId")
+    google_analytics_account_id = self._sheets_config.get_value(sheet_id, "GoogleAnalyticsAccountId")
+    campaign_manager_account_id = self._sheets_config.get_value(sheet_id, "CampaignManagerAccountId")
+    account_config = AccountConfig(google_ads_id, google_analytics_account_id, campaign_manager_account_id, app_id)
+    logging.getLogger("SpreadsheetExecutionSource").info(account_config)
+
     sources = self._read_sources(self._sheets_config, sheet_id)
     destinations = self._read_destination(self._sheets_config, sheet_id)
 
-    schedules = \
-      self._sheets_config.get_range(sheet_id, 'Schedules!A2:D')['values']
-
-    for schedule in schedules:
-      if schedule[0] == 'YES':
-        source_metadata = sources[schedule[1]]
-        destination_metadata = destinations[schedule[2]]
-        yield Execution(schedule[1],
-                        source_metadata['type'],
-                        source_metadata['metadata'],
-                        schedule[2],
-                        destination_metadata['action'],
-                        destination_metadata['metadata'])
+    schedules_range = self._sheets_config.get_range(sheet_id, 'SchedulesRange')
+    if 'values' in schedules_range:
+      for schedule in schedules_range['values']:
+        if schedule[0] == 'YES':
+          yield Execution(account_config, sources[schedule[1]], destinations[schedule[2]])
+    else:
+      logging.getLogger("SpreadsheetExecutionSource").warn("No schedules found!")
 
   @staticmethod
   def _read_sources(sheets_config, sheet_id):
-    range = sheets_config.get_range(sheet_id, 'Sources!A2:E')
-
+    range = sheets_config.get_range(sheet_id, 'SourcesRange')
     sources = {}
-    for row in range['values']:
-      sources[row[0]] = {'type': SourceType[row[1]], 'metadata': row[2:]}
-
+    if 'values' in range:
+      for row in range['values']:
+        source = Source(row[0], SourceType[row[1]], row[2:])
+        sources[source.source_name] = source
+    else:
+      logging.getLogger("SpreadsheetExecutionSource").warn("No sources found!")
     return sources
 
   @staticmethod
   def _read_destination(sheets_config, sheet_id):
-    range = sheets_config.get_range(sheet_id, 'Destinations!A2:H')
-
+    range = sheets_config.get_range(sheet_id, 'DestinationsRange')
     destinations = {}
-    for row in range['values']:
-      destinations[row[0]] = {'action': Action[row[1]], 'metadata': row[2:]}
-
+    if 'values' in range:
+      for row in range['values']:
+        destination = Destination(row[0], DestinationType[row[1]], row[2:])
+        destinations[destination.destination_name] = destination
+    else:
+      logging.getLogger("SpreadsheetExecutionSource").warn("No destinations found!")
     return destinations

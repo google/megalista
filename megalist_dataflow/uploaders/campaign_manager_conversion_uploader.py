@@ -21,17 +21,14 @@ import apache_beam as beam
 
 from uploaders import google_ads_utils as ads_utils
 from uploaders import utils as utils
-from utils.execution import Action
+from utils.execution import DestinationType
 
 
 class CampaignManagerConversionUploaderDoFn(beam.DoFn):
-  def __init__(self, oauth_credentials, dcm_profile_id):
+  def __init__(self, oauth_credentials):
     super().__init__()
     self.oauth_credentials = oauth_credentials
-    self.dcm_profile_id = dcm_profile_id
     self.active = True
-    if self.dcm_profile_id is None:
-      self.active = False
 
   def _get_dcm_service(self):
     credentials = Credentials(
@@ -51,7 +48,7 @@ class CampaignManagerConversionUploaderDoFn(beam.DoFn):
 
   @staticmethod
   def _assert_all_list_names_are_present(any_execution):
-    destination = any_execution.destination_metadata
+    destination = any_execution.destination.destination_metadata
     if len(destination) is not 2:
       raise ValueError('Missing destination information. Found {}'.format(len(destination)))
 
@@ -73,15 +70,15 @@ class CampaignManagerConversionUploaderDoFn(beam.DoFn):
 
     ads_utils.assert_elements_have_same_execution(elements)
     any_execution = elements[0]['execution']
-    ads_utils.assert_right_type_action(any_execution, Action.CM_OFFLINE_CONVERSION)
+    ads_utils.assert_right_type_action(any_execution, DestinationType.CM_OFFLINE_CONVERSION)
     self._assert_all_list_names_are_present(any_execution)
 
-    floodlight_activity_id = any_execution.destination_metadata[0]
-    floodlight_configuration_id = any_execution.destination_metadata[1]
+    floodlight_activity_id = any_execution.destination.destination_metadata[0]
+    floodlight_configuration_id = any_execution.destination.destination_metadata[1]
 
-    self._do_upload_data(floodlight_activity_id, floodlight_configuration_id, time, utils.extract_rows(elements))
+    self._do_upload_data(floodlight_activity_id, floodlight_configuration_id, any_execution.account_config.campaign_manager_account_id, time, utils.extract_rows(elements))
 
-  def _do_upload_data(self, floodlight_activity_id, floodlight_configuration_id, time, rows):
+  def _do_upload_data(self, floodlight_activity_id, floodlight_configuration_id, campaign_manager_account_id, time, rows):
 
     service = self._get_dcm_service()
     conversions = [{
@@ -96,7 +93,7 @@ class CampaignManagerConversionUploaderDoFn(beam.DoFn):
       'conversions': conversions,
       'encryptionInfo': 'AD_SERVING'
     }
-    request = service.conversions().batchinsert(profileId=self.dcm_profile_id.get(), body=request_body)
+    request = service.conversions().batchinsert(profileId=campaign_manager_account_id, body=request_body)
     response = request.execute()
     if response['hasFailures']:
       logging.getLogger().error('Error(s) inserting conversions:')

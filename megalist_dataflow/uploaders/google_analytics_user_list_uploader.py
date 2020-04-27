@@ -21,21 +21,15 @@ from google.oauth2.credentials import Credentials
 
 from uploaders import google_ads_utils as ads_utils
 from uploaders import utils as utils
-from utils.execution import Action
+from utils.execution import DestinationType
 
 
 class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
   def __init__(self,
-               oauth_credentials,
-               account_id,
-               google_ads_account):
+               oauth_credentials):
     super().__init__()
     self.oauth_credentials = oauth_credentials
-    self.account_id = account_id
-    self.google_ads_account = google_ads_account
     self.active = True
-    if self.account_id is None or self.google_ads_account is None:
-      self.active = False
 
   def _get_analytics_service(self):
     credentials = Credentials(
@@ -49,9 +43,9 @@ class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
     service = build('analytics', 'v3', credentials=credentials)
     return service
 
-  def _create_list_if_doesnt_exist(self, analytics, web_property_id, view_ids, list_name, list_definition):
+  def _create_list_if_doesnt_exist(self, analytics, web_property_id, view_ids, list_name, list_definition, ga_account_id, ads_customer_id):
     lists = analytics.management().remarketingAudience().list(
-      accountId=self.account_id.get(), webPropertyId=web_property_id).execute()['items']
+      accountId=ga_account_id, webPropertyId=web_property_id).execute()['items']
     results = list(
       filter(lambda x: x['name'] == list_name, lists))
     if len(results) == 0:
@@ -62,19 +56,19 @@ class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
                  'linkedViews': view_ids,
                  'linkedAdAccounts': [{
                    'type': 'ADWORDS_LINKS',
-                   'linkedAccountId': self.google_ads_account.get()
+                   'linkedAccountId': ads_customer_id
                  }],
                  **list_definition}))
 
       response = analytics.management().remarketingAudience().insert(
-        accountId=self.account_id.get(),
+        accountId=ga_account_id,
         webPropertyId=web_property_id,
         body={
           'name': list_name,
           'linkedViews': view_ids,
           'linkedAdAccounts': [{
             'type': 'ADWORDS_LINKS',
-            'linkedAccountId': self.google_ads_account.get()
+            'linkedAccountId': ads_customer_id
           }],
           **list_definition
         }).execute()
@@ -88,7 +82,7 @@ class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
   def start_bundle(self):
     pass
 
-  def _create_list(self, web_property_id, view_id, user_id_list_name, buyer_custom_dim):
+  def _create_list(self, web_property_id, view_id, user_id_list_name, buyer_custom_dim, ga_account_id, ads_customer_id):
     analytics = self._get_analytics_service()
     view_ids = [view_id]
     self._create_list_if_doesnt_exist(analytics, web_property_id, view_ids, user_id_list_name, {
@@ -101,11 +95,11 @@ class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
           'membershipDurationDays': 365
         }
       }
-    })
+    }, ga_account_id, ads_customer_id)
 
   @staticmethod
   def _assert_all_list_names_are_present(any_execution):
-    destination = any_execution.destination_metadata
+    destination = any_execution.destination.destination_metadata
     if len(destination) is not 6:
       raise ValueError('Missing destination information. Found {}'.format(len(destination)))
 
@@ -129,26 +123,29 @@ class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
 
     ads_utils.assert_elements_have_same_execution(elements)
     any_execution = elements[0]['execution']
-    ads_utils.assert_right_type_action(any_execution, Action.GA_USER_LIST_UPLOAD)
+    ads_utils.assert_right_type_action(any_execution, DestinationType.GA_USER_LIST_UPLOAD)
     self._assert_all_list_names_are_present(any_execution)
 
-    web_property_id = any_execution.destination_metadata[0]
-    view_id = any_execution.destination_metadata[1]
-    data_import_name = any_execution.destination_metadata[2]
-    user_id_list_name = any_execution.destination_metadata[3]
-    user_id_custom_dim = any_execution.destination_metadata[4]
-    buyer_custom_dim = any_execution.destination_metadata[5]
+    ads_customer_id = any_execution.account_config.google_ads_account_id
+    ga_account_id = any_execution.account_config.google_analytics_account_id
+
+    web_property_id = any_execution.destination.destination_metadata[0]
+    view_id = any_execution.destination.destination_metadata[1]
+    data_import_name = any_execution.destination.destination_metadata[2]
+    user_id_list_name = any_execution.destination.destination_metadata[3]
+    user_id_custom_dim = any_execution.destination.destination_metadata[4]
+    buyer_custom_dim = any_execution.destination.destination_metadata[5]
 
     self._do_upload_data(web_property_id, view_id, data_import_name, user_id_list_name, user_id_custom_dim,
-                         buyer_custom_dim, utils.extract_rows(elements))
+                         buyer_custom_dim, ga_account_id, ads_customer_id, utils.extract_rows(elements))
 
   def _do_upload_data(self, web_property_id, view_id, data_import_name, user_id_list_name, user_id_custom_dim,
-                      buyer_custom_dim, rows):
-    self._create_list(web_property_id, view_id, user_id_list_name, buyer_custom_dim)
+                      buyer_custom_dim, ga_account_id, ads_customer_id, rows):
+    self._create_list(web_property_id, view_id, user_id_list_name, buyer_custom_dim, ga_account_id, ads_customer_id)
 
     analytics = self._get_analytics_service()
     data_sources = analytics.management().customDataSources().list(
-      accountId=self.account_id.get(), webPropertyId=web_property_id).execute()['items']
+      accountId=ga_account_id, webPropertyId=web_property_id).execute()['items']
     results = list(
       filter(lambda x: x['name'] == data_import_name, data_sources))
     if len(results) == 1:
@@ -161,7 +158,7 @@ class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
                                     mimetype='application/octet-stream',
                                     resumable=True)
         analytics.management().uploads().uploadData(
-          accountId=self.account_id.get(),
+          accountId=ga_account_id,
           webPropertyId=web_property_id,
           customDataSourceId=id,
           media_body=media).execute()

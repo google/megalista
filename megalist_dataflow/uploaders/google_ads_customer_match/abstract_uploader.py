@@ -19,19 +19,18 @@ from typing import Dict, Any, List
 
 from uploaders import google_ads_utils as ads_utils
 from uploaders import utils as utils
-from utils.execution import Action
+from utils.execution import AccountConfig, DestinationType
 from utils.oauth_credentials import OAuthCredentials
 
 
 class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
 
-  def __init__(self, oauth_credentials: OAuthCredentials, developer_token: str, customer_id: str):
+  def __init__(self, oauth_credentials: OAuthCredentials, developer_token: str):
     super().__init__()
     self.oauth_credentials = oauth_credentials
     self.developer_token = developer_token
-    self.customer_id = customer_id
     self.active = True
-    if self.developer_token is None or self.customer_id is None:
+    if self.developer_token is None:
       self.active = False
     self._user_list_id_cache = {}
 
@@ -69,13 +68,13 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
     return id
 
   # just to facilitate mocking
-  def _get_user_list_service(self):
+  def _get_user_list_service(self, customer_id):
     return ads_utils.get_ads_service(
-      'AdwordsUserListService', 'v201809', self.oauth_credentials, self.developer_token.get(), self.customer_id.get())
+      'AdwordsUserListService', 'v201809', self.oauth_credentials, self.developer_token.get(), customer_id)
 
   def _assert_execution_is_valid(self, elements, any_execution) -> None:
     ads_utils.assert_elements_have_same_execution(elements)
-    destination= any_execution.destination_metadata
+    destination= any_execution.destination.destination_metadata
 
     ## TODO: the number of parameters vary by upload. This test could be parameterized
     if not destination[0]:
@@ -96,12 +95,12 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
       return
 
     any_execution=elements[0]['execution']
-    if any_execution.action is self.get_action_type():
+    if any_execution.destination.destination_type is self.get_action_type():
       self._assert_execution_is_valid(elements, any_execution)
-      user_list_service=self._get_user_list_service()
+      user_list_service=self._get_user_list_service(any_execution.account_config.google_ads_account_id)
       list_id=self._create_list_if_it_does_not_exist(user_list_service,
-                                                            any_execution.destination_metadata[0],
-                                                            self.get_list_definition(any_execution.destination_metadata[0]))
+                                                            any_execution.destination.destination_metadata[0],
+                                                            self.get_list_definition(any_execution.account_config, any_execution.destination.destination_metadata[0]))
 
       rows=self.get_filtered_rows(
           utils.extract_rows(elements), self.get_row_keys())
@@ -111,7 +110,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
           'userListId': list_id,
           'membersList': rows
         },
-        'operator': any_execution.destination_metadata[1]
+        'operator': any_execution.destination.destination_metadata[1]
       }
       user_list_service.mutateMembers([mutate_members_operation])
     yield elements
@@ -119,11 +118,11 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
   def get_filtered_rows(self, rows:List[Any], keys: List[str]) -> List[Dict[str, Any]]:
       return [{key: row.get(key) for key in keys} for row in rows]
 
-  def get_list_definition(self, list_name:str) -> Dict[str, Any]:
+  def get_list_definition(self, account_config:AccountConfig, list_name:str) -> Dict[str, Any]:
     pass
 
   def get_row_keys(self) -> List[str]:
     pass
 
-  def get_action_type(self) -> Action:
+  def get_action_type(self) -> DestinationType:
     pass
