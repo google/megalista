@@ -55,5 +55,5 @@ To schedule daily/hourly runs, go to **Cloud Scheduler**:
 - Click on *create job* 
 - Add a name and frequency as desired
 - For *target* set as HTTP
-- Configure a *POST* for url: https://dataflow.googleapis.com/v1b3/projects/${YOUR_PROJECT_ID}/templates:launch?gcsPath=gs://${BUCKET_NAME}/templates/megalist, replacing the params with the actual values
+- Configure a *POST* for url: https://dataflow.googleapis.com/v1b3/projects/${YOUR_PROJECT_ID}/locations/${LOCATION}/templates:launch?gcsPath=gs://${BUCKET_NAME}/templates/megalist, replacing the params with the actual values
 - For a sample on the *body* of the request, check **cloud_config/scheduler.json** 

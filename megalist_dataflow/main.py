@@ -51,8 +51,8 @@ def run(argv=None):
                                        dataflow_options.developer_token, dataflow_options.refresh_token)
 
   sheets_config = SheetsConfig(oauth_credentials)
-  conversion_plus_mapper = ConversionPlusMapper(
-    sheets_config, dataflow_options.cp_sheet_id, dataflow_options.cp_sheet_range)
+  # conversion_plus_mapper = ConversionPlusMapper(
+  #   sheets_config, dataflow_options.cp_sheet_id, dataflow_options.cp_sheet_range)
   user_list_hasher = AdsUserListPIIHashingMapper()
 
   with beam.Pipeline(options=pipeline_options) as pipeline:
@@ -60,7 +60,7 @@ def run(argv=None):
       SpreadsheetExecutionSource(sheets_config, dataflow_options.setup_sheet_id)))
 
     _add_google_ads_user_list_upload(executions, user_list_hasher, oauth_credentials, dataflow_options)
-    _add_google_ads_offline_conversion(executions, conversion_plus_mapper, oauth_credentials, dataflow_options)
+    _add_google_ads_offline_conversion(executions, None, oauth_credentials, dataflow_options)
     _add_google_ads_ssd(executions, AdsSSDHashingMapper(), oauth_credentials, dataflow_options)
     _add_ga_user_list(executions, oauth_credentials, dataflow_options)
     _add_cm_conversion(executions, oauth_credentials, dataflow_options)
@@ -91,7 +91,7 @@ def _add_google_ads_offline_conversion(pipeline, conversion_plus_mapper, oauth_c
   (
       pipeline
       | 'Load Data -  Google Ads user list conversion' >> FilterLoadAndGroupData([DestinationType.ADS_OFFLINE_CONVERSION])
-      | 'Boost Conversions' >> beam.Map(conversion_plus_mapper.boost_conversions)
+      # | 'Boost Conversions' >> beam.Map(conversion_plus_mapper.boost_conversions)
       | 'Upload - Google Ads offline conversion' >> beam.ParDo(GoogleAdsOfflineUploaderDoFn(oauth_credentials,
                                                                                             dataflow_options.developer_token))
   )

@@ -7,16 +7,7 @@
         "client_secret": "GCP OAuth Client Secret",
         "access_token": "GCP OAuth access token",
         "refresh_token": "GCP OAuth refresh token",
-        "google_analytics_account_id": "Google Analytics Account Id",
-        "google_analytics_web_property_id": "Google Analytics Web Property Id",
-        "google_analytics_user_id_custom_dim": "Google Analytics Custom Dimension for user id",
-        "google_analytics_buyer_custom_dim": "Google Analytics Custom Dimension for buyer",
-        "ssd_conversion_name": "Google Ads Store Sales Direct Conversion Name",
-        "ssd_external_upload_id": "Google Ads Store Sales Direct External Upload Id",
-        "app_id": "Play store app id for importing mobile device ids",
-        "cp_sheet_id": "Config sheet for Conversion Plus",
-        "cp_sheet_range": "Config range for Conversion Plus",
-        "cp_conversion_name": "Boosted Conversion for Conversion Plus"
+        "setup_sheet_id": "Setup Google Sheets Id"
     },
     "environment": {
         "tempLocation": "gs://megalist-data/temp",
