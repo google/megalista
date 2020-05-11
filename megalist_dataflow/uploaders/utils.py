@@ -12,6 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 
 def extract_rows(elements):
   return [dict['row'] for dict in elements]
+ 
+def safe_process(logger):
+  def deco(func):
+    def inner(*args, **kwargs):
+      elements = args[1]
+      if len(elements) == 0:
+        logger.warning('Skipping upload, received no elements.')
+        return
+      logger.info(f'Uploading {len(elements)} rows...')
+      try:
+        func(*args, *kwargs)
+      except Exception as e:
+        logger.error(f"Error uploading SSD data for :{extract_rows(elements)}")
+        logger.error(f"Exception: {e}")
+    return inner
+  return deco

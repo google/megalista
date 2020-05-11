@@ -46,6 +46,7 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
     if not destination[0]:
       raise ValueError('Missing destination information. Received {}'.format(str(destination)))
 
+  @utils.safe_process(logger=logging.getLogger("megalista.GoogleAdsSSDUploader"))
   def process(self, elements, **kwargs):
     """
     Args:
@@ -55,24 +56,15 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
       logging.getLogger("megalista.GoogleAdsSSDUploader").warning('Skipping upload to ads, parameters not configured.')
       return
 
-    if len(elements) == 0:
-      logging.getLogger("megalista.GoogleAdsSSDUploader").warning('Skipping upload to ads, received no elements.')
-      return
-
     ads_utils.assert_elements_have_same_execution(elements)
     any_execution = elements[0]['execution']
     ads_utils.assert_right_type_action(any_execution, DestinationType.ADS_SSD_UPLOAD)
     self._assert_conversion_name_is_present(any_execution)
 
-    try:
-      ssd_service = self._get_ssd_service(any_execution.account_config._google_ads_account_id)
-      rows = utils.extract_rows(elements)
-      logging.getLogger("megalista.GoogleAdsSSDUploader").info(f"Uploading {len(rows)} rows to SSD...")
-      self._do_upload(ssd_service, any_execution.destination.destination_metadata[0], any_execution.destination.destination_metadata[1],
-                      rows)
-    except Exception as e:
-      logging.getLogger("megalista.GoogleAdsSSDUploader").error(f"Error uploading SSD data for :{rows}")
-      logging.getLogger("megalista.GoogleAdsSSDUploader").error(f"Exception: {e}")
+    ssd_service = self._get_ssd_service(any_execution.account_config._google_ads_account_id)
+    rows = utils.extract_rows(elements)
+    self._do_upload(ssd_service, any_execution.destination.destination_metadata[0], any_execution.destination.destination_metadata[1],
+                    rows)
 
 
   @staticmethod
