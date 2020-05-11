@@ -62,7 +62,7 @@ class AccountConfig:
     return self._app_id
 
   def __str__(self) -> str:
-    return f"[Account Config] Google Ads Customer Id: {self.google_ads_account_id}, Google Analytics Account Id: {self.google_analytics_account_id}, Campaign Manager Account Id: {self.campaign_manager_account_id}, Play Store App Id: {self.app_id}"
+    return f"\n[Account Config]\n\tGoogle Ads Customer Id: {self.google_ads_account_id}\n\tGoogle Analytics Account Id: {self.google_analytics_account_id}\n\tCampaign Manager Account Id: {self.campaign_manager_account_id}\n\tPlay Store App Id: {self.app_id}"
 
   def __eq__(self, other):
     return self.google_ads_account_id == other.google_ads_account_id \

@@ -42,13 +42,13 @@ class SpreadsheetExecutionSource(BaseBoundedSource):
 
   def read(self, range_tracker):
     sheet_id = self._setup_sheet_id.get()
-
+    logging.getLogger("megalista.SpreadsheetExecutionSource").info(f"Loading configuration sheet {sheet_id}...")
     google_ads_id = self._sheets_config.get_value(sheet_id, "GoogleAdsAccountId")
     app_id = self._sheets_config.get_value(sheet_id, "AppId")
     google_analytics_account_id = self._sheets_config.get_value(sheet_id, "GoogleAnalyticsAccountId")
     campaign_manager_account_id = self._sheets_config.get_value(sheet_id, "CampaignManagerAccountId")
     account_config = AccountConfig(google_ads_id, google_analytics_account_id, campaign_manager_account_id, app_id)
-    logging.getLogger("SpreadsheetExecutionSource").info(account_config)
+    logging.getLogger("megalista.SpreadsheetExecutionSource").info(f"Loaded: {account_config}")
 
     sources = self._read_sources(self._sheets_config, sheet_id)
     destinations = self._read_destination(self._sheets_config, sheet_id)
@@ -57,9 +57,10 @@ class SpreadsheetExecutionSource(BaseBoundedSource):
     if 'values' in schedules_range:
       for schedule in schedules_range['values']:
         if schedule[0] == 'YES':
+          logging.getLogger("megalista.SpreadsheetExecutionSource").info(f"Executing step Source:{sources[schedule[1]].source_name} -> Destination:{destinations[schedule[2]].destination_name}")
           yield Execution(account_config, sources[schedule[1]], destinations[schedule[2]])
     else:
-      logging.getLogger("SpreadsheetExecutionSource").warn("No schedules found!")
+      logging.getLogger("megalista.SpreadsheetExecutionSource").warn("No schedules found!")
 
   @staticmethod
   def _read_sources(sheets_config, sheet_id):
@@ -70,7 +71,7 @@ class SpreadsheetExecutionSource(BaseBoundedSource):
         source = Source(row[0], SourceType[row[1]], row[2:])
         sources[source.source_name] = source
     else:
-      logging.getLogger("SpreadsheetExecutionSource").warn("No sources found!")
+      logging.getLogger("megalista.SpreadsheetExecutionSource").warn("No sources found!")
     return sources
 
   @staticmethod
@@ -82,5 +83,5 @@ class SpreadsheetExecutionSource(BaseBoundedSource):
         destination = Destination(row[0], DestinationType[row[1]], row[2:])
         destinations[destination.destination_name] = destination
     else:
-      logging.getLogger("SpreadsheetExecutionSource").warn("No destinations found!")
+      logging.getLogger("megalista.SpreadsheetExecutionSource").warn("No destinations found!")
     return destinations

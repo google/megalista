@@ -23,8 +23,6 @@ class SheetsConfig:
 
   def _get_sheets_service(self):
     if not self._sheets_service:
-      print('-------- client_id ' + self._oauth_credentials.get_client_id())
-
       credentials = Credentials(
         token=self._oauth_credentials.get_access_token(),
         refresh_token=self._oauth_credentials.get_refresh_token(),

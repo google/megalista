@@ -124,5 +124,7 @@ def _add_cm_conversion(pipeline, oauth_credentials, dataflow_options):
 
 
 if __name__ == '__main__':
-  logging.getLogger().setLevel(logging.INFO)
+  logging.getLogger().setLevel(logging.ERROR)
+  logging.getLogger("megalista").setLevel(logging.INFO)
   run()
+  logging.getLogger("megalista").info("Completed successfully!")

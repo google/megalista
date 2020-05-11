@@ -52,11 +52,11 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
        elements: List of dict with two elements: 'execution' and 'row'. All executions must be equal.
     """
     if not self.active:
-      logging.getLogger().warning('Skipping upload to ads, parameters not configured.')
+      logging.getLogger("megalista.GoogleAdsSSDUploader").warning('Skipping upload to ads, parameters not configured.')
       return
 
     if len(elements) == 0:
-      logging.getLogger().warning('Skipping upload to ads, received no elements.')
+      logging.getLogger("megalista.GoogleAdsSSDUploader").warning('Skipping upload to ads, received no elements.')
       return
 
     ads_utils.assert_elements_have_same_execution(elements)
@@ -64,10 +64,16 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
     ads_utils.assert_right_type_action(any_execution, DestinationType.ADS_SSD_UPLOAD)
     self._assert_conversion_name_is_present(any_execution)
 
-    ssd_service = self._get_ssd_service(any_execution.account_config._google_ads_account_id)
+    try:
+      ssd_service = self._get_ssd_service(any_execution.account_config._google_ads_account_id)
+      rows = utils.extract_rows(elements)
+      logging.getLogger("megalista.GoogleAdsSSDUploader").info(f"Uploading {len(rows)} rows to SSD...")
+      self._do_upload(ssd_service, any_execution.destination.destination_metadata[0], any_execution.destination.destination_metadata[1],
+                      rows)
+    except Exception as e:
+      logging.getLogger("megalista.GoogleAdsSSDUploader").error(f"Error uploading SSD data for :{rows}")
+      logging.getLogger("megalista.GoogleAdsSSDUploader").error(f"Exception: {e}")
 
-    self._do_upload(ssd_service, any_execution.destination.destination_metadata[0], any_execution.destination.destination_metadata[1],
-                    utils.extract_rows(elements))
 
   @staticmethod
   def _do_upload(ssd_service, conversion_name, ssd_external_upload_id, rows):
