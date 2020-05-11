@@ -2,7 +2,6 @@
     "jobName": "megalist_daily",
     "parameters": {
         "developer_token": "Google Ads Developer Token",
-        "customer_id": "Google Ads Customer Id",
         "client_id": "GCP OAuth Client id",
         "client_secret": "GCP OAuth Client Secret",
         "access_token": "GCP OAuth access token",
