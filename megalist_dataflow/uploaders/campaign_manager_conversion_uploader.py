@@ -56,16 +56,13 @@ class CampaignManagerConversionUploaderDoFn(beam.DoFn):
         or not destination[1]:
       raise ValueError('Missing destination information. Received {}'.format(str(destination)))
 
+  @utils.safe_process(logger=logging.getLogger("megalista.CampaignManagerConversionUploader"))
   def process(self, elements, **kwargs):
     self._do_process(elements, time.time())
 
   def _do_process(self, elements, time):
     if not self.active:
       logging.getLogger().warning("Skipping upload to Campaign Manager, parameters not configured.")
-      return
-
-    if len(elements) == 0:
-      logging.getLogger().warning('Skipping upload to Campaign Manager, received no elements.')
       return
 
     ads_utils.assert_elements_have_same_execution(elements)

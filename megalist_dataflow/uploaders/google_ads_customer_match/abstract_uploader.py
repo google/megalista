@@ -81,6 +81,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
       raise ValueError(
           'Missing destination information. Received {}'.format(str(destination)))
 
+  @utils.safe_process(logger=logging.getLogger("megalista.GoogleAdsCustomerMatchAbstractUploader"))
   def process(self, elements, **kwargs) -> None:
     """
     Args:
@@ -89,11 +90,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
     if not self.active:
       logging.getLogger().warning('Skipping upload to ads, parameters not configured.')
       return
-
-    if len(elements) == 0:
-      logging.getLogger().warning('Skipping upload to ads, received no elements.')
-      return
-
+      
     any_execution=elements[0]['execution']
     if any_execution.destination.destination_type is self.get_action_type():
       self._assert_execution_is_valid(elements, any_execution)

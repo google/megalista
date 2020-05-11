@@ -45,13 +45,10 @@ class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
     if not destination[0]:
       raise ValueError('Missing destination information. Received {}'.format(str(destination)))
 
+  @utils.safe_process(logger=logging.getLogger("megalista.GoogleAdsOfflineUploader"))
   def process(self, elements_batch, **kwargs):
     if not self.active:
       logging.getLogger().warning("Skipping upload to ads, parameters not configured.")
-      return
-
-    if len(elements_batch) == 0:
-      logging.getLogger().warning('Skipping upload to ads, received no elements.')
       return
 
     ads_utils.assert_elements_have_same_execution(elements_batch)

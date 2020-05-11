@@ -36,9 +36,8 @@ from utils.execution import DestinationType, Execution
 from utils.oauth_credentials import OAuthCredentials
 from utils.options import DataflowOptions
 from utils.sheets_config import SheetsConfig
-
-
-# TODO: Do not fail the whole pipeline if a branch fail
+import warnings
+warnings.filterwarnings("ignore", "Your application has authenticated using end user credentials")
 
 
 def filter_by_action(execution: Execution, destination_type: DestinationType):

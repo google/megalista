@@ -102,14 +102,12 @@ class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
         or not destination[5]:
       raise ValueError('Missing destination information. Received {}'.format(str(destination)))
 
+
+  @utils.safe_process(logger=logging.getLogger("megalista.GoogleAnalyticsUserListUploader"))
   def process(self, elements, **kwargs):
 
     if not self.active:
       logging.getLogger().warning('Skipping upload to FA, parameters not configured.')
-      return
-
-    if len(elements) == 0:
-      logging.getLogger().warning('Skipping upload to GA, received no elements.')
       return
 
     ads_utils.assert_elements_have_same_execution(elements)
