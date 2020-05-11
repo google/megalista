@@ -28,7 +28,7 @@ def safe_process(logger):
       try:
         func(*args, *kwargs)
       except Exception as e:
-        logger.error(f"Error uploading SSD data for :{extract_rows(elements)}")
+        logger.error(f"Error uploading data for :{extract_rows(elements)}")
         logger.error(f"Exception: {e}")
     return inner
   return deco

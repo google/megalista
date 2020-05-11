@@ -30,6 +30,7 @@ from uploaders.google_ads_customer_match.contact_info_uploader import GoogleAdsC
 from uploaders.google_ads_customer_match.mobile_uploader import GoogleAdsCustomerMatchMobileUploaderDoFn
 from uploaders.google_ads_customer_match.user_id_uploader import GoogleAdsCustomerMatchUserIdUploaderDoFn
 from uploaders.google_analytics_user_list_uploader import GoogleAnalyticsUserListUploaderDoFn
+from uploaders.google_analytics_measurement_protocol import GoogleAnalyticsMeasurementProtocolUploaderDoFn
 
 from utils.execution import DestinationType, Execution
 from utils.oauth_credentials import OAuthCredentials
@@ -63,6 +64,7 @@ def run(argv=None):
     _add_google_ads_offline_conversion(executions, None, oauth_credentials, dataflow_options)
     _add_google_ads_ssd(executions, AdsSSDHashingMapper(), oauth_credentials, dataflow_options)
     _add_ga_user_list(executions, oauth_credentials, dataflow_options)
+    _add_ga_measurement_protocol(executions, oauth_credentials, dataflow_options)
     _add_cm_conversion(executions, oauth_credentials, dataflow_options)
 
     # todo: update trix at the end
@@ -112,6 +114,13 @@ def _add_ga_user_list(pipeline, oauth_credentials, dataflow_options):
       pipeline
       | 'Load Data -  GA user list' >> FilterLoadAndGroupData([DestinationType.GA_USER_LIST_UPLOAD])
       | 'Upload - GA user list' >> beam.ParDo(GoogleAnalyticsUserListUploaderDoFn(oauth_credentials))
+  )
+
+def _add_ga_measurement_protocol(pipeline, oauth_credentials, dataflow_options):
+  (
+      pipeline
+      | 'Load Data - GA measurement protocol' >> FilterLoadAndGroupData([DestinationType.GA_MEASUREMENT_PROTOCOL], 20)
+      | 'Upload - GA measurement protocol' >> beam.ParDo(GoogleAnalyticsMeasurementProtocolUploaderDoFn(oauth_credentials))
   )
 
 
