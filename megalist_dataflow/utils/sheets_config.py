@@ -45,4 +45,7 @@ class SheetsConfig:
     return self._get_sheets_service().spreadsheets().values().get(spreadsheetId=sheet_id, range=range).execute()
 
   def get_value(self, sheet_id, range):
-    return self.get_range(sheet_id, range)['values'][0][0]
+    range = self.get_range(sheet_id, range)
+    if range.get('values') is None:
+      return None
+    return range['values'][0][0]
