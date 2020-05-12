@@ -62,9 +62,9 @@ def run(argv=None):
     _add_google_ads_user_list_upload(executions, user_list_hasher, oauth_credentials, dataflow_options)
     _add_google_ads_offline_conversion(executions, None, oauth_credentials, dataflow_options)
     _add_google_ads_ssd(executions, AdsSSDHashingMapper(), oauth_credentials, dataflow_options)
-    _add_ga_user_list(executions, oauth_credentials, dataflow_options)
-    _add_ga_measurement_protocol(executions, oauth_credentials, dataflow_options)
-    _add_cm_conversion(executions, oauth_credentials, dataflow_options)
+    _add_ga_user_list(executions, oauth_credentials)
+    _add_ga_measurement_protocol(executions, oauth_credentials)
+    _add_cm_conversion(executions, oauth_credentials)
 
     # todo: update trix at the end
 
@@ -108,14 +108,14 @@ def _add_google_ads_ssd(pipeline, hasher, oauth_credentials, dataflow_options):
   )
 
 
-def _add_ga_user_list(pipeline, oauth_credentials, dataflow_options):
+def _add_ga_user_list(pipeline, oauth_credentials):
   (
       pipeline
       | 'Load Data -  GA user list' >> FilterLoadAndGroupData([DestinationType.GA_USER_LIST_UPLOAD])
       | 'Upload - GA user list' >> beam.ParDo(GoogleAnalyticsUserListUploaderDoFn(oauth_credentials))
   )
 
-def _add_ga_measurement_protocol(pipeline, oauth_credentials, dataflow_options):
+def _add_ga_measurement_protocol(pipeline, oauth_credentials):
   (
       pipeline
       | 'Load Data - GA measurement protocol' >> FilterLoadAndGroupData([DestinationType.GA_MEASUREMENT_PROTOCOL], 20)
@@ -123,7 +123,7 @@ def _add_ga_measurement_protocol(pipeline, oauth_credentials, dataflow_options):
   )
 
 
-def _add_cm_conversion(pipeline, oauth_credentials, dataflow_options):
+def _add_cm_conversion(pipeline, oauth_credentials):
   (
       pipeline
       | 'Load Data -  CM conversion' >> FilterLoadAndGroupData([DestinationType.CM_OFFLINE_CONVERSION])
