@@ -14,10 +14,11 @@
 
 
 import logging
+
 import apache_beam as beam
+from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaInMemoryUpload
-from google.oauth2.credentials import Credentials
 
 from uploaders import google_ads_utils as ads_utils
 from uploaders import utils as utils
@@ -43,7 +44,8 @@ class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
     service = build('analytics', 'v3', credentials=credentials)
     return service
 
-  def _create_list_if_doesnt_exist(self, analytics, web_property_id, view_ids, list_name, list_definition, ga_account_id, ads_customer_id):
+  def _create_list_if_doesnt_exist(self, analytics, web_property_id, view_ids, list_name, list_definition,
+                                   ga_account_id, ads_customer_id, mcc):
     lists = analytics.management().remarketingAudience().list(
       accountId=ga_account_id, webPropertyId=web_property_id).execute()['items']
     results = list(
@@ -58,7 +60,7 @@ class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
           'name': list_name,
           'linkedViews': view_ids,
           'linkedAdAccounts': [{
-            'type': 'ADWORDS_LINKS',
+            'type': 'MCC_LINKS' if mcc else 'ADWORDS_LINKS',
             'linkedAccountId': ads_customer_id
           }],
           **list_definition
@@ -73,7 +75,8 @@ class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
   def start_bundle(self):
     pass
 
-  def _create_list(self, web_property_id, view_id, user_id_list_name, buyer_custom_dim, ga_account_id, ads_customer_id):
+  def _create_list(self, web_property_id, view_id, user_id_list_name, buyer_custom_dim, ga_account_id, ads_customer_id,
+                   mcc):
     analytics = self._get_analytics_service()
     view_ids = [view_id]
     self._create_list_if_doesnt_exist(analytics, web_property_id, view_ids, user_id_list_name, {
@@ -86,7 +89,7 @@ class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
           'membershipDurationDays': 365
         }
       }
-    }, ga_account_id, ads_customer_id)
+    }, ga_account_id, ads_customer_id, mcc)
 
   @staticmethod
   def _assert_all_list_names_are_present(any_execution):
@@ -102,12 +105,11 @@ class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
         or not destination[5]:
       raise ValueError('Missing destination information. Received {}'.format(str(destination)))
 
-
   @utils.safe_process(logger=logging.getLogger("megalista.GoogleAnalyticsUserListUploader"))
   def process(self, elements, **kwargs):
 
     if not self.active:
-      logging.getLogger().warning('Skipping upload to FA, parameters not configured.')
+      logging.getLogger().warning('Skipping upload to GA, parameters not configured.')
       return
 
     ads_utils.assert_elements_have_same_execution(elements)
@@ -116,6 +118,7 @@ class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
     self._assert_all_list_names_are_present(any_execution)
 
     ads_customer_id = any_execution.account_config.google_ads_account_id
+    mcc = any_execution.account_config.mcc
     ga_account_id = any_execution.account_config.google_analytics_account_id
 
     web_property_id = any_execution.destination.destination_metadata[0]
@@ -126,11 +129,12 @@ class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
     buyer_custom_dim = any_execution.destination.destination_metadata[5]
 
     self._do_upload_data(web_property_id, view_id, data_import_name, user_id_list_name, user_id_custom_dim,
-                         buyer_custom_dim, ga_account_id, ads_customer_id, utils.extract_rows(elements))
+                         buyer_custom_dim, ga_account_id, ads_customer_id, mcc, utils.extract_rows(elements))
 
   def _do_upload_data(self, web_property_id, view_id, data_import_name, user_id_list_name, user_id_custom_dim,
-                      buyer_custom_dim, ga_account_id, ads_customer_id, rows):
-    self._create_list(web_property_id, view_id, user_id_list_name, buyer_custom_dim, ga_account_id, ads_customer_id)
+                      buyer_custom_dim, ga_account_id, ads_customer_id, mcc, rows):
+    self._create_list(web_property_id, view_id, user_id_list_name, buyer_custom_dim, ga_account_id, ads_customer_id,
+                      mcc)
 
     analytics = self._get_analytics_service()
     data_sources = analytics.management().customDataSources().list(
