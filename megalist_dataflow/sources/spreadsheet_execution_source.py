@@ -11,15 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import distutils.util
+import logging
+
 from apache_beam.options.value_provider import ValueProvider
 
 from sources.base_bounded_source import BaseBoundedSource
-from utils.execution import Execution, AccountConfig
 from utils.execution import Destination, DestinationType
+from utils.execution import Execution, AccountConfig
 from utils.execution import Source, SourceType
 from utils.sheets_config import SheetsConfig
-
-import logging
 
 
 class SpreadsheetExecutionSource(BaseBoundedSource):
@@ -29,8 +30,8 @@ class SpreadsheetExecutionSource(BaseBoundedSource):
 
   def __init__(
       self,
-      sheets_config:SheetsConfig,
-      setup_sheet_id:ValueProvider
+      sheets_config: SheetsConfig,
+      setup_sheet_id: ValueProvider
   ):
     super().__init__()
     self._sheets_config = sheets_config
@@ -44,10 +45,12 @@ class SpreadsheetExecutionSource(BaseBoundedSource):
     sheet_id = self._setup_sheet_id.get()
     logging.getLogger("megalista.SpreadsheetExecutionSource").info(f"Loading configuration sheet {sheet_id}...")
     google_ads_id = self._sheets_config.get_value(sheet_id, "GoogleAdsAccountId")
+    mcc_trix = self._sheets_config.get_value(sheet_id, "GoogleAdsMCC")
+    mcc = False if mcc_trix is None else bool(distutils.util.strtobool(mcc_trix))
     app_id = self._sheets_config.get_value(sheet_id, "AppId")
     google_analytics_account_id = self._sheets_config.get_value(sheet_id, "GoogleAnalyticsAccountId")
     campaign_manager_account_id = self._sheets_config.get_value(sheet_id, "CampaignManagerAccountId")
-    account_config = AccountConfig(google_ads_id, google_analytics_account_id, campaign_manager_account_id, app_id)
+    account_config = AccountConfig(google_ads_id, mcc, google_analytics_account_id, campaign_manager_account_id, app_id)
     logging.getLogger("megalista.SpreadsheetExecutionSource").info(f"Loaded: {account_config}")
 
     sources = self._read_sources(self._sheets_config, sheet_id)
@@ -57,7 +60,8 @@ class SpreadsheetExecutionSource(BaseBoundedSource):
     if 'values' in schedules_range:
       for schedule in schedules_range['values']:
         if schedule[0] == 'YES':
-          logging.getLogger("megalista.SpreadsheetExecutionSource").info(f"Executing step Source:{sources[schedule[1]].source_name} -> Destination:{destinations[schedule[2]].destination_name}")
+          logging.getLogger("megalista.SpreadsheetExecutionSource").info(
+            f"Executing step Source:{sources[schedule[1]].source_name} -> Destination:{destinations[schedule[2]].destination_name}")
           yield Execution(account_config, sources[schedule[1]], destinations[schedule[2]])
     else:
       logging.getLogger("megalista.SpreadsheetExecutionSource").warn("No schedules found!")

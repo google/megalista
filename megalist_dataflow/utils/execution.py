@@ -17,6 +17,7 @@ from typing import List
 
 OK_STATUS = 'OK'
 
+
 class DestinationType(Enum):
   CM_OFFLINE_CONVERSION, \
   ADS_OFFLINE_CONVERSION, \
@@ -33,15 +34,18 @@ class SourceType(Enum):
   CSV = range(2)
   # TODO: CSV not yet implemented
 
+
 class AccountConfig:
   def __init__(
-    self,
-    google_ads_account_id:str,
-    google_analytics_account_id:str,
-    campaign_manager_account_id:str,
-    app_id:str
+      self,
+      google_ads_account_id: str,
+      mcc: bool,
+      google_analytics_account_id: str,
+      campaign_manager_account_id: str,
+      app_id: str
   ):
     self._google_ads_account_id = google_ads_account_id
+    self._mcc = mcc
     self._google_analytics_account_id = google_analytics_account_id
     self._campaign_manager_account_id = campaign_manager_account_id
     self._app_id = app_id
@@ -49,6 +53,10 @@ class AccountConfig:
   @property
   def google_ads_account_id(self) -> str:
     return self._google_ads_account_id
+
+  @property
+  def mcc(self) -> bool:
+    return self._mcc
 
   @property
   def google_analytics_account_id(self) -> str:
@@ -63,7 +71,12 @@ class AccountConfig:
     return self._app_id
 
   def __str__(self) -> str:
-    return f"\n[Account Config]\n\tGoogle Ads Customer Id: {self.google_ads_account_id}\n\tGoogle Analytics Account Id: {self.google_analytics_account_id}\n\tCampaign Manager Account Id: {self.campaign_manager_account_id}\n\tPlay Store App Id: {self.app_id}"
+    return f"\n[Account Config]\n\t" \
+           f"Google Ads Customer Id: {self.google_ads_account_id}\n\t" \
+           f"Google Ads MCC: {self._mcc}\n\t" \
+           f"Google Analytics Account Id: {self.google_analytics_account_id}\n\t" \
+           f"Campaign Manager Account Id: {self.campaign_manager_account_id}\n\t" \
+           f"Play Store App Id: {self.app_id}"
 
   def __eq__(self, other):
     return self.google_ads_account_id == other.google_ads_account_id \
@@ -72,15 +85,16 @@ class AccountConfig:
            and self.app_id == other.app_id
 
   def __hash__(self):
-    return hash((self.google_ads_account_id, self.google_analytics_account_id, 
+    return hash((self.google_ads_account_id, self.google_analytics_account_id,
                  self.campaign_manager_account_id, self.app_id))
+
 
 class Source:
   def __init__(
-    self,
-    source_name:str,
-    source_type:SourceType,
-    source_metadata:List[str]
+      self,
+      source_name: str,
+      source_type: SourceType,
+      source_metadata: List[str]
   ):
     self._source_name = source_name
     self._source_type = source_type
@@ -106,13 +120,14 @@ class Source:
   def __hash__(self):
     return hash((self.source_name, self.source_type, self.source_metadata))
 
+
 class Destination:
   def __init__(
       self,
-      destination_name:str,
-      destination_type:DestinationType,
-      destination_metadata:List[str]
-    ):
+      destination_name: str,
+      destination_type: DestinationType,
+      destination_metadata: List[str]
+  ):
     self._destination_name = destination_name
     self._destination_type = destination_type
     self._destination_metadata = destination_metadata
@@ -130,8 +145,8 @@ class Destination:
     return self._destination_metadata
 
   def __eq__(self, other) -> bool:
-    return  self.destination_name == other.destination_name \
-          and self.destination_metadata == other.destination_metadata
+    return self.destination_name == other.destination_name \
+           and self.destination_metadata == other.destination_metadata
 
   def __hash__(self):
     return hash((self.destination_name, self.destination_type, self.destination_metadata))
@@ -140,9 +155,9 @@ class Destination:
 class Execution:
   def __init__(
       self,
-      account_config:AccountConfig,
-      source:Source,
-      destination:Destination
+      account_config: AccountConfig,
+      source: Source,
+      destination: Destination
   ):
     self._account_config = account_config
     self._source = source
@@ -161,7 +176,8 @@ class Execution:
     return self._account_config
 
   def __str__(self):
-    return 'Origin name: {}. Action: {}. Destination name: {}'.format(self.source.source_name, self.destination.destination_type,
+    return 'Origin name: {}. Action: {}. Destination name: {}'.format(self.source.source_name,
+                                                                      self.destination.destination_type,
                                                                       self.destination.destination_name)
 
   def __eq__(self, other):
