@@ -40,7 +40,7 @@ def assert_elements_have_same_execution(elements):
 
 def assert_right_type_action(execution: Execution, expected_action: DestinationType) -> None:
   if execution.destination.destination_type is not expected_action:
-    raise ValueError('Wrong Action received: {}'.format(execution.action.name))
+    raise ValueError('Wrong Action received: {}'.format(execution.destination.destination_type.name))
 
 def format_date(date):
   if isinstance(date, datetime.datetime):
