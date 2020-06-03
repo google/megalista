@@ -55,16 +55,16 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
       }]
     }])
     if (len(response.entries) == 0):
-      logging.getLogger().info('%s list does not exist, creating...' % list_name)
+      logging.getLogger("megalista.GoogleAdsCustomerMatchAbstractUploader").info('%s list does not exist, creating...' % list_name)
       result = user_list_service.mutate([{
         'operator': 'ADD',
         **list_definition
       }])
       id = result['value'][0]['id']
-      logging.getLogger().info('List %s created with id: %d' % (list_name, id))
+      logging.getLogger("megalista.GoogleAdsCustomerMatchAbstractUploader").info('List %s created with id: %d' % (list_name, id))
     else:
       id = response.entries[0]['id']
-      logging.getLogger().info('List found %s with id: %d' % (list_name, id))
+      logging.getLogger("megalista.GoogleAdsCustomerMatchAbstractUploader").info('List found %s with id: %d' % (list_name, id))
     return id
 
   # just to facilitate mocking
@@ -88,7 +88,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
        elements: List of dict with two elements: 'execution' and 'row'. All executions must be equal.
     """
     if not self.active:
-      logging.getLogger().warning('Skipping upload to ads, parameters not configured.')
+      logging.getLogger("megalista.GoogleAdsCustomerMatchAbstractUploader").warning('Skipping upload to ads, parameters not configured.')
       return
       
     any_execution=elements[0]['execution']
@@ -101,7 +101,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
 
       rows=self.get_filtered_rows(
           utils.extract_rows(elements), self.get_row_keys())
-      logging.getLogger().warning('Uploading {} rows to Google Ads'.format(len(rows)))
+      logging.getLogger("megalista.GoogleAdsCustomerMatchAbstractUploader").warning('Uploading {} rows to Google Ads'.format(len(rows)))
       mutate_members_operation={
         'operand': {
           'userListId': list_id,
