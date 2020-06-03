@@ -12,11 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from apache_beam import PTransform, DoFn
+from typing import List
 
 import apache_beam as beam
-
-from typing import List
+from apache_beam import PTransform
 
 from sources.bq_api_dofn import BigQueryApiDoFn
 from utils.execution import DestinationType, Execution
@@ -36,15 +35,15 @@ class FilterLoadAndGroupData(PTransform):
   def __init__(
       self,
       actions: List[DestinationType],
-      batch_size: int = 5000
+      batch_size: int = 5000,
+      source_dofn=BigQueryApiDoFn()
   ):
     super().__init__()
-    self._source_dofn = BigQueryApiDoFn()
+    self._source_dofn = source_dofn
     self._actions = actions
     self._batch_size = batch_size
 
   def expand(self, input_or_inputs):
-    # todo: rotear a source baseado no tipo presente na Execution
     return input_or_inputs | \
            beam.Filter(filter_by_action, self._actions) | \
            beam.ParDo(self._source_dofn) | \
