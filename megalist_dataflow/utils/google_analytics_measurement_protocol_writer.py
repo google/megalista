@@ -35,19 +35,25 @@ class GoogleAnalyticsMeasurementProtocolResultsWriter(beam.DoFn):
 
   @utils.safe_process(logger=logging.getLogger("megalista.GoogleAnalyticsMeasurementProtocolUploadsWritter"))
   def process(self, elements, *args, **kwargs):
+    self._do_process(elements, datetime.now().timestamp())
+
+  def _do_process(self, elements, now):
     ads_utils.assert_elements_have_same_execution(elements)
     any_execution = elements[0]['execution']
     ads_utils.assert_right_type_action(any_execution, DestinationType.GA_MEASUREMENT_PROTOCOL)
 
-    table_name = any_execution.source.source_metadata[0] + '.' + any_execution.source.source_metadata[1] + "_uploaded"
-
-    now = datetime.now().timestamp()
+    table_name = any_execution.source.source_metadata[0] + '.' + any_execution.source.source_metadata[
+      1] + "_uploaded"
 
     rows = utils.extract_rows(elements)
-    client = bigquery.Client()
+    client = self._get_bq_client()
     table = client.get_table(table_name)
     results = client.insert_rows(table, [{'uuid': row['uuid'], 'timestamp': now} for row in rows],
                                  (SchemaField("uuid", "string"), SchemaField("timestamp", "timestamp")))
 
     for result in results:
       logging.getLogger("megalista.GoogleAnalyticsMeasurementProtocolResultsWriter").error(result['errors'])
+
+  @staticmethod
+  def _get_bq_client():
+    return bigquery.Client()
