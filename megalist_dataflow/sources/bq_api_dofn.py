@@ -13,11 +13,10 @@
 # limitations under the License.
 
 
-from apache_beam import DoFn
-
-from google.cloud import bigquery
-
 import logging
+
+from apache_beam import DoFn
+from google.cloud import bigquery
 
 from utils.execution import SourceType
 
@@ -45,9 +44,11 @@ class BigQueryApiDoFn(DoFn):
 
     table_name = execution.source.source_metadata[0] + '.' + execution.source.source_metadata[1]
 
+    query = "select data.* from " + table_name + " data"
+
     logging.getLogger().info('Reading from table %s for Execution (%s)', table_name, str(execution))
 
-    rows_iterator = client.list_rows(table_name, page_size=self._query_batch_size)
+    rows_iterator = client.query(query).result(page_size=self._query_batch_size)
     for row in rows_iterator:
       yield {'execution': execution, 'row': self._convert_row_to_dict(row)}
 
