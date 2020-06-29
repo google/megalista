@@ -26,137 +26,151 @@ from utils.execution import DestinationType
 
 
 class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
-  def __init__(self,
-               oauth_credentials):
-    super().__init__()
-    self.oauth_credentials = oauth_credentials
-    self.active = True
+    def __init__(self,
+                 oauth_credentials):
+        super().__init__()
+        self.oauth_credentials = oauth_credentials
+        self.active = True
 
-  def _get_analytics_service(self):
-    credentials = Credentials(
-      token=self.oauth_credentials.get_access_token(),
-      refresh_token=self.oauth_credentials.get_refresh_token(),
-      client_id=self.oauth_credentials.get_client_id(),
-      client_secret=self.oauth_credentials.get_client_secret(),
-      token_uri='https://accounts.google.com/o/oauth2/token',
-      scopes=["https://www.googleapis.com/auth/analytics.edit", 'https://www.googleapis.com/auth/adwords'])
+    def _get_analytics_service(self):
+        credentials = Credentials(
+            token=self.oauth_credentials.get_access_token(),
+            refresh_token=self.oauth_credentials.get_refresh_token(),
+            client_id=self.oauth_credentials.get_client_id(),
+            client_secret=self.oauth_credentials.get_client_secret(),
+            token_uri='https://accounts.google.com/o/oauth2/token',
+            scopes=["https://www.googleapis.com/auth/analytics.edit", 'https://www.googleapis.com/auth/adwords'])
 
-    service = build('analytics', 'v3', credentials=credentials)
-    return service
+        service = build('analytics', 'v3', credentials=credentials)
+        return service
 
-  def _create_list_if_doesnt_exist(self, analytics, web_property_id, view_ids, list_name, list_definition,
-                                   ga_account_id, ads_customer_id, mcc):
-    lists = analytics.management().remarketingAudience().list(
-      accountId=ga_account_id, webPropertyId=web_property_id).execute()['items']
-    results = list(
-      filter(lambda x: x['name'] == list_name, lists))
-    if len(results) == 0:
-      logging.getLogger().info('%s list does not exist, creating...' % list_name)
+    def _create_list_if_doesnt_exist(self, analytics, web_property_id, view_ids, list_name, list_definition,
+                                     ga_account_id, ads_customer_id, mcc):
+        lists = analytics.management().remarketingAudience().list(
+            accountId=ga_account_id, webPropertyId=web_property_id).execute()['items']
+        results = list(
+            filter(lambda x: x['name'] == list_name, lists))
+        if len(results) == 0:
+            logging.getLogger().info('%s list does not exist, creating...' % list_name)
 
-      response = analytics.management().remarketingAudience().insert(
-        accountId=ga_account_id,
-        webPropertyId=web_property_id,
-        body={
-          'name': list_name,
-          'linkedViews': view_ids,
-          'linkedAdAccounts': [{
-            'type': 'MCC_LINKS' if mcc else 'ADWORDS_LINKS',
-            'linkedAccountId': ads_customer_id
-          }],
-          **list_definition
-        }).execute()
-      id = response['id']
-      logging.getLogger().info('%s created with id: %s' % (list_name, id))
-    else:
-      id = results[0]['id']
-      logging.getLogger().info('%s found with id: %s' % (list_name, id))
-    return id
+            response = analytics.management().remarketingAudience().insert(
+                accountId=ga_account_id,
+                webPropertyId=web_property_id,
+                body={
+                    'name': list_name,
+                    'linkedViews': view_ids,
+                    'linkedAdAccounts': [{
+                        'type': 'MCC_LINKS' if mcc else 'ADWORDS_LINKS',
+                        'linkedAccountId': ads_customer_id
+                    }],
+                    **list_definition
+                }).execute()
+            id = response['id']
+            logging.getLogger().info('%s created with id: %s' % (list_name, id))
+        else:
+            id = results[0]['id']
+            logging.getLogger().info('%s found with id: %s' % (list_name, id))
+        return id
 
-  def start_bundle(self):
-    pass
+    def start_bundle(self):
+        pass
 
-  def _create_list(self, web_property_id, view_id, user_id_list_name, buyer_custom_dim, ga_account_id, ads_customer_id,
-                   mcc):
-    analytics = self._get_analytics_service()
-    view_ids = [view_id]
-    self._create_list_if_doesnt_exist(analytics, web_property_id, view_ids, user_id_list_name, {
-      'audienceType': 'SIMPLE',
-      'audienceDefinition': {
-        'includeConditions': {
-          'kind': 'analytics#includeConditions',
-          'isSmartList': False,
-          'segment': 'users::condition::%s==buyer' % buyer_custom_dim,
-          'membershipDurationDays': 365
-        }
-      }
-    }, ga_account_id, ads_customer_id, mcc)
+    def _create_list(self, web_property_id, view_id, user_id_list_name, buyer_custom_dim, ga_account_id,
+                     ads_customer_id,
+                     mcc):
+        analytics = self._get_analytics_service()
+        view_ids = [view_id]
+        self._create_list_if_doesnt_exist(analytics, web_property_id, view_ids, user_id_list_name, {
+            'audienceType': 'SIMPLE',
+            'audienceDefinition': {
+                'includeConditions': {
+                    'kind': 'analytics#includeConditions',
+                    'isSmartList': False,
+                    'segment': 'users::condition::%s==buyer' % buyer_custom_dim,
+                    'membershipDurationDays': 365
+                }
+            }
+        }, ga_account_id, ads_customer_id, mcc)
 
-  @staticmethod
-  def _assert_all_list_names_are_present(any_execution):
-    destination = any_execution.destination.destination_metadata
-    if len(destination) is not 6:
-      raise ValueError('Missing destination information. Found {}'.format(len(destination)))
+    @staticmethod
+    def _assert_all_list_names_are_present(any_execution):
+        destination = any_execution.destination.destination_metadata
+        if len(destination) is not 6:
+            raise ValueError('Missing destination information. Found {}'.format(len(destination)))
 
-    if not destination[0] \
-        or not destination[1] \
-        or not destination[2] \
-        or not destination[3] \
-        or not destination[4] \
-        or not destination[5]:
-      raise ValueError('Missing destination information. Received {}'.format(str(destination)))
+        if not destination[0] \
+                or not destination[1] \
+                or not destination[2] \
+                or not destination[3] \
+                or not destination[4] \
+                or not destination[5]:
+            raise ValueError('Missing destination information. Received {}'.format(str(destination)))
 
-  @utils.safe_process(logger=logging.getLogger("megalista.GoogleAnalyticsUserListUploader"))
-  def process(self, elements, **kwargs):
+    @utils.safe_process(logger=logging.getLogger("megalista.GoogleAnalyticsUserListUploader"))
+    def process(self, elements, **kwargs):
 
-    if not self.active:
-      logging.getLogger().warning('Skipping upload to GA, parameters not configured.')
-      return
+        if not self.active:
+            logging.getLogger().warning('Skipping upload to GA, parameters not configured.')
+            return
 
-    ads_utils.assert_elements_have_same_execution(elements)
-    any_execution = elements[0]['execution']
-    ads_utils.assert_right_type_action(any_execution, DestinationType.GA_USER_LIST_UPLOAD)
-    self._assert_all_list_names_are_present(any_execution)
+        ads_utils.assert_elements_have_same_execution(elements)
+        any_execution = elements[0]['execution']
+        ads_utils.assert_right_type_action(any_execution, DestinationType.GA_USER_LIST_UPLOAD)
+        self._assert_all_list_names_are_present(any_execution)
 
-    ads_customer_id = any_execution.account_config.google_ads_account_id
-    mcc = any_execution.account_config.mcc
-    ga_account_id = any_execution.account_config.google_analytics_account_id
+        ads_customer_id = any_execution.account_config.google_ads_account_id
+        mcc = any_execution.account_config.mcc
+        ga_account_id = any_execution.account_config.google_analytics_account_id
 
-    web_property_id = any_execution.destination.destination_metadata[0]
-    view_id = any_execution.destination.destination_metadata[1]
-    data_import_name = any_execution.destination.destination_metadata[2]
-    user_id_list_name = any_execution.destination.destination_metadata[3]
-    user_id_custom_dim = any_execution.destination.destination_metadata[4]
-    buyer_custom_dim = any_execution.destination.destination_metadata[5]
+        # Reads all metadata parameters
+        metadata = any_execution.destination.destination_metadata
 
-    self._do_upload_data(web_property_id, view_id, data_import_name, user_id_list_name, user_id_custom_dim,
-                         buyer_custom_dim, ga_account_id, ads_customer_id, mcc, utils.extract_rows(elements))
+        web_property_id = metadata[0]
+        view_id = metadata[1]
+        data_import_name = metadata[2]
+        user_id_list_name = metadata[3]
+        user_id_custom_dim = metadata[4]
+        buyer_custom_dim = metadata[5]
 
-  def _do_upload_data(self, web_property_id, view_id, data_import_name, user_id_list_name, user_id_custom_dim,
-                      buyer_custom_dim, ga_account_id, ads_customer_id, mcc, rows):
-    self._create_list(web_property_id, view_id, user_id_list_name, buyer_custom_dim, ga_account_id, ads_customer_id,
-                      mcc)
+        # Optional parameter
+        custom_dim_field = metadata[6] if len(metadata) > 6 else None
 
-    analytics = self._get_analytics_service()
-    data_sources = analytics.management().customDataSources().list(
-      accountId=ga_account_id, webPropertyId=web_property_id).execute()['items']
-    results = list(
-      filter(lambda x: x['name'] == data_import_name, data_sources))
-    if len(results) == 1:
-      id = results[0]['id']
-      logging.getLogger().info("Adding data to %s - %s" % (data_import_name, id))
-      body = '\n'.join(['%s,%s' % (user_id_custom_dim, buyer_custom_dim), *['%s,buyer' %
-                                                                            row['user_id'] for row in rows]])
-      try:
-        media = MediaInMemoryUpload(bytes(body, 'UTF-8'),
-                                    mimetype='application/octet-stream',
-                                    resumable=True)
-        analytics.management().uploads().uploadData(
-          accountId=ga_account_id,
-          webPropertyId=web_property_id,
-          customDataSourceId=id,
-          media_body=media).execute()
-      except Exception as e:
-        logging.getLogger().error('Error while uploading GA Data: %s' % e)
-    else:
-      logging.getLogger().error(
-        "%s - data import not found, please configure it in Google Analytics" % data_import_name)
+        self._do_upload_data(web_property_id, view_id, data_import_name, user_id_list_name, user_id_custom_dim,
+                             buyer_custom_dim, custom_dim_field, ga_account_id, ads_customer_id, mcc,
+                             utils.extract_rows(elements))
+
+    def _do_upload_data(self, web_property_id, view_id, data_import_name, user_id_list_name, user_id_custom_dim,
+                        buyer_custom_dim, custom_dim_field, ga_account_id, ads_customer_id, mcc, rows):
+        self._create_list(web_property_id, view_id, user_id_list_name, buyer_custom_dim, ga_account_id, ads_customer_id,
+                          mcc)
+
+        analytics = self._get_analytics_service()
+        data_sources = analytics.management().customDataSources().list(
+            accountId=ga_account_id, webPropertyId=web_property_id).execute()['items']
+        results = list(
+            filter(lambda x: x['name'] == data_import_name, data_sources))
+
+        if len(results) == 1:
+
+            id = results[0]['id']
+
+            logging.getLogger().info("Adding data to %s - %s" % (data_import_name, id))
+            body = '\n'.join([
+                '%s,%s' % (user_id_custom_dim, buyer_custom_dim),
+                *['%s,%s' % (row['user_id'], row[custom_dim_field] if custom_dim_field else 'buyer') for row in rows]
+            ])
+
+            try:
+                media = MediaInMemoryUpload(bytes(body, 'UTF-8'),
+                                            mimetype='application/octet-stream',
+                                            resumable=True)
+                analytics.management().uploads().uploadData(
+                    accountId=ga_account_id,
+                    webPropertyId=web_property_id,
+                    customDataSourceId=id,
+                    media_body=media).execute()
+            except Exception as e:
+                logging.getLogger().error('Error while uploading GA Data: %s' % e)
+        else:
+            logging.getLogger().error(
+                "%s - data import not found, please configure it in Google Analytics" % data_import_name)
