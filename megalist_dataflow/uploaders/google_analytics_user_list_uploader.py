@@ -95,13 +95,12 @@ class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
     @staticmethod
     def _assert_all_list_names_are_present(any_execution):
         destination = any_execution.destination.destination_metadata
-        if len(destination) is not 6:
+        if len(destination) < 6:
             raise ValueError('Missing destination information. Found {}'.format(len(destination)))
 
         if not destination[0] \
                 or not destination[1] \
                 or not destination[2] \
-                or not destination[3] \
                 or not destination[4] \
                 or not destination[5]:
             raise ValueError('Missing destination information. Received {}'.format(str(destination)))
@@ -141,8 +140,10 @@ class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
 
     def _do_upload_data(self, web_property_id, view_id, data_import_name, user_id_list_name, user_id_custom_dim,
                         buyer_custom_dim, custom_dim_field, ga_account_id, ads_customer_id, mcc, rows):
-        self._create_list(web_property_id, view_id, user_id_list_name, buyer_custom_dim, ga_account_id, ads_customer_id,
-                          mcc)
+
+        if user_id_list_name:
+            self._create_list(web_property_id, view_id, user_id_list_name, buyer_custom_dim, ga_account_id,
+                              ads_customer_id, mcc)
 
         analytics = self._get_analytics_service()
         data_sources = analytics.management().customDataSources().list(

@@ -218,9 +218,29 @@ def test_elements_uploading(mocker, uploader):
   media = MediaInMemoryUpload(bytes(body, 'UTF-8'),
                               mimetype='application/octet-stream',
                               resumable=True)
-  # service.management().uploads().uploadData.assert_any_call(
-  #   accountId="acc",
-  #   webPropertyId='web_property',
-  #   customDataSourceId=1,
-  #   media_body=media
-  # )
+
+def test_elements_uploading_custom_field(mocker, uploader):
+
+  service = mocker.MagicMock()
+
+  mocker.patch.object(uploader, '_get_analytics_service')
+  uploader._get_analytics_service.return_value = service
+
+  service.management().customDataSources().list().execute.return_value = {
+    'items': [{'id': 1, 'name': 'data_import_name'}]}
+
+  execution = Execution(AccountConfig('', False, '', '', ''),
+                        Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers']),
+                        Destination('dest1', DestinationType.GA_USER_LIST_UPLOAD,
+                                    ['web_property', 'b', 'data_import_name', 'd', 'user_id_custom_dim',
+                                     'buyer_custom_dim']))
+  uploader.process([{'execution': execution, 'row': {'user_id': '12'}},
+                    {'execution': execution, 'row': {'user_id': '34'}}])
+
+  body = 'user_id_custom_dim, buyer_custom_dim\n' \
+         '12,buyer\n' \
+         '34,buyer'
+
+  media = MediaInMemoryUpload(bytes(body, 'UTF-8'),
+                              mimetype='application/octet-stream',
+                              resumable=True)
