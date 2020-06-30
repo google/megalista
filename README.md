@@ -29,7 +29,7 @@ In order to create it, follow these steps:
  - Access GCP console
  - Go to the **API & Services** section on the top-left menu.
  - On the **OAuth Consent Screen** and configure an *Application name*
- - Then, go to the **Credentials** and create an *OAuth client Id* with Application type set as *Other*
+ - Then, go to the **Credentials** and create an *OAuth client Id* with Application type set as *Desktop App*
  - This will generate a *Client Id* and a *Client secret*
  - Run the **generate_megalist_token.sh** script in this folder providing these two values and follow the instructions
    - Sample: `./generate_megalist_token.sh client_id client_secret`
@@ -57,3 +57,10 @@ To schedule daily/hourly runs, go to **Cloud Scheduler**:
 - For *target* set as HTTP
 - Configure a *POST* for url: https://dataflow.googleapis.com/v1b3/projects/${YOUR_PROJECT_ID}/locations/${LOCATION}/templates:launch?gcsPath=gs://${BUCKET_NAME}/templates/megalist, replacing the params with the actual values
 - For a sample on the *body* of the request, check **cloud_config/scheduler.json**
+
+## Creating a Service Account
+It's recommended to create a new Service Account to be used with the Cloud Scheduler
+- Go to IAM & Admin > Service Accounts
+- Create a new Service Account with the following roles:
+    - Dataflow Admin
+    - Storage Objects Viewer
