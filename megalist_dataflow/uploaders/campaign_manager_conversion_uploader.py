@@ -62,7 +62,7 @@ class CampaignManagerConversionUploaderDoFn(beam.DoFn):
 
   def _do_process(self, elements, time):
     if not self.active:
-      logging.getLogger().warning("Skipping upload to Campaign Manager, parameters not configured.")
+      logging.getLogger("megalista.CampaignManagerConversionsUploader").warning("Skipping upload to Campaign Manager, parameters not configured.")
       return
 
     ads_utils.assert_elements_have_same_execution(elements)
@@ -78,13 +78,23 @@ class CampaignManagerConversionUploaderDoFn(beam.DoFn):
   def _do_upload_data(self, floodlight_activity_id, floodlight_configuration_id, campaign_manager_account_id, time, rows):
 
     service = self._get_dcm_service()
-    conversions = [{
-      'gclid': conversion['gclid'],
-      'floodlightActivityId': floodlight_activity_id,
-      'floodlightConfigurationId': floodlight_configuration_id,
-      'ordinal': math.floor(time * 10e5),
-      'timestampMicros': math.floor(time * 10e5)
-    } for conversion in rows]
+    conversions = []
+    for conversion in rows:
+      to_upload = {
+        'floodlightActivityId': floodlight_activity_id,
+        'floodlightConfigurationId': floodlight_configuration_id,
+        'ordinal': math.floor(time * 10e5),
+        'timestampMicros': math.floor(time * 10e5)
+      }
+      logging.getLogger("megalista.CampaignManagerConversionsUploader").info(conversion)
+      if 'gclid' in conversion and conversion['gclid']:
+        to_upload['gclid'] = conversion['gclid']
+      elif 'encryptedUserId' in conversion and conversion['encryptedUserId']:
+        to_upload['encryptedUserId'] = conversion['encryptedUserId']
+      elif 'mobileDeviceId' in conversion and conversion['mobileDeviceId']:
+        to_upload['mobileDeviceId'] = conversion['mobileDeviceId']
+      logging.getLogger("megalista.CampaignManagerConversionsUploader").info(to_upload)
+      conversions.append(to_upload)
 
     request_body = {
       'conversions': conversions,
@@ -93,8 +103,9 @@ class CampaignManagerConversionUploaderDoFn(beam.DoFn):
     request = service.conversions().batchinsert(profileId=campaign_manager_account_id, body=request_body)
     response = request.execute()
     if response['hasFailures']:
-      logging.getLogger().error('Error(s) inserting conversions:')
+      logging.getLogger("megalista.CampaignManagerConversionsUploader").error('Error(s) inserting conversions:')
       status = response['status'][0]
       for error in status['errors']:
-        logging.getLogger().error('\t[%s]: %s' % (
+        logging.getLogger("megalista.CampaignManagerConversionsUploader").error('\t[%s]: %s' % (
           error['code'], error['message']))
+      logging.getLogger("megalista.CampaignManagerConversionsUploader").error(response)
