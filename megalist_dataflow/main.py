@@ -21,7 +21,7 @@ from apache_beam.options.pipeline_options import PipelineOptions
 from mappers.ads_ssd_hashing_mapper import AdsSSDHashingMapper
 from mappers.ads_user_list_pii_hashing_mapper import AdsUserListPIIHashingMapper
 from sources.filter_load_and_group_data import FilterLoadAndGroupData
-from sources.google_analytics_measurement_protocol_bq_api_dofn import GoogleAnalyticsMeasurementProtocolBigQueryApiDoFn
+from sources.transactional_events_bq_api_dofn import TransactionalEventsBigQueryApiDoFn
 from sources.spreadsheet_execution_source import SpreadsheetExecutionSource
 from uploaders.campaign_manager_conversion_uploader import CampaignManagerConversionUploaderDoFn
 from uploaders.google_ads_customer_match.contact_info_uploader import GoogleAdsCustomerMatchContactInfoUploaderDoFn
@@ -32,7 +32,7 @@ from uploaders.google_ads_ssd_uploader import GoogleAdsSSDUploaderDoFn
 from uploaders.google_analytics_measurement_protocol import GoogleAnalyticsMeasurementProtocolUploaderDoFn
 from uploaders.google_analytics_user_list_uploader import GoogleAnalyticsUserListUploaderDoFn
 from utils.execution import DestinationType, Execution
-from utils.google_analytics_measurement_protocol_writer import GoogleAnalyticsMeasurementProtocolResultsWriter
+from utils.transactional_events_results_writer import TransactionalEventsResultsWriter
 from utils.oauth_credentials import OAuthCredentials
 from utils.options import DataflowOptions
 from utils.sheets_config import SheetsConfig
@@ -63,7 +63,7 @@ def run(argv=None):
     _add_google_ads_offline_conversion(executions, None, oauth_credentials, dataflow_options)
     _add_google_ads_ssd(executions, AdsSSDHashingMapper(), oauth_credentials, dataflow_options)
     _add_ga_user_list(executions, oauth_credentials)
-    _add_ga_measurement_protocol(executions)
+    _add_ga_measurement_protocol(executions, dataflow_options)
     _add_cm_conversion(executions, oauth_credentials)
 
     # todo: update trix at the end
@@ -117,15 +117,15 @@ def _add_ga_user_list(pipeline, oauth_credentials):
   )
 
 
-def _add_ga_measurement_protocol(pipeline):
+def _add_ga_measurement_protocol(pipeline, dataflow_options):
   (
       pipeline
       | 'Load Data - GA measurement protocol' >>
       FilterLoadAndGroupData([DestinationType.GA_MEASUREMENT_PROTOCOL], 20,
-                             GoogleAnalyticsMeasurementProtocolBigQueryApiDoFn())
+                             TransactionalEventsBigQueryApiDoFn(dataflow_options.bq_ops_dataset))
       | 'Upload - GA measurement protocol' >>
       beam.ParDo(GoogleAnalyticsMeasurementProtocolUploaderDoFn())
-      | 'Persist results - GA measurement protocol' >> beam.ParDo(GoogleAnalyticsMeasurementProtocolResultsWriter())
+      | 'Persist results - GA measurement protocol' >> beam.ParDo(TransactionalEventsResultsWriter(dataflow_options.bq_ops_dataset))
   )
 
 

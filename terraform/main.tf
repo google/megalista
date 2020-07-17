@@ -3,6 +3,11 @@ variable "bucket_name" {
     description = "Google Cloud Storage Bucket to create"
 }
 
+variable "bq_ops_dataset" {
+    type = string
+    description = "Auxliary bigquery dataset for Megalista operations to create"
+}
+
 variable "developer_token" {
     type = string
     description = "Google Ads developer Token"
@@ -39,6 +44,12 @@ data "google_client_config" "current" {
 data "google_client_openid_userinfo" "me" {
 }
 
+resource "google_bigquery_dataset" "dataset" {
+  dataset_id                  = "${var.bq_ops_dataset}"
+  location                    = "US"
+  delete_contents_on_destroy = true
+}
+
 locals {
     scheduler_body = <<EOF
     {
@@ -49,7 +60,8 @@ locals {
             "client_secret": "${var.client_secret}",
             "access_token": "${var.access_token}",
             "refresh_token": "${var.refresh_token}",
-            "setup_sheet_id": "${var.setup_sheet_id}"
+            "setup_sheet_id": "${var.setup_sheet_id}",
+            "bq_ops_dataset": "${var.bq_ops_dataset}",
         },
         "environment": {
             "tempLocation": "gs://${var.bucket_name}/tmp",

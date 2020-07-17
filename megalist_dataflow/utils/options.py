@@ -35,6 +35,9 @@ class DataflowOptions(PipelineOptions):
     parser.add_value_provider_argument(
       '--setup_sheet_id',
       help='Id of Spreadsheet with execution info')
+    parser.add_value_provider_argument(
+      '--bq_ops_dataset',
+      help='Auxliary bigquery dataset used for Megalista operations')    
     # Google Ads
     parser.add_value_provider_argument(
       '--developer_token',

@@ -21,7 +21,7 @@ from google.cloud import bigquery
 from utils.execution import SourceType
 
 
-class GoogleAnalyticsMeasurementProtocolBigQueryApiDoFn(DoFn):
+class TransactionalEventsBigQueryApiDoFn(DoFn):
   """
   DoFn with Execution as input and lines read from BigQuery as output.
   This implementation is specific to measurement protocol as it joins source table with uploaded table in order to
@@ -30,10 +30,26 @@ class GoogleAnalyticsMeasurementProtocolBigQueryApiDoFn(DoFn):
 
   def __init__(
       self,
+      bq_ops_dataset,
       query_batch_size=20000  # type: int
   ):
     super().__init__()
     self._query_batch_size = query_batch_size
+    self._first_element_processed = False
+    self._bq_ops_dataset = str(bq_ops_dataset)
+
+  def create_uploaded_table(self, uploaded_table_name):
+    if self._first_element_processed:
+      return
+
+    client = bigquery.Client()
+    
+    query = "CREATE TABLE IF NOT EXISTS " + uploaded_table_name + " ( \
+             timestamp TIMESTAMP OPTIONS(description= 'Event timestamp'), \
+             uuid STRING OPTIONS(description='Event unique identifier'))\
+             PARTITION BY _PARTITIONDATE \
+             OPTIONS(partition_expiration_days=7)"  
+    client.query(query) 
 
   def start_bundle(self):
     pass
@@ -42,16 +58,18 @@ class GoogleAnalyticsMeasurementProtocolBigQueryApiDoFn(DoFn):
     if execution.source.source_type is not SourceType.BIG_QUERY:
       raise NotImplementedError
 
+    #initialize destination table for uploaded events
+    uploaded_table_name = self._bq_ops_dataset + '.' + execution.source.source_metadata[1] +'_uploaded'
+    self.create_uploaded_table(uploaded_table_name)
+
     client = bigquery.Client()
 
     table_name = execution.source.source_metadata[0] + '.' + execution.source.source_metadata[1]
-    uploaded_table_name = table_name + "_uploaded"
-
     query = "select data.* from " + table_name + " data \
              left join " + uploaded_table_name + " uploaded on data.uuid = uploaded.uuid \
              where uploaded.uuid is null;"
 
-    logging.getLogger("megalista.GoogleAnalyticsMeasurementProtocolBigQueryApiDoFn").info(
+    logging.getLogger("megalista.TransactionalEventsBigQueryApiDoFn").info(
       'Reading from table %s for Execution (%s)', table_name, str(execution))
     rows_iterator = client.query(query).result(page_size=self._query_batch_size)
     for row in rows_iterator:

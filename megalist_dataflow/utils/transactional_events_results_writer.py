@@ -24,16 +24,17 @@ from uploaders import utils
 from utils.execution import DestinationType
 
 
-class GoogleAnalyticsMeasurementProtocolResultsWriter(beam.DoFn):
+class TransactionalEventsResultsWriter(beam.DoFn):
   """
   Uploads UUIDs from rows successfully sent to Analytics' Measurement Protocol.
   It uploads the rows to a table with the same name of the source table plus the suffix '_uploaded'.
   """
 
-  def __init__(self):
+  def __init__(self, bq_ops_dataset):
     super().__init__()
+    self._bq_ops_dataset = str(bq_ops_dataset)
 
-  @utils.safe_process(logger=logging.getLogger("megalista.GoogleAnalyticsMeasurementProtocolUploadsWritter"))
+  @utils.safe_process(logger=logging.getLogger("megalista.TransactionalEventsResultsWriter"))
   def process(self, elements, *args, **kwargs):
     self._do_process(elements, datetime.now().timestamp())
 
@@ -42,17 +43,17 @@ class GoogleAnalyticsMeasurementProtocolResultsWriter(beam.DoFn):
     any_execution = elements[0]['execution']
     ads_utils.assert_right_type_action(any_execution, DestinationType.GA_MEASUREMENT_PROTOCOL)
 
-    table_name = any_execution.source.source_metadata[0] + '.' + any_execution.source.source_metadata[
-      1] + "_uploaded"
+    table_name = self._bq_ops_dataset + '.' + any_execution.source.source_metadata[1] + "_uploaded"
 
     rows = utils.extract_rows(elements)
     client = self._get_bq_client()
     table = client.get_table(table_name)
+    print(table_name)
     results = client.insert_rows(table, [{'uuid': row['uuid'], 'timestamp': now} for row in rows],
                                  (SchemaField("uuid", "string"), SchemaField("timestamp", "timestamp")))
 
     for result in results:
-      logging.getLogger("megalista.GoogleAnalyticsMeasurementProtocolResultsWriter").error(result['errors'])
+      logging.getLogger("megalista.TransactionalEventsResultsWriter").error(result['errors'])
 
   @staticmethod
   def _get_bq_client():
