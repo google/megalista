@@ -49,7 +49,7 @@ class CampaignManagerConversionUploaderDoFn(beam.DoFn):
   @staticmethod
   def _assert_all_list_names_are_present(any_execution):
     destination = any_execution.destination.destination_metadata
-    if len(destination) is not 2:
+    if len(destination) != 2:
       raise ValueError('Missing destination information. Found {}'.format(len(destination)))
 
     if not destination[0] \

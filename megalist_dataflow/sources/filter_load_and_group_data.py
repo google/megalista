@@ -22,7 +22,7 @@ from utils.execution import DestinationType, Execution
 from utils.group_by_execution_dofn import GroupByExecutionDoFn
 
 
-def filter_by_action(execution: Execution, actions: List[str]) -> bool:
+def filter_by_action(execution: Execution, actions: List[DestinationType]) -> bool:
   return execution.destination.destination_type in actions
 
 
