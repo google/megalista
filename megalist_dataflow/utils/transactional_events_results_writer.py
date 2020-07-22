@@ -41,7 +41,7 @@ class TransactionalEventsResultsWriter(beam.DoFn):
   def _do_process(self, elements, now):
     ads_utils.assert_elements_have_same_execution(elements)
     any_execution = elements[0]['execution']
-    ads_utils.assert_right_type_action(any_execution, DestinationType.GA_MEASUREMENT_PROTOCOL)
+    #ads_utils.assert_right_type_action(any_execution, DestinationType.GA_MEASUREMENT_PROTOCOL)
 
     table_name = self._bq_ops_dataset + '.' + any_execution.source.source_metadata[1] + "_uploaded"
 

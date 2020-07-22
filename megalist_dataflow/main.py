@@ -31,6 +31,9 @@ from uploaders.google_ads_offline_conversions_uploader import GoogleAdsOfflineUp
 from uploaders.google_ads_ssd_uploader import GoogleAdsSSDUploaderDoFn
 from uploaders.google_analytics_measurement_protocol import GoogleAnalyticsMeasurementProtocolUploaderDoFn
 from uploaders.google_analytics_user_list_uploader import GoogleAnalyticsUserListUploaderDoFn
+#from uploaders.appsflyer_s2s_uploader import AppsFlyerS2SUploaderDoFn
+from uploaders.appsflyer_s2s_uploader_async import AppsFlyerS2SUploaderDoFn
+
 from utils.execution import DestinationType, Execution
 from utils.transactional_events_results_writer import TransactionalEventsResultsWriter
 from utils.oauth_credentials import OAuthCredentials
@@ -65,6 +68,7 @@ def run(argv=None):
     _add_ga_user_list(executions, oauth_credentials)
     _add_ga_measurement_protocol(executions, dataflow_options)
     _add_cm_conversion(executions, oauth_credentials)
+    _add_appsflyer_s2s_events(executions, dataflow_options)
 
     # todo: update trix at the end
 
@@ -136,6 +140,16 @@ def _add_cm_conversion(pipeline, oauth_credentials):
       | 'Upload - CM conversion' >> beam.ParDo(CampaignManagerConversionUploaderDoFn(oauth_credentials))
   )
 
+def _add_appsflyer_s2s_events(pipeline, dataflow_options):
+  (
+      pipeline
+      | 'Load Data - AppsFlyer S2S events' >>
+      FilterLoadAndGroupData([DestinationType.APPSFLYER_S2S_EVENTS], 1000,
+                             TransactionalEventsBigQueryApiDoFn(dataflow_options.bq_ops_dataset))
+      | 'Upload - AppsFlyer S2S events' >>
+      beam.ParDo(AppsFlyerS2SUploaderDoFn(dataflow_options.appsflyer_dev_key))
+      | 'Persist results - AppsFlyer S2S events' >> beam.ParDo(TransactionalEventsResultsWriter(dataflow_options.bq_ops_dataset))
+  )
 
 if __name__ == '__main__':
   logging.getLogger().setLevel(logging.ERROR)

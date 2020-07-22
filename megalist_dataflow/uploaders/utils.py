@@ -13,6 +13,9 @@
 # limitations under the License.
 
 import logging
+from datetime import datetime
+from pytz import timezone
+
 
 def extract_rows(elements):
   return [dict['row'] for dict in elements]
@@ -32,3 +35,8 @@ def safe_process(logger):
         logger.error(f"Exception: {e}")
     return inner
   return deco
+
+
+def convert_datetime_tz(dt, origin_tz_str, destination_tz_str):
+  datetime_obj = timezone(origin_tz).localize(dt)
+  return datetime_obj.astimezone(timezone(destination_tz))

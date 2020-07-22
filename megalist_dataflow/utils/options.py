@@ -56,3 +56,8 @@ class DataflowOptions(PipelineOptions):
     parser.add_argument(
       '--output',
       help='Output file to write results to.')
+    # APPSFLYER
+    parser.add_value_provider_argument(
+      '--appsflyer_dev_key',
+      help='Developer key for AppsFlyer S2S API')
+
