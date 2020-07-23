@@ -22,6 +22,6 @@ setuptools.setup(
     url='https://cse.googlesource.com/solutions/megalist',
     install_requires=['googleads==20.0.0', 'google-api-python-client==1.7.9',
                       'bloom-filter==1.3', 'google-cloud-core==1.0.2',
-                      'google-cloud-datastore==1.9.0, aiohttp==3.6.2'],
+                      'google-cloud-datastore==1.9.0', 'aiohttp==3.6.2'],
     packages=setuptools.find_packages(),
 )
