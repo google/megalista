@@ -116,7 +116,7 @@ def _add_google_ads_ssd(pipeline, hasher, oauth_credentials, dataflow_options):
 def _add_ga_user_list(pipeline, oauth_credentials):
   (
       pipeline
-      | 'Load Data -  GA user list' >> FilterLoadAndGroupData([DestinationType.GA_USER_LIST_UPLOAD])
+      | 'Load Data -  GA user list' >> FilterLoadAndGroupData([DestinationType.GA_USER_LIST_UPLOAD], 5000000)
       | 'Upload - GA user list' >> beam.ParDo(GoogleAnalyticsUserListUploaderDoFn(oauth_credentials))
   )
 
