@@ -10,3 +10,4 @@ pytest-mock==3.2.0
 pytz==2020.1
 wheel==0.34.2
 pyarrow==0.17.1
+aiohttp==3.6.2
