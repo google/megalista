@@ -20,8 +20,8 @@ setuptools.setup(
     author='Alvaro Stivi',
     author_email='astivi@google.com',
     url='https://cse.googlesource.com/solutions/megalist',
-    install_requires=['googleads==20.0.0', 'google-api-python-client==1.7.9',
-                      'bloom-filter==1.3', 'google-cloud-core==1.0.2',
-                      'google-cloud-datastore==1.9.0', 'aiohttp==3.6.2'],
+    install_requires=['googleads==24.1.0', 'google-api-python-client==1.10.0',
+                      'bloom-filter==1.3', 'google-cloud-core==1.3.0', 'google-cloud-bigquery==1.26.0',
+                      'google-cloud-datastore==1.13.1', 'aiohttp==3.6.2'],
     packages=setuptools.find_packages(),
 )
