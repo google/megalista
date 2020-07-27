@@ -1,6 +1,7 @@
 googleads==24.1.0
 google-api-python-client==1.10.0
 google-cloud-core==1.3.0
+google-cloud-bigquery==1.26.0
 apache-beam[gcp]==2.22.0
 apache-beam==2.22.0
 google-cloud-datastore==1.13.1
