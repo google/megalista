@@ -21,24 +21,25 @@ from apache_beam.options.pipeline_options import PipelineOptions
 from mappers.ads_ssd_hashing_mapper import AdsSSDHashingMapper
 from mappers.ads_user_list_pii_hashing_mapper import AdsUserListPIIHashingMapper
 from sources.filter_load_and_group_data import FilterLoadAndGroupData
-from sources.transactional_events_bq_api_dofn import TransactionalEventsBigQueryApiDoFn
 from sources.spreadsheet_execution_source import SpreadsheetExecutionSource
+from sources.transactional_events_bq_api_dofn import TransactionalEventsBigQueryApiDoFn
+# from uploaders.appsflyer_s2s_uploader import AppsFlyerS2SUploaderDoFn
+from uploaders.appsflyer_s2s_uploader_async import AppsFlyerS2SUploaderDoFn
 from uploaders.campaign_manager_conversion_uploader import CampaignManagerConversionUploaderDoFn
 from uploaders.google_ads_customer_match.contact_info_uploader import GoogleAdsCustomerMatchContactInfoUploaderDoFn
 from uploaders.google_ads_customer_match.mobile_uploader import GoogleAdsCustomerMatchMobileUploaderDoFn
 from uploaders.google_ads_customer_match.user_id_uploader import GoogleAdsCustomerMatchUserIdUploaderDoFn
 from uploaders.google_ads_offline_conversions_uploader import GoogleAdsOfflineUploaderDoFn
 from uploaders.google_ads_ssd_uploader import GoogleAdsSSDUploaderDoFn
+from uploaders.google_analytics_data_import_uploader import GoogleAnalyticsDataImportUploaderDoFn
 from uploaders.google_analytics_measurement_protocol import GoogleAnalyticsMeasurementProtocolUploaderDoFn
 from uploaders.google_analytics_user_list_uploader import GoogleAnalyticsUserListUploaderDoFn
-#from uploaders.appsflyer_s2s_uploader import AppsFlyerS2SUploaderDoFn
-from uploaders.appsflyer_s2s_uploader_async import AppsFlyerS2SUploaderDoFn
-
 from utils.execution import DestinationType, Execution
-from utils.transactional_events_results_writer import TransactionalEventsResultsWriter
+from utils.google_analytics_data_import_eraser import GoogleAnalyticsDataImportEraser
 from utils.oauth_credentials import OAuthCredentials
 from utils.options import DataflowOptions
 from utils.sheets_config import SheetsConfig
+from utils.transactional_events_results_writer import TransactionalEventsResultsWriter
 
 warnings.filterwarnings("ignore", "Your application has authenticated using end user credentials")
 
@@ -66,6 +67,7 @@ def run(argv=None):
     _add_google_ads_offline_conversion(executions, None, oauth_credentials, dataflow_options)
     _add_google_ads_ssd(executions, AdsSSDHashingMapper(), oauth_credentials, dataflow_options)
     _add_ga_user_list(executions, oauth_credentials)
+    _add_ga_data_import(executions, oauth_credentials)
     _add_ga_measurement_protocol(executions, dataflow_options)
     _add_cm_conversion(executions, oauth_credentials)
     _add_appsflyer_s2s_events(executions, dataflow_options)
@@ -119,6 +121,17 @@ def _add_ga_user_list(pipeline, oauth_credentials):
       | 'Load Data -  GA user list' >> FilterLoadAndGroupData([DestinationType.GA_USER_LIST_UPLOAD], 5000000)
       | 'Upload - GA user list' >> beam.ParDo(GoogleAnalyticsUserListUploaderDoFn(oauth_credentials))
   )
+
+
+def _add_ga_data_import(pipeline, oauth_credentials):
+    (
+            pipeline
+            | 'Filter Executions - GA data import' >>
+            beam.Filter(lambda execution: execution.destination.destination_type == DestinationType.GA_DATA_IMPORT)
+            | 'Delete Data -  GA data import' >> beam.ParDo(GoogleAnalyticsDataImportEraser(oauth_credentials))
+            | 'Load Data -  GA data import' >> FilterLoadAndGroupData([DestinationType.GA_DATA_IMPORT], 300000)
+            | 'Upload - GA data import' >> beam.ParDo(GoogleAnalyticsDataImportUploaderDoFn(oauth_credentials))
+    )
 
 
 def _add_ga_measurement_protocol(pipeline, dataflow_options):

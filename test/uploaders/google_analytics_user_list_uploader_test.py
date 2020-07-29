@@ -14,7 +14,6 @@
 
 import pytest
 from apache_beam.options.value_provider import StaticValueProvider
-from googleapiclient.http import MediaInMemoryUpload
 
 from megalist_dataflow.uploaders.google_analytics_user_list_uploader import GoogleAnalyticsUserListUploaderDoFn
 from megalist_dataflow.utils.oauth_credentials import OAuthCredentials
@@ -25,29 +24,16 @@ from utils.execution import Execution, SourceType, DestinationType, Source, Acco
 def uploader(mocker):
     mocker.patch('googleads.oauth2.GoogleRefreshTokenClient')
     mocker.patch('googleads.adwords.AdWordsClient')
-    id = StaticValueProvider(str, "id")
+    client_id = StaticValueProvider(str, "id")
     secret = StaticValueProvider(str, "secret")
     access = StaticValueProvider(str, "access")
     refresh = StaticValueProvider(str, "refresh")
-    credentials = OAuthCredentials(id, secret, access, refresh)
+    credentials = OAuthCredentials(client_id, secret, access, refresh)
     return GoogleAnalyticsUserListUploaderDoFn(credentials)
 
 
-def test_get_service(mocker, uploader):
-    assert uploader._get_analytics_service() != None
-
-
-def test_not_active(mocker):
-    id = StaticValueProvider(str, "id")
-    secret = StaticValueProvider(str, "secret")
-    access = StaticValueProvider(str, "access")
-    refresh = StaticValueProvider(str, "refresh")
-    credentials = OAuthCredentials(id, secret, access, refresh)
-    uploader = GoogleAnalyticsUserListUploaderDoFn(credentials)
-    mocker.patch.object(uploader, '_get_analytics_service')
-    uploader.start_bundle()
-    uploader.process([], )
-    uploader._get_analytics_service.assert_not_called()
+def test_get_service(uploader):
+    assert uploader._get_analytics_service() is not None
 
 
 def test_work_with_empty_elements(uploader, mocker, caplog):
@@ -195,7 +181,6 @@ def test_list_creation_mcc(mocker, uploader):
 
 
 def test_avoid_list_creation_when_name_blank(mocker, uploader):
-
     ads_account_id = 'xxx-yyy-zzzz'
     ga_account_id = 'acc'
 
@@ -215,7 +200,6 @@ def test_avoid_list_creation_when_name_blank(mocker, uploader):
 
 
 def test_elements_uploading(mocker, uploader):
-
     service = mocker.MagicMock()
 
     mocker.patch.object(uploader, '_get_analytics_service')
@@ -252,7 +236,6 @@ def test_elements_uploading(mocker, uploader):
 
 
 def test_elements_uploading_custom_field(mocker, uploader):
-
     service = mocker.MagicMock()
 
     mocker.patch.object(uploader, '_get_analytics_service')
