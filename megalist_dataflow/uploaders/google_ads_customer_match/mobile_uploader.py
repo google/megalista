@@ -25,7 +25,17 @@ from utils.oauth_credentials import OAuthCredentials
 
 
 class GoogleAdsCustomerMatchMobileUploaderDoFn(GoogleAdsCustomerMatchAbstractUploaderDoFn):
-  def get_list_definition(self, account_config: AccountConfig, list_name:str) -> Dict[str, Any]:
+  def get_list_definition(self, account_config: AccountConfig, destination_metadata: List[str]) -> Dict[str, Any]:
+    list_name = destination_metadata[0]    
+    app_id = account_config.app_id
+    
+    #overwrite app_id from default to custom
+    if len(destination_metadata) >=4 and len(destination_metadata[3]) > 0:
+        app_id = destination_metadata[3]
+
+    if account_config.custom_app_id is not None:
+      app_id = account_config.custom_app_id
+
     return {
       'operand': {
         'xsi_type': 'CrmBasedUserList',
@@ -34,7 +44,7 @@ class GoogleAdsCustomerMatchMobileUploaderDoFn(GoogleAdsCustomerMatchAbstractUpl
         # CRM-based user list_name can use a membershipLifeSpan of 10000 to indicate
         # unlimited; otherwise normal values apply.
         'membershipLifeSpan': 10000,
-        'appId': account_config.app_id,
+        'appId': app_id,
         'uploadKeyType': 'MOBILE_ADVERTISING_ID'
       }
     }

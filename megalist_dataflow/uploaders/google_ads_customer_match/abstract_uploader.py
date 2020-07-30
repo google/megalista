@@ -94,10 +94,11 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
     any_execution=elements[0]['execution']
     if any_execution.destination.destination_type is self.get_action_type():
       self._assert_execution_is_valid(elements, any_execution)
+
       user_list_service=self._get_user_list_service(any_execution.account_config.google_ads_account_id)
       list_id=self._create_list_if_it_does_not_exist(user_list_service,
                                                             any_execution.destination.destination_metadata[0],
-                                                            self.get_list_definition(any_execution.account_config, any_execution.destination.destination_metadata[0]))
+                                                            self.get_list_definition(any_execution.account_config, any_execution.destination.destination_metadata))
 
       rows=self.get_filtered_rows(
           utils.extract_rows(elements), self.get_row_keys())

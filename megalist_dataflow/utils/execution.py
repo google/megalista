@@ -52,6 +52,7 @@ class AccountConfig:
         self._campaign_manager_account_id = campaign_manager_account_id
         self._app_id = app_id
 
+    
     @property
     def google_ads_account_id(self) -> str:
         return self._google_ads_account_id

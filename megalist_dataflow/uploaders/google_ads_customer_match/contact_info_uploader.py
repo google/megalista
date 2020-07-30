@@ -24,7 +24,8 @@ from utils.execution import DestinationType, AccountConfig
 
 
 class GoogleAdsCustomerMatchContactInfoUploaderDoFn(GoogleAdsCustomerMatchAbstractUploaderDoFn):
-  def get_list_definition(self, account_config: AccountConfig, list_name: str) -> Dict[str, Any]:
+  def get_list_definition(self, account_config: AccountConfig, destination_metadata: List[str]) -> Dict[str, Any]:
+    list_name = destination_metadata[0]
     return {
       'operand': {
         'xsi_type': 'CrmBasedUserList',
