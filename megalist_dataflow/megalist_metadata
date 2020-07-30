@@ -31,6 +31,16 @@
             "name": "setup_sheet_id",
             "label": "Google Sheets id for config",
             "help_text": "Google Sheets id for config"
+        },
+        {
+            "name": "bq_ops_dataset",
+            "label": "Auxliary bigquery dataset used for Megalista operations",
+            "help_text": "Auxliary bigquery dataset used for Megalista operations"
+        },
+        {
+            "name": "appsflyer_dev_key",
+            "label": "Developer key for AppsFlyer S2S API",
+            "help_text": "Developer key for AppsFlyer S2S API"
         }
     ]
 }
