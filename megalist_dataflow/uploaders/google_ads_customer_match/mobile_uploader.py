@@ -33,9 +33,6 @@ class GoogleAdsCustomerMatchMobileUploaderDoFn(GoogleAdsCustomerMatchAbstractUpl
     if len(destination_metadata) >=4 and len(destination_metadata[3]) > 0:
         app_id = destination_metadata[3]
 
-    if account_config.custom_app_id is not None:
-      app_id = account_config.custom_app_id
-
     return {
       'operand': {
         'xsi_type': 'CrmBasedUserList',
