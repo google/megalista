@@ -124,14 +124,13 @@ def _add_ga_user_list(pipeline, oauth_credentials):
 
 
 def _add_ga_data_import(pipeline, oauth_credentials):
-    (
-            pipeline
-            | 'Filter Executions - GA data import' >>
-            beam.Filter(lambda execution: execution.destination.destination_type == DestinationType.GA_DATA_IMPORT)
-            | 'Delete Data -  GA data import' >> beam.ParDo(GoogleAnalyticsDataImportEraser(oauth_credentials))
-            | 'Load Data -  GA data import' >> FilterLoadAndGroupData([DestinationType.GA_DATA_IMPORT], 300000)
-            | 'Upload - GA data import' >> beam.ParDo(GoogleAnalyticsDataImportUploaderDoFn(oauth_credentials))
-    )
+  (
+          pipeline
+          | 'Filter Executions - GA data import' >> beam.Filter(filter_by_action, DestinationType.GA_DATA_IMPORT)
+          | 'Delete Data -  GA data import' >> beam.ParDo(GoogleAnalyticsDataImportEraser(oauth_credentials))
+          | 'Load Data -  GA data import' >> FilterLoadAndGroupData([DestinationType.GA_DATA_IMPORT], 300000)
+          | 'Upload - GA data import' >> beam.ParDo(GoogleAnalyticsDataImportUploaderDoFn(oauth_credentials))
+  )
 
 
 def _add_ga_measurement_protocol(pipeline, dataflow_options):
