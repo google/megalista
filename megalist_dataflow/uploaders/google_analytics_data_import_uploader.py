@@ -113,7 +113,7 @@ class GoogleAnalyticsDataImportUploaderDoFn(beam.DoFn):
                     val1b,val2b,val3b
                     val1c,val2c,val3c
         """
-        column_names = [columnName for columnName in rows[0].keys()]
+        column_names = ['ga:'+columnName for columnName in rows[0].keys()]
         header = ','.join(column_names)
         body = '\n'.join([
             ','.join(['' if element is None else element for element in row.values()]) for row in rows
