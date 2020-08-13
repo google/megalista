@@ -14,7 +14,7 @@
 
 import datetime
 import pytz
-from utils.execution import DestinationType, Execution
+from megalist_dataflow.utils.execution import DestinationType, Execution
 
 timezone = pytz.timezone('America/Sao_Paulo')
 
@@ -29,6 +29,10 @@ def get_ads_service(service_name, version, oauth_credentials, developer_token, c
 
 
 def assert_elements_have_same_execution(elements):
+
+  if not elements or 'execution' not in elements[0]:
+    raise ValueError('No executions found')
+
   last_execution = elements[0]['execution']
   for element in elements:
     current_execution = element['execution']
@@ -40,7 +44,7 @@ def assert_elements_have_same_execution(elements):
 
 def assert_right_type_action(execution: Execution, expected_action: DestinationType) -> None:
   if execution.destination.destination_type is not expected_action:
-    raise ValueError('Wrong Action received: {}'.format(execution.destination.destination_type.name))
+    raise ValueError('Wrong DestinationType received: {}'.format(execution.destination.destination_type.name))
 
 def format_date(date):
   if isinstance(date, datetime.datetime):
