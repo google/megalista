@@ -12,31 +12,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
-from datetime import datetime
 from pytz import timezone
 
 
 def extract_rows(elements):
-  return [dict['row'] for dict in elements]
- 
+  return [element['row'] for element in elements if 'row' in element]
+
+
 def safe_process(logger):
   def deco(func):
     def inner(*args, **kwargs):
       elements = args[1]
-      if len(elements) == 0:
+      if not elements:
         logger.warning('Skipping upload, received no elements.')
         return
       logger.info(f'Uploading {len(elements)} rows...')
       try:
         return func(*args, *kwargs)
       except Exception as e:
-        logger.error(f"Error uploading data for :{extract_rows(elements)}")
-        logger.error(f"Exception: {e}")
+        logger.error(f'Error uploading data for :{extract_rows(elements)}')
+        logger.error(f'Exception: {e}')
+        raise
     return inner
   return deco
 
 
-def convert_datetime_tz(dt, origin_tz_str, destination_tz_str):
+def convert_datetime_tz(dt, origin_tz, destination_tz):
   datetime_obj = timezone(origin_tz).localize(dt)
   return datetime_obj.astimezone(timezone(destination_tz))
