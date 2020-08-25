@@ -7,7 +7,8 @@
         "access_token": "GCP OAuth access token",
         "refresh_token": "GCP OAuth refresh token",
         "setup_sheet_id": "Setup Google Sheets Id",
-        "bq_ops_dataset": "Auxliary bigquery dataset used for Megalista operations"
+        "bq_ops_dataset": "Auxliary bigquery dataset used for Megalista operations",
+	"appsflyer_dev_key": "Apps flyer dev key"
     },
     "environment": {
         "tempLocation": "gs://megalist-data/temp",
