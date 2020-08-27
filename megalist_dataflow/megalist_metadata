@@ -5,7 +5,8 @@
         {
             "name": "developer_token",
             "label": "Google Ads Developer Token",
-            "help_text": "Google Ads Developer Token"
+            "help_text": "Google Ads Developer Token",
+            "is_optional": "true"
         },
         {
             "name": "client_id",
@@ -40,7 +41,8 @@
         {
             "name": "appsflyer_dev_key",
             "label": "Developer key for AppsFlyer S2S API",
-            "help_text": "Developer key for AppsFlyer S2S API"
+            "help_text": "Developer key for AppsFlyer S2S API",
+            "is_optional": "true"
         }
     ]
 }
