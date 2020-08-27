@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from megalist_dataflow.reducers.bloom_filter_reducer import BloomFilterReducer
+from reducers.bloom_filter_reducer import BloomFilterReducer
 from bloom_filter import BloomFilter
 
 

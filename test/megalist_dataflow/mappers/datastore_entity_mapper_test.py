@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from megalist_dataflow.mappers.datastore_entity_mapper import DatastoreEntityMapper
+from mappers.datastore_entity_mapper import DatastoreEntityMapper
 from apache_beam.io.gcp.datastore.v1new.types import Key
 
 

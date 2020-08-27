@@ -15,9 +15,9 @@
 import logging
 
 import apache_beam as beam
-from megalist_dataflow.uploaders import google_ads_utils as ads_utils
-from megalist_dataflow.uploaders import utils
-from megalist_dataflow.utils.execution import DestinationType
+from uploaders import google_ads_utils as ads_utils
+from uploaders import utils
+from utils.execution import DestinationType
 
 
 class GoogleAdsOfflineUploaderDoFn(beam.DoFn):

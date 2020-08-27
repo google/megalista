@@ -13,8 +13,8 @@
 # limitations under the License.
 import datetime
 
-from megalist_dataflow.utils.execution import DestinationType
-from megalist_dataflow.utils.execution import Execution
+from utils.execution import DestinationType
+from utils.execution import Execution
 import pytz
 
 timezone = pytz.timezone('America/Sao_Paulo')

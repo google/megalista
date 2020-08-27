@@ -13,11 +13,8 @@
 # limitations under the License.
 
 import logging
-from typing import Dict, Any
-from urllib.parse import quote
 
 import apache_beam as beam
-import requests
 import time
 from datetime import datetime
 
