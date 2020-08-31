@@ -64,5 +64,6 @@ To schedule daily/hourly runs, go to **Cloud Scheduler**:
 It's recommended to create a new Service Account to be used with the Cloud Scheduler
 - Go to IAM & Admin > Service Accounts
 - Create a new Service Account with the following roles:
+    - Cloud Dataflow Service Agent
     - Dataflow Admin
     - Storage Objects Viewer
