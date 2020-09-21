@@ -30,6 +30,9 @@ class DestinationType(Enum):
     GA_MEASUREMENT_PROTOCOL, \
     GA_DATA_IMPORT = range(10)
 
+    def __eq__(self, other):
+      return self.name == other.name
+
 
 class SourceType(Enum):
     BIG_QUERY, \
