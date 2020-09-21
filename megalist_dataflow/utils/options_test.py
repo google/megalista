@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from megalist_dataflow.utils.options import DataflowOptions
-from apache_beam.options.pipeline_options import PipelineOptions
+from utils.options import DataflowOptions
 
 
 def test_options(mocker):

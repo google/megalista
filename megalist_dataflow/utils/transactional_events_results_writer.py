@@ -21,7 +21,6 @@ from google.cloud.bigquery import SchemaField
 
 from uploaders import google_ads_utils as ads_utils
 from uploaders import utils
-from utils.execution import DestinationType
 
 
 class TransactionalEventsResultsWriter(beam.DoFn):

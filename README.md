@@ -57,10 +57,13 @@ To schedule daily/hourly runs, go to **Cloud Scheduler**:
 - For *target* set as HTTP
 - Configure a *POST* for url: https://dataflow.googleapis.com/v1b3/projects/${YOUR_PROJECT_ID}/locations/${LOCATION}/templates:launch?gcsPath=gs://${BUCKET_NAME}/templates/megalist, replacing the params with the actual values
 - For a sample on the *body* of the request, check **cloud_config/scheduler.json**
+- Add OAuth Headers
+- Scope: https://www.googleapis.com/auth/cloud-platform
 
 ## Creating a Service Account
 It's recommended to create a new Service Account to be used with the Cloud Scheduler
 - Go to IAM & Admin > Service Accounts
 - Create a new Service Account with the following roles:
+    - Cloud Dataflow Service Agent
     - Dataflow Admin
     - Storage Objects Viewer
