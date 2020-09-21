@@ -23,7 +23,6 @@ from mappers.ads_user_list_pii_hashing_mapper import AdsUserListPIIHashingMapper
 from sources.filter_load_and_group_data import FilterLoadAndGroupData
 from sources.spreadsheet_execution_source import SpreadsheetExecutionSource
 from sources.transactional_events_bq_api_dofn import TransactionalEventsBigQueryApiDoFn
-# from uploaders.appsflyer_s2s_uploader import AppsFlyerS2SUploaderDoFn
 from uploaders.appsflyer_s2s_uploader_async import AppsFlyerS2SUploaderDoFn
 from uploaders.campaign_manager_conversion_uploader import CampaignManagerConversionUploaderDoFn
 from uploaders.google_ads_customer_match.contact_info_uploader import GoogleAdsCustomerMatchContactInfoUploaderDoFn
@@ -34,14 +33,16 @@ from uploaders.google_ads_ssd_uploader import GoogleAdsSSDUploaderDoFn
 from uploaders.google_analytics_data_import_uploader import GoogleAnalyticsDataImportUploaderDoFn
 from uploaders.google_analytics_measurement_protocol import GoogleAnalyticsMeasurementProtocolUploaderDoFn
 from uploaders.google_analytics_user_list_uploader import GoogleAnalyticsUserListUploaderDoFn
-from utils.execution import DestinationType, Execution
+from utils.execution import DestinationType
+from utils.execution import Execution
 from utils.google_analytics_data_import_eraser import GoogleAnalyticsDataImportEraser
 from utils.oauth_credentials import OAuthCredentials
 from utils.options import DataflowOptions
 from utils.sheets_config import SheetsConfig
 from utils.transactional_events_results_writer import TransactionalEventsResultsWriter
 
-warnings.filterwarnings("ignore", "Your application has authenticated using end user credentials")
+warnings.filterwarnings(
+    "ignore", "Your application has authenticated using end user credentials")
 
 
 def filter_by_action(execution: Execution, destination_type: DestinationType):
@@ -51,8 +52,11 @@ def filter_by_action(execution: Execution, destination_type: DestinationType):
 def run(argv=None):
   pipeline_options = PipelineOptions()
   dataflow_options = pipeline_options.view_as(DataflowOptions)
-  oauth_credentials = OAuthCredentials(dataflow_options.client_id, dataflow_options.client_secret,
-                                       dataflow_options.developer_token, dataflow_options.refresh_token)
+  oauth_credentials = OAuthCredentials(
+      dataflow_options.client_id,
+      dataflow_options.client_secret,
+      dataflow_options.developer_token,
+      dataflow_options.refresh_token)
 
   sheets_config = SheetsConfig(oauth_credentials)
   # conversion_plus_mapper = ConversionPlusMapper(
