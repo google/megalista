@@ -11,20 +11,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-import apache_beam as beam
-import logging
-
 from typing import Dict, Any, List
 
 from uploaders import google_ads_utils as ads_utils
-from uploaders.google_ads_customer_match.abstract_uploader import GoogleAdsCustomerMatchAbstractUploaderDoFn 
-from uploaders import utils as utils
+from uploaders import utils
+from uploaders.google_ads_customer_match.abstract_uploader import GoogleAdsCustomerMatchAbstractUploaderDoFn
 from utils.execution import DestinationType, AccountConfig
 
 
-class GoogleAdsCustomerMatchUserIdUploaderDoFn(GoogleAdsCustomerMatchAbstractUploaderDoFn):
-  def get_list_definition(self, account_config: AccountConfig, destination_metadata: List[str]) -> Dict[str, Any]:
+class GoogleAdsCustomerMatchUserIdUploaderDoFn(
+    GoogleAdsCustomerMatchAbstractUploaderDoFn):
+
+  def get_list_definition(
+      self,
+      account_config: AccountConfig,
+      destination_metadata: List[str]) -> Dict[str, Any]:
     list_name = destination_metadata[0]
     return {
       'operand': {
