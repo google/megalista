@@ -63,8 +63,7 @@ class CampaignManagerConversionUploaderDoFn(beam.DoFn):
       raise ValueError(
           f'Missing destination information. Received {str(destination)}')
 
-  @utils.safe_process(
-      logger=logging.getLogger(_LOGGER_NAME))
+  @utils.safe_process(logger=logging.getLogger(_LOGGER_NAME))
   def process(self, elements, **kwargs):
     self._do_process(elements, time.time())
 
@@ -113,6 +112,8 @@ class CampaignManagerConversionUploaderDoFn(beam.DoFn):
         to_upload['encryptedUserId'] = conversion['encryptedUserId']
       elif 'mobileDeviceId' in conversion and conversion['mobileDeviceId']:
         to_upload['mobileDeviceId'] = conversion['mobileDeviceId']
+      elif 'matchId' in conversion and conversion['matchId']:
+        to_upload['matchId'] = conversion['matchId']
 
       logging.getLogger(_LOGGER_NAME).info(to_upload)
       conversions.append(to_upload)

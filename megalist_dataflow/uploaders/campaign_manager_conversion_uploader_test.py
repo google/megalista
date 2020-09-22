@@ -163,6 +163,40 @@ def test_conversion_upload(mocker, uploader):
       profileId='dcm_profile_id', body=expected_body)
 
 
+def test_conversion_upload_match_id(mocker, uploader):
+  mocker.patch.object(uploader, '_get_dcm_service')
+
+  floodlight_activity_id = 'floodlight_activity_id'
+  floodlight_configuration_id = 'floodlight_configuration_id'
+
+  source = Source('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'))
+  destination = Destination(
+      'dest1',
+      DestinationType.CM_OFFLINE_CONVERSION,
+      (floodlight_activity_id, floodlight_configuration_id))
+  execution = Execution(_account_config, source, destination)
+  current_time = time.time()
+
+  mocker.patch.object(time, 'time')
+  time.time.return_value = current_time
+
+  uploader.process([{'execution': execution, 'row': {'matchId': 'abc'}}])
+
+  expected_body = {
+      'conversions': [{
+          'matchId': 'abc',
+          'floodlightActivityId': floodlight_activity_id,
+          'floodlightConfigurationId': floodlight_configuration_id,
+          'ordinal': math.floor(current_time * 10e5),
+          'timestampMicros': math.floor(current_time * 10e5)
+      }],
+      'encryptionInfo': 'AD_SERVING'
+  }
+  
+  uploader._get_dcm_service().conversions().batchinsert.assert_any_call(
+      profileId='dcm_profile_id', body=expected_body)
+
+
 def test_error_on_api_call(mocker, uploader, caplog):
   mocker.patch.object(uploader, '_get_dcm_service')
   service = mocker.MagicMock()
