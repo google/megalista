@@ -18,7 +18,7 @@ import logging
 from apache_beam import DoFn
 from google.cloud import bigquery
 
-from utils.execution import SourceType
+from megalist_dataflow.utils.execution import SourceType
 
 
 class TransactionalEventsBigQueryApiDoFn(DoFn):

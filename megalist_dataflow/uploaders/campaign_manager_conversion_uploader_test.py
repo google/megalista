@@ -192,7 +192,7 @@ def test_conversion_upload_match_id(mocker, uploader):
       }],
       'encryptionInfo': 'AD_SERVING'
   }
-  
+
   uploader._get_dcm_service().conversions().batchinsert.assert_any_call(
       profileId='dcm_profile_id', body=expected_body)
 

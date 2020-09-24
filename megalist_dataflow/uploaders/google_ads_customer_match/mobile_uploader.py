@@ -17,11 +17,11 @@ import logging
 
 from typing import List, Dict, Any
 
-from uploaders import google_ads_utils as ads_utils
-from uploaders.google_ads_customer_match.abstract_uploader import GoogleAdsCustomerMatchAbstractUploaderDoFn 
-from uploaders import utils as utils
-from utils.execution import DestinationType, AccountConfig
-from utils.oauth_credentials import OAuthCredentials
+from megalist_dataflow.uploaders import google_ads_utils as ads_utils
+from megalist_dataflow.uploaders.google_ads_customer_match.abstract_uploader import GoogleAdsCustomerMatchAbstractUploaderDoFn
+from megalist_dataflow.uploaders import utils as utils
+from megalist_dataflow.utils.execution import DestinationType, AccountConfig
+from megalist_dataflow.utils.oauth_credentials import OAuthCredentials
 
 
 class GoogleAdsCustomerMatchMobileUploaderDoFn(GoogleAdsCustomerMatchAbstractUploaderDoFn):
