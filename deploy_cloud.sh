@@ -19,9 +19,7 @@ if [ $# != 3 ]; then
     exit 1
 fi
 
-cd megalist_dataflow
 gcloud config set project $1
-python3 -m pip install --user -q -r requirements.txt
-python3 -m main --runner DataflowRunner --project $1 --gcp_project_id $1 --temp_location gs://$2/tmp/ --region $3 --setup_file ./setup.py --template_location gs://$2/templates/megalist --num_workers 1 --autoscaling_algorithm=NONE
-gsutil cp megalist_metadata gs://$2/templates/megalist_metadata
-cd ..
+python3 -m pip install --user -q -r megalist_dataflow/requirements.txt
+python3 -m megalist_dataflow.main --runner DataflowRunner --project $1 --gcp_project_id $1 --temp_location gs://$2/tmp/ --region $3 --setup_file ./megalist_dataflow/setup.py --template_location gs://$2/templates/megalist --num_workers 1 --autoscaling_algorithm=NONE
+gsutil cp megalist_dataflow/megalist_metadata gs://$2/templates/megalist_metadata
