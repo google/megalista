@@ -35,7 +35,7 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(beam.DoFn):
     pass
 
   def _format_hit(self, payload: Dict[str, Any]) -> str:
-    return "&".join([key + "=" + quote(str(value)) for key, value in payload.items()])
+    return "&".join([key + "=" + quote(str(value)) for key, value in payload.items() if value is not None])
 
   @utils.safe_process(logger=logging.getLogger("megalista.GoogleAnalyticsMeasurementProtocolUploader"))
   def process(self, elements, **kwargs):
@@ -53,12 +53,14 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(beam.DoFn):
       "cid": row['client_id'],
       "ea": row['event_action'],
       "ec": row['event_category'],
-      "ev": row['event_value'],
-      "el": row['event_label'],
+      "ev": row.get('event_value'),
+      "el": row.get('event_label'),
       "ua": self.UA,
       **{key: row[key] for key in list(filter(lambda key: key.startswith("cd"), row.keys()))}
     } for row in rows]
+
     encoded = [self._format_hit(payload) for payload in payloads]
+
     payload = '\n'.join(encoded)
     response = requests.post(url=self.API_URL, data=payload)
     if response.status_code != 200:
