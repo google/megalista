@@ -13,10 +13,10 @@
 # limitations under the License.
 from typing import Dict, Any, List
 
-from megalist_dataflow.uploaders import google_ads_utils as ads_utils
-from megalist_dataflow.uploaders import utils
-from megalist_dataflow.uploaders.google_ads_customer_match.abstract_uploader import GoogleAdsCustomerMatchAbstractUploaderDoFn
-from megalist_dataflow.utils.execution import DestinationType, AccountConfig
+from uploaders import google_ads_utils as ads_utils
+from uploaders import utils
+from uploaders.google_ads_customer_match.abstract_uploader import GoogleAdsCustomerMatchAbstractUploaderDoFn
+from utils.execution import DestinationType, AccountConfig
 
 
 class GoogleAdsCustomerMatchUserIdUploaderDoFn(

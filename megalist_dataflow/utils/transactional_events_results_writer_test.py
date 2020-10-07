@@ -14,14 +14,14 @@
 
 import datetime
 
-from megalist_dataflow.utils.execution import AccountConfig
-from megalist_dataflow.utils.execution import Destination
-from megalist_dataflow.utils.execution import DestinationType
-from megalist_dataflow.utils.execution import Execution
-from megalist_dataflow.utils.execution import Source
-from megalist_dataflow.utils.execution import SourceType
+from utils.execution import AccountConfig
+from utils.execution import Destination
+from utils.execution import DestinationType
+from utils.execution import Execution
+from utils.execution import Source
+from utils.execution import SourceType
 import pytest
-from megalist_dataflow.utils.transactional_events_results_writer import TransactionalEventsResultsWriter
+from utils.transactional_events_results_writer import TransactionalEventsResultsWriter
 
 from google.cloud.bigquery import SchemaField
 

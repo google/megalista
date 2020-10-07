@@ -15,14 +15,14 @@ import math
 import time
 
 from apache_beam.options.value_provider import StaticValueProvider
-from megalist_dataflow.uploaders.campaign_manager_conversion_uploader import CampaignManagerConversionUploaderDoFn
-from megalist_dataflow.utils.execution import AccountConfig
-from megalist_dataflow.utils.execution import Destination
-from megalist_dataflow.utils.execution import DestinationType
-from megalist_dataflow.utils.execution import Execution
-from megalist_dataflow.utils.execution import Source
-from megalist_dataflow.utils.execution import SourceType
-from megalist_dataflow.utils.oauth_credentials import OAuthCredentials
+from uploaders.campaign_manager_conversion_uploader import CampaignManagerConversionUploaderDoFn
+from utils.execution import AccountConfig
+from utils.execution import Destination
+from utils.execution import DestinationType
+from utils.execution import Execution
+from utils.execution import Source
+from utils.execution import SourceType
+from utils.oauth_credentials import OAuthCredentials
 import pytest
 
 _account_config = AccountConfig(mcc=False,

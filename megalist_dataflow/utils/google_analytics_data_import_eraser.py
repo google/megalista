@@ -19,8 +19,8 @@ from google.cloud import bigquery
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
-from megalist_dataflow.uploaders import google_ads_utils as ads_utils
-from megalist_dataflow.utils.execution import DestinationType
+from uploaders import google_ads_utils as ads_utils
+from utils.execution import DestinationType
 
 
 class GoogleAnalyticsDataImportEraser(beam.DoFn):

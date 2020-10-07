@@ -14,7 +14,7 @@
 import logging
 from apache_beam import DoFn
 from google.cloud import bigquery
-from megalist_dataflow.utils.execution import SourceType
+from utils.execution import SourceType
 class BigQueryApiDoFn(DoFn):
   """
   DoFn with Execution as input and lines read from BigQuery as output.

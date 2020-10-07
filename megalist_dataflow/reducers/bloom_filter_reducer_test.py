@@ -13,7 +13,7 @@
 # limitations under the License.
 from reducers.bloom_filter_reducer import BloomFilterReducer
 from bloom_filter import BloomFilter
-from megalist_dataflow.reducers.bloom_filter_reducer import BloomFilterReducer
+from reducers.bloom_filter_reducer import BloomFilterReducer
 
 
 def test_bloom_filter():

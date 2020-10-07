@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from megalist_dataflow.uploaders.google_ads_user_list_uploader import GoogleAdsUserListUploaderDoFn
-from megalist_dataflow.utils.oauth_credentials import OAuthCredentials
+from uploaders.google_ads_user_list_uploader import GoogleAdsUserListUploaderDoFn
+from utils.oauth_credentials import OAuthCredentials
 from apache_beam.options.value_provider import StaticValueProvider
 import pytest
 

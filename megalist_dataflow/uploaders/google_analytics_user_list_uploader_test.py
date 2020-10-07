@@ -15,8 +15,8 @@
 import pytest
 from apache_beam.options.value_provider import StaticValueProvider
 
-from megalist_dataflow.uploaders.google_analytics_user_list_uploader import GoogleAnalyticsUserListUploaderDoFn
-from megalist_dataflow.utils.oauth_credentials import OAuthCredentials
+from uploaders.google_analytics_user_list_uploader import GoogleAnalyticsUserListUploaderDoFn
+from utils.oauth_credentials import OAuthCredentials
 from utils.execution import Execution, SourceType, DestinationType, Source, AccountConfig, Destination
 
 

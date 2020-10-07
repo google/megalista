@@ -15,8 +15,8 @@
 import unittest
 
 from apache_beam.options.value_provider import StaticValueProvider
-from megalist_dataflow.uploaders.google_ads_customer_match import user_id_uploader
-from megalist_dataflow.utils.oauth_credentials import OAuthCredentials
+from uploaders.google_ads_customer_match import user_id_uploader
+from utils.oauth_credentials import OAuthCredentials
 import pytest
 
 

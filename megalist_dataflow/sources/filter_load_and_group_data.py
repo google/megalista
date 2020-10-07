@@ -17,9 +17,9 @@ from typing import List
 import apache_beam as beam
 from apache_beam import PTransform
 
-from megalist_dataflow.sources.bq_api_dofn import BigQueryApiDoFn
-from megalist_dataflow.utils.execution import DestinationType, Execution
-from megalist_dataflow.utils.group_by_execution_dofn import GroupByExecutionDoFn
+from sources.bq_api_dofn import BigQueryApiDoFn
+from utils.execution import DestinationType, Execution
+from utils.group_by_execution_dofn import GroupByExecutionDoFn
 
 
 def filter_by_action(execution: Execution, actions: List[DestinationType]) -> bool:

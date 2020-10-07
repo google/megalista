@@ -19,8 +19,8 @@ import apache_beam as beam
 from google.cloud import bigquery
 from google.cloud.bigquery import SchemaField
 
-from megalist_dataflow.uploaders import google_ads_utils as ads_utils
-from megalist_dataflow.uploaders import utils
+from uploaders import google_ads_utils as ads_utils
+from uploaders import utils
 
 
 class TransactionalEventsResultsWriter(beam.DoFn):

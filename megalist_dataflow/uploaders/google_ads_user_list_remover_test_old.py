@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from megalist_dataflow.utils.oauth_credentials import OAuthCredentials
+from utils.oauth_credentials import OAuthCredentials
 from apache_beam.options.value_provider import StaticValueProvider
 import pytest
 

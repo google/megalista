@@ -16,11 +16,11 @@ import logging
 
 from apache_beam.options.value_provider import ValueProvider
 
-from megalist_dataflow.sources.base_bounded_source import BaseBoundedSource
-from megalist_dataflow.utils.execution import Destination, DestinationType
-from megalist_dataflow.utils.execution import Execution, AccountConfig
-from megalist_dataflow.utils.execution import Source, SourceType
-from megalist_dataflow.utils.sheets_config import SheetsConfig
+from sources.base_bounded_source import BaseBoundedSource
+from utils.execution import Destination, DestinationType
+from utils.execution import Execution, AccountConfig
+from utils.execution import Source, SourceType
+from utils.sheets_config import SheetsConfig
 
 
 class SpreadsheetExecutionSource(BaseBoundedSource):

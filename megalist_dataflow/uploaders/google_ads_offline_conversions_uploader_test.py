@@ -14,14 +14,14 @@
 
 from apache_beam.options.value_provider import StaticValueProvider
 import pytest
-from megalist_dataflow.uploaders.google_ads_offline_conversions_uploader import GoogleAdsOfflineUploaderDoFn
-from megalist_dataflow.utils.execution import AccountConfig
-from megalist_dataflow.utils.execution import Destination
-from megalist_dataflow.utils.execution import DestinationType
-from megalist_dataflow.utils.execution import Execution
-from megalist_dataflow.utils.execution import Source
-from megalist_dataflow.utils.execution import SourceType
-from megalist_dataflow.utils.oauth_credentials import OAuthCredentials
+from uploaders.google_ads_offline_conversions_uploader import GoogleAdsOfflineUploaderDoFn
+from utils.execution import AccountConfig
+from utils.execution import Destination
+from utils.execution import DestinationType
+from utils.execution import Execution
+from utils.execution import Source
+from utils.execution import SourceType
+from utils.oauth_credentials import OAuthCredentials
 
 _account_config = AccountConfig('account_id', False, 'ga_account_id', '', '')
 
