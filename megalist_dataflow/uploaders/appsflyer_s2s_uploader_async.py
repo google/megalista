@@ -72,10 +72,9 @@ class AppsFlyerS2SUploaderDoFn(beam.DoFn):
   async def _send_http_request(self, session, payload, curr_retry):
     url = self.API_URL + self.app_id
     headers = {
-      "authentication": str(self.dev_key),
+      "authentication": self.dev_key.get(),
       'Content-Type': 'application/json' 
     }
-
 
     try:
       async with session.post(url, headers=headers, json=payload,
@@ -86,7 +85,8 @@ class AppsFlyerS2SUploaderDoFn(beam.DoFn):
             return await self._send_http_request(session, payload, curr_retry+1)
           else:
             logging.getLogger("megalista.AppsFlyerS2SUploader").error(
-              f"Fail to send event. Response code: {response.status}")
+              f"Fail to send event. Response code: {response.status}, "
+              f"reason: {response.reason}")
             #print(await response.text()) #uncomment to troubleshoot
         return response.status
 
