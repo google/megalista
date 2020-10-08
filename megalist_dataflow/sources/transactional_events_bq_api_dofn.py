@@ -36,7 +36,7 @@ class TransactionalEventsBigQueryApiDoFn(DoFn):
     super().__init__()
     self._query_batch_size = query_batch_size
     self._first_element_processed = False
-    self._bq_ops_dataset = str(bq_ops_dataset)
+    self._bq_ops_dataset = bq_ops_dataset
 
   def create_uploaded_table(self, uploaded_table_name):
     if self._first_element_processed:
@@ -63,7 +63,7 @@ class TransactionalEventsBigQueryApiDoFn(DoFn):
       raise NotImplementedError
 
     #initialize destination table for uploaded events
-    uploaded_table_name = self._bq_ops_dataset + '.' + execution.source.source_metadata[1] +'_uploaded'
+    uploaded_table_name = self._bq_ops_dataset.get() + '.' + execution.source.source_metadata[1] +'_uploaded'
     self.create_uploaded_table(uploaded_table_name)
 
     client = bigquery.Client()
