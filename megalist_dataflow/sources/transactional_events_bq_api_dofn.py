@@ -48,7 +48,7 @@ class TransactionalEventsBigQueryApiDoFn(DoFn):
              timestamp TIMESTAMP OPTIONS(description= 'Event timestamp'), \
              uuid STRING OPTIONS(description='Event unique identifier'))\
              PARTITION BY _PARTITIONDATE \
-             OPTIONS(partition_expiration_days=7)"
+             OPTIONS(partition_expiration_days=15)"
 
     logging.getLogger("megalista.TransactionalEventsBigQueryApiDoFn").info(
       "Creating table %s if it doesn't exist", uploaded_table_name)
