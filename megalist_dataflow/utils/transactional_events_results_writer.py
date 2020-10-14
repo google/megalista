@@ -31,7 +31,7 @@ class TransactionalEventsResultsWriter(beam.DoFn):
 
   def __init__(self, bq_ops_dataset):
     super().__init__()
-    self._bq_ops_dataset = str(bq_ops_dataset)
+    self._bq_ops_dataset = bq_ops_dataset
 
   @utils.safe_process(logger=logging.getLogger("megalista.TransactionalEventsResultsWriter"))
   def process(self, elements, *args, **kwargs):
@@ -40,9 +40,8 @@ class TransactionalEventsResultsWriter(beam.DoFn):
   def _do_process(self, elements, now):
     ads_utils.assert_elements_have_same_execution(elements)
     any_execution = elements[0]['execution']
-    #ads_utils.assert_right_type_action(any_execution, DestinationType.GA_MEASUREMENT_PROTOCOL)
 
-    table_name = self._bq_ops_dataset + '.' + any_execution.source.source_metadata[1] + "_uploaded"
+    table_name = self._bq_ops_dataset.get() + '.' + any_execution.source.source_metadata[1] + "_uploaded"
 
     rows = utils.extract_rows(elements)
     client = self._get_bq_client()
