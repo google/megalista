@@ -32,7 +32,7 @@ def safe_process(logger):
       except Exception as e:
         logger.error(f'Error uploading data for :{extract_rows(elements)}')
         logger.error(f'Exception: {e}')
-        raise
+        #raise # aviod rasing exception to ensure execution of remaining batches
     return inner
   return deco
 
