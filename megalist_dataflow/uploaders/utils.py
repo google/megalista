@@ -14,6 +14,8 @@
 
 from pytz import timezone
 
+MAX_RETRIES = 3
+
 
 def extract_rows(elements):
   return [element['row'] for element in elements if 'row' in element]
@@ -30,11 +32,29 @@ def safe_process(logger):
       try:
         return func(*args, *kwargs)
       except Exception as e:
+        # TODO: this doesn't work. All api call should be migrate to
+        #  "safe_call_api" below.
         logger.error(f'Error uploading data for :{extract_rows(elements)}')
         logger.error(f'Exception: {e}')
-        #raise # aviod rasing exception to ensure execution of remaining batches
+
     return inner
+
   return deco
+
+
+def safe_call_api(function, logger, *args, **kwargs):
+  current_retry = 1
+  _do_safe_call_api(function, logger, current_retry, *args, **kwargs)
+
+
+def _do_safe_call_api(function, logger, current_retry, *args, **kwargs):
+  try:
+    return function(*args, *kwargs)
+  except Exception as e:
+    if current_retry < MAX_RETRIES:
+      logger.exception(f'Fail number {current_retry}. Stack track follows. Trying again.')
+      current_retry += 1
+      return _do_safe_call_api(function, logger, current_retry, *args, **kwargs)
 
 
 def convert_datetime_tz(dt, origin_tz, destination_tz):

@@ -129,8 +129,13 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
           },
           'operator': any_execution.destination.destination_metadata[1]
       }
-      user_list_service.mutateMembers([mutate_members_operation])
+      utils.safe_call_api(self.call_api, logging, user_list_service, [mutate_members_operation])
+      logging.getLogger(_DEFAULT_LOGGER).warning(
+        'Uploaded %d rows to Google Ads', len(rows))
     yield elements
+
+  def call_api(self, service, operations):
+    service.mutateMembers(operations)
 
   def get_filtered_rows(self, rows: List[Any],
                         keys: List[str]) -> List[Dict[str, Any]]:
