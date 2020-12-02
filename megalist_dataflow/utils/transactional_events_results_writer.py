@@ -25,7 +25,7 @@ from uploaders import utils
 
 class TransactionalEventsResultsWriter(beam.DoFn):
   """
-  Uploads UUIDs from rows successfully sent to Analytics' Measurement Protocol.
+  Uploads UUIDs from rows successfully sent by the uploader.
   It uploads the rows to a table with the same name of the source table plus the suffix '_uploaded'.
   """
 

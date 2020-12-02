@@ -16,12 +16,14 @@
 import logging
 import math
 import time
+
 import apache_beam as beam
+from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
+
 from uploaders import google_ads_utils as ads_utils
 from uploaders import utils
 from utils.execution import DestinationType
-from google.oauth2.credentials import Credentials
 
 _LOGGER_NAME: str = 'megalista.CampaignManagerConversionsUploader'
 
@@ -46,7 +48,7 @@ class CampaignManagerConversionUploaderDoFn(beam.DoFn):
             'https://www.googleapis.com/auth/dfatrafficking',
             'https://www.googleapis.com/auth/ddmconversions'])
 
-    return build('dfareporting', 'v3.3', credentials=credentials)
+    return build('dfareporting', 'v3.4', credentials=credentials)
 
   def start_bundle(self):
     pass
@@ -119,8 +121,7 @@ class CampaignManagerConversionUploaderDoFn(beam.DoFn):
       conversions.append(to_upload)
 
     request_body = {
-        'conversions': conversions,
-        'encryptionInfo': 'AD_SERVING'
+      'conversions': conversions,
     }
 
     request = service.conversions().batchinsert(

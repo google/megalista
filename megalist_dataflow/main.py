@@ -73,7 +73,7 @@ def run(argv=None):
     _add_ga_user_list(executions, oauth_credentials)
     _add_ga_data_import(executions, oauth_credentials)
     _add_ga_measurement_protocol(executions, dataflow_options)
-    _add_cm_conversion(executions, oauth_credentials)
+    _add_cm_conversion(executions, oauth_credentials, dataflow_options)
     _add_appsflyer_s2s_events(executions, dataflow_options)
 
     # todo: update trix at the end
@@ -149,11 +149,15 @@ def _add_ga_measurement_protocol(pipeline, dataflow_options):
   )
 
 
-def _add_cm_conversion(pipeline, oauth_credentials):
+def _add_cm_conversion(pipeline, oauth_credentials, dataflow_options):
   (
       pipeline
-      | 'Load Data -  CM conversion' >> FilterLoadAndGroupData([DestinationType.CM_OFFLINE_CONVERSION])
+      | 'Load Data -  CM conversion' >> FilterLoadAndGroupData(
+        [DestinationType.CM_OFFLINE_CONVERSION],
+        source_dofn=TransactionalEventsBigQueryApiDoFn(dataflow_options.bq_ops_dataset))
       | 'Upload - CM conversion' >> beam.ParDo(CampaignManagerConversionUploaderDoFn(oauth_credentials))
+      | 'Persist results - CM conversion' >> beam.ParDo(
+        TransactionalEventsResultsWriter(dataflow_options.bq_ops_dataset))
   )
 
 def _add_appsflyer_s2s_events(pipeline, dataflow_options):
