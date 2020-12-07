@@ -31,11 +31,9 @@ def safe_process(logger):
       logger.info(f'Uploading {len(elements)} rows...')
       try:
         return func(*args, *kwargs)
-      except Exception as e:
-        # TODO: this doesn't work. All api call should be migrate to
-        #  "safe_call_api" below.
+      except Exception:
         logger.error(f'Error uploading data for :{extract_rows(elements)}')
-        logger.error(f'Exception: {e}')
+        logger.exception("Stack trace:")
 
     return inner
 
