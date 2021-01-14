@@ -15,8 +15,8 @@
         },
         {
             "name": "client_secret",
-            "label": "Client Secret for the Google Ads API",
-            "help_text": "Client Secret for the Google Ads API"
+            "label": "Client Secret for the Google APIs",
+            "help_text": "Client Secret for the Google APIs"
         },
         {
             "name": "access_token",
