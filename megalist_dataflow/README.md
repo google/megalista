@@ -17,6 +17,7 @@ Sample integration code for onboarding data from BigQuery to Google Ads, Google 
   - **Google Ads** API Access
   - **Campaign Manager** API Access
   - **Google Analytics** API Access
+  - **Google Analytics 4** Measurement Protocol API Secret
   - **AppsFlyer** Dev token for S2S events
 - **Python3**
 - **Google Cloud SDK**

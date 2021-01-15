@@ -33,6 +33,7 @@ from uploaders.google_ads_ssd_uploader import GoogleAdsSSDUploaderDoFn
 from uploaders.google_analytics_data_import_uploader import GoogleAnalyticsDataImportUploaderDoFn
 from uploaders.google_analytics_measurement_protocol import GoogleAnalyticsMeasurementProtocolUploaderDoFn
 from uploaders.google_analytics_user_list_uploader import GoogleAnalyticsUserListUploaderDoFn
+from uploaders.google_analytics_4_measurement_protocol import GoogleAnalytics4MeasurementProtocolUploaderDoFn
 from utils.execution import DestinationType
 from utils.execution import Execution
 from utils.google_analytics_data_import_eraser import GoogleAnalyticsDataImportEraser
@@ -73,6 +74,7 @@ def run(argv=None):
     _add_ga_user_list(executions, oauth_credentials)
     _add_ga_data_import(executions, oauth_credentials)
     _add_ga_measurement_protocol(executions, dataflow_options)
+    _add_ga_4_measurement_protocol(executions, dataflow_options)
     _add_cm_conversion(executions, oauth_credentials, dataflow_options)
     _add_appsflyer_s2s_events(executions, dataflow_options)
 
@@ -146,6 +148,17 @@ def _add_ga_measurement_protocol(pipeline, dataflow_options):
       | 'Upload - GA measurement protocol' >>
       beam.ParDo(GoogleAnalyticsMeasurementProtocolUploaderDoFn())
       | 'Persist results - GA measurement protocol' >> beam.ParDo(TransactionalEventsResultsWriter(dataflow_options.bq_ops_dataset))
+  )
+
+def _add_ga_4_measurement_protocol(pipeline, dataflow_options):
+  (
+      pipeline
+      | 'Load Data - GA 4 measurement protocol' >>
+      FilterLoadAndGroupData([DestinationType.GA_4_MEASUREMENT_PROTOCOL], 20,
+                            TransactionalEventsBigQueryApiDoFn(dataflow_options.bq_ops_dataset))
+      | 'Upload - GA 4 measurement protocol' >>
+      beam.ParDo(GoogleAnalytics4MeasurementProtocolUploaderDoFn())
+      | 'Persist results - GA 4 measurement protocol' >> beam.ParDo(TransactionalEventsResultsWriter(dataflow_options.bq_ops_dataset))
   )
 
 

@@ -28,7 +28,8 @@ class DestinationType(Enum):
     GA_USER_LIST_UPLOAD, \
     APPSFLYER_S2S_EVENTS, \
     GA_MEASUREMENT_PROTOCOL, \
-    GA_DATA_IMPORT = range(10)
+    GA_DATA_IMPORT, \
+    GA_4_MEASUREMENT_PROTOCOL = range(11)
 
     def __eq__(self, other):
       return self.name == other.name

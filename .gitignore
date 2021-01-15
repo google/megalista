@@ -9,4 +9,4 @@ run_local.sh
 generate_csv.sh
 .terraform
 .idea
-venv
+.venv
