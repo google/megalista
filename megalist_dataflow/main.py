@@ -132,7 +132,7 @@ def _add_ga_data_import(pipeline, oauth_credentials):
           pipeline
           | 'Filter Executions - GA data import' >> beam.Filter(filter_by_action, DestinationType.GA_DATA_IMPORT)
           | 'Delete Data -  GA data import' >> beam.ParDo(GoogleAnalyticsDataImportEraser(oauth_credentials))
-          | 'Load Data -  GA data import' >> FilterLoadAndGroupData([DestinationType.GA_DATA_IMPORT], 300000)
+          | 'Load Data -  GA data import' >> FilterLoadAndGroupData([DestinationType.GA_DATA_IMPORT], 1000000)
           | 'Upload - GA data import' >> beam.ParDo(GoogleAnalyticsDataImportUploaderDoFn(oauth_credentials))
   )
 
