@@ -98,6 +98,7 @@ class CampaignManagerConversionUploaderDoFn(beam.DoFn):
 
     service = self._get_dcm_service()
     conversions = []
+    logger = logging.getLogger(_LOGGER_NAME)
     for conversion in rows:
       to_upload = {
           'floodlightActivityId': floodlight_activity_id,
@@ -105,8 +106,6 @@ class CampaignManagerConversionUploaderDoFn(beam.DoFn):
           'ordinal': math.floor(timestamp * 10e5),
           'timestampMicros': math.floor(timestamp * 10e5)
       }
-
-      logging.getLogger(_LOGGER_NAME).info(conversion)
 
       if 'gclid' in conversion and conversion['gclid']:
         to_upload['gclid'] = conversion['gclid']
@@ -117,23 +116,26 @@ class CampaignManagerConversionUploaderDoFn(beam.DoFn):
       elif 'matchId' in conversion and conversion['matchId']:
         to_upload['matchId'] = conversion['matchId']
 
-      logging.getLogger(_LOGGER_NAME).info(to_upload)
       conversions.append(to_upload)
 
     request_body = {
       'conversions': conversions,
     }
 
+    logger.info(f'Conversions: \n{conversions}')
+    
     request = service.conversions().batchinsert(
         profileId=campaign_manager_account_id, body=request_body)
     response = request.execute()
 
     if response['hasFailures']:
-      logging.getLogger(_LOGGER_NAME).error('Error(s) inserting conversions:')
-      status = response['status'][0]
+      logger.error(f'Error(s) inserting conversions:\n{response}')
+      conversions_status = response['status']
+      error_messages = []
 
-      for error in status['errors']:
-        logging.getLogger(_LOGGER_NAME).error(
-            '\t[%s]: %s', error['code'], error['message'])
-
-      logging.getLogger(_LOGGER_NAME).error(response)
+      for status in conversions_status:
+        if 'errors' in status:
+          for error in status['errors']:
+            error_messages.append('[{}]: {}'.format(error['code'], error['message']))
+      
+      logger.error('Errors from API:\n{}'.format('\n'.join(error_messages)))

@@ -31,9 +31,10 @@ def safe_process(logger):
       logger.info(f'Uploading {len(elements)} rows...')
       try:
         return func(*args, *kwargs)
-      except Exception:
+      except Exception as e:
         logger.error(f'Error uploading data for :{extract_rows(elements)}')
-        logger.exception("Stack trace:")
+        logger.error(e, exc_info=True)
+        logger.exception('Error uploading data.')
 
     return inner
 

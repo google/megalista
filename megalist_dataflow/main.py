@@ -153,7 +153,7 @@ def _add_cm_conversion(pipeline, oauth_credentials, dataflow_options):
   (
       pipeline
       | 'Load Data -  CM conversion' >> FilterLoadAndGroupData(
-        [DestinationType.CM_OFFLINE_CONVERSION],
+        [DestinationType.CM_OFFLINE_CONVERSION], 1000,
         source_dofn=TransactionalEventsBigQueryApiDoFn(dataflow_options.bq_ops_dataset))
       | 'Upload - CM conversion' >> beam.ParDo(CampaignManagerConversionUploaderDoFn(oauth_credentials))
       | 'Persist results - CM conversion' >> beam.ParDo(
