@@ -1,4 +1,4 @@
-# Copyright 2020 Google LLC
+# Copyright 2021 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Iterable
+from utils.execution import Batch
+
 class AdsSSDHashingMapper():
   def _hash_field(self, s):
     import hashlib
@@ -24,5 +27,9 @@ class AdsSSDHashingMapper():
       'amount': conversion['amount']
     }
 
-  def map_conversions(self, conversions):
-    return [{'execution': dict['execution'], 'row': self._map_conversion(dict['row'])} for dict in conversions]
+  def _map_conversions(self, conversions):
+    return [self._map_conversion(conversion) for conversion in conversions]
+
+  def map_batch(self, batch: Batch):
+    return Batch(batch.execution, self._map_conversions(batch.elements))
+

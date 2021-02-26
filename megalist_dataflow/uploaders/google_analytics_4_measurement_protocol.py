@@ -23,7 +23,7 @@ import json
 
 from uploaders import google_ads_utils as ads_utils
 from uploaders import utils as utils
-from utils.execution import DestinationType
+from utils.execution import DestinationType, Batch
 
 
 class GoogleAnalytics4MeasurementProtocolUploaderDoFn(beam.DoFn):
@@ -43,23 +43,21 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(beam.DoFn):
     return (a and not b) or (not a and b)
 
   @utils.safe_process(logger=logging.getLogger("megalista.GoogleAnalytics4MeasurementProtocolUploader"))
-  def process(self, elements, **kwargs):
-    ads_utils.assert_elements_have_same_execution(elements)
-    any_execution = elements[0]['execution']
-    ads_utils.assert_right_type_action(any_execution, DestinationType.GA_4_MEASUREMENT_PROTOCOL)
+  def process(self, batch: Batch, **kwargs):
+    execution = batch.execution
 
-    api_secret = any_execution.destination.destination_metadata[0]
-    is_event = self._str2bool(any_execution.destination.destination_metadata[1])
-    is_user_property = self._str2bool(any_execution.destination.destination_metadata[2])
-    non_personalized_ads = self._str2bool(any_execution.destination.destination_metadata[3])
+    api_secret = execution.destination.destination_metadata[0]
+    is_event = self._str2bool(execution.destination.destination_metadata[1])
+    is_user_property = self._str2bool(execution.destination.destination_metadata[2])
+    non_personalized_ads = self._str2bool(execution.destination.destination_metadata[3])
 
     firebase_app_id = None
-    if len(any_execution.destination.destination_metadata) >= 5:
-      firebase_app_id = any_execution.destination.destination_metadata[4]
+    if len(execution.destination.destination_metadata) >= 5:
+      firebase_app_id = execution.destination.destination_metadata[4]
 
     measurement_id = None
-    if len(any_execution.destination.destination_metadata) >= 6:
-      measurement_id = any_execution.destination.destination_metadata[5]
+    if len(execution.destination.destination_metadata) >= 6:
+      measurement_id = execution.destination.destination_metadata[5]
      
     if not self._exactly_one_of(firebase_app_id, measurement_id):
           raise ValueError(
@@ -75,8 +73,7 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(beam.DoFn):
 
     accepted_elements = []
 
-    for element in elements:
-      row = utils.extract_rows([element])[0]
+    for row in batch.elements:
       app_instance_id = row.get('app_instance_id')
       client_id = row.get('client_id')
 
@@ -108,8 +105,8 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(beam.DoFn):
         logging.getLogger("megalista.GoogleAnalytics4MeasurementProtocolUploader").error(
           f"Error calling GA4 MP {response.status_code}: {response.raw}")
       else:
-        accepted_elements.append(element)
+        accepted_elements.append(row)
 
     logging.getLogger("megalista.GoogleAnalytics4MeasurementProtocolUploader").info(
-      f"Successfully uploaded {len(accepted_elements)}/{len(elements)} events.")
-    yield accepted_elements
+      f"Successfully uploaded {len(accepted_elements)}/{len(batch.elements)} events.")
+    yield Batch(execution, accepted_elements)

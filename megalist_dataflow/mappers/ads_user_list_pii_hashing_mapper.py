@@ -1,4 +1,4 @@
-# Copyright 2020 Google LLC
+# Copyright 2021 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,6 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+import logging
+
+from utils.execution import Batch
 
 
 class FieldHasher:
@@ -28,6 +32,9 @@ class FieldHasher:
 
 
 class AdsUserListPIIHashingMapper:
+    def __init__(self):
+        self.logger = logging.getLogger(
+            'megalista.AdsUserListPIIHashingMapper')
 
     def _hash_user(self, user, hasher):
 
@@ -37,7 +44,7 @@ class AdsUserListPIIHashingMapper:
             if 'email' in user:
                 hashed['hashedEmail'] = hasher.hash_field(user['email'])
         except:
-            print("Error hashing email for user: %s" % user)
+            self.logger.error("Error hashing email for user: %s" % user)
 
         try:
             if 'mailing_address_first_name' in user and 'mailing_address_last_name' in user:
@@ -48,25 +55,26 @@ class AdsUserListPIIHashingMapper:
                     'zipCode': user['mailing_address_zip']
                 }
         except:
-            print("Error hashing address for user: %s" % user)
+            self.logger.error("Error hashing address for user: %s" % user)
 
         try:
             if 'phone' in user:
                 hashed['hashedPhoneNumber'] = hasher.hash_field(user['phone'])
         except:
-            print("Error hashing phone for user: %s" % user)
+            self.logger.error("Error hashing phone for user: %s" % user)
 
         try:
             if 'mobile_device_id' in user:
                 hashed['mobileId'] = user['mobile_device_id']
         except:
-            print("Error hashing mobile_device_id for user: %s" % user)
+            self.logger.error(
+                "Error hashing mobile_device_id for user: %s" % user)
 
         try:
             if 'user_id' in user:
                 hashed['userId'] = user['user_id']
         except:
-            print("Error hashing user_id for user: %s" % user)
+            self.logger.error("Error hashing user_id for user: %s" % user)
 
         return hashed
 
@@ -82,10 +90,10 @@ class AdsUserListPIIHashingMapper:
 
         return should_hash_fields.lower() != 'false'
 
-    def hash_users(self, dicts):
+    def hash_users(self, batch: Batch):
 
-        should_hash_fields = self._get_should_hash_fields(dicts[0]['execution'].destination.destination_metadata)
-        print('Should hash fields is %s' % should_hash_fields)
+        should_hash_fields = self._get_should_hash_fields(
+            batch.execution.destination.destination_metadata)
+        self.logger.debug('Should hash fields is %s' % should_hash_fields)
 
-        return [{'execution': dict['execution'], 'row': self._hash_user(dict['row'], FieldHasher(should_hash_fields))}
-                for dict in dicts]
+        return Batch(batch.execution, [self._hash_user(element, FieldHasher(should_hash_fields)) for element in batch.elements])

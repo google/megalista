@@ -20,6 +20,7 @@ from uploaders import google_ads_utils as ads_utils
 from uploaders import utils
 from utils.execution import AccountConfig
 from utils.execution import DestinationType
+from utils.execution import Batch
 from utils.oauth_credentials import OAuthCredentials
 
 _DEFAULT_LOGGER: str = 'megalista.GoogleAdsCustomerMatchAbstractUploader'
@@ -85,9 +86,8 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
                                      self.oauth_credentials,
                                      self.developer_token.get(), customer_id)
 
-  def _assert_execution_is_valid(self, elements, any_execution) -> None:
-    ads_utils.assert_elements_have_same_execution(elements)
-    destination = any_execution.destination.destination_metadata
+  def _assert_execution_is_valid(self, execution) -> None:
+    destination = execution.destination.destination_metadata
 
     # The number of parameters vary by upload. This test could be parameterized
     if not destination[0]:
@@ -95,44 +95,38 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
           str(destination)))
 
   @utils.safe_process(logger=logging.getLogger(_DEFAULT_LOGGER))
-  def process(self, elements, **kwargs) -> None:
-    """Args:
-
-       elements: List of dict with two elements: 'execution' and 'row'. All
-       executions must be equal.
-    """
+  def process(self, batch: Batch, **kwargs) -> None:
     if not self.active:
       logging.getLogger(_DEFAULT_LOGGER).warning(
           'Skipping upload to ads, parameters not configured.')
       return
 
-    any_execution = elements[0]['execution']
-    if any_execution.destination.destination_type is self.get_action_type():
-      self._assert_execution_is_valid(elements, any_execution)
+    execution = batch.execution
 
-      user_list_service = self._get_user_list_service(
-          any_execution.account_config.google_ads_account_id)
-      list_id = self._create_list_if_it_does_not_exist(
-          user_list_service, any_execution.destination.destination_metadata[0],
-          self.get_list_definition(
-              any_execution.account_config,
-              any_execution.destination.destination_metadata))
+    self._assert_execution_is_valid(execution)
 
-      rows = self.get_filtered_rows(
-          utils.extract_rows(elements), self.get_row_keys())
-      logging.getLogger(_DEFAULT_LOGGER).warning(
-          'Uploading %d rows to Google Ads', len(rows))
-      mutate_members_operation = {
-          'operand': {
-              'userListId': list_id,
-              'membersList': rows
-          },
-          'operator': any_execution.destination.destination_metadata[1]
-      }
-      utils.safe_call_api(self.call_api, logging, user_list_service, [mutate_members_operation])
-      logging.getLogger(_DEFAULT_LOGGER).warning(
-        'Uploaded %d rows to Google Ads', len(rows))
-    yield elements
+    user_list_service = self._get_user_list_service(
+        execution.account_config.google_ads_account_id)
+    list_id = self._create_list_if_it_does_not_exist(
+        user_list_service, execution.destination.destination_metadata[0],
+        self.get_list_definition(
+            execution.account_config,
+            execution.destination.destination_metadata))
+
+    rows = self.get_filtered_rows(
+        batch.elements, self.get_row_keys())
+    logging.getLogger(_DEFAULT_LOGGER).warning(
+        'Uploading %d rows to Google Ads', len(rows))
+    mutate_members_operation = {
+        'operand': {
+            'userListId': list_id,
+            'membersList': rows
+        },
+        'operator': execution.destination.destination_metadata[1]
+    }
+    utils.safe_call_api(self.call_api, logging, user_list_service, [mutate_members_operation])
+    logging.getLogger(_DEFAULT_LOGGER).warning(
+      'Uploaded %d rows to Google Ads', len(rows))
 
   def call_api(self, service, operations):
     service.mutateMembers(operations)

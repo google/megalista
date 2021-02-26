@@ -23,6 +23,7 @@ from utils.execution import DestinationType
 from utils.execution import Execution
 from utils.execution import Source
 from utils.execution import SourceType
+from utils.execution import Batch
 
 _account_config = AccountConfig('1234567890', False, '1234567890', '', '')
 
@@ -41,71 +42,6 @@ def uploader(mocker):
 
 def test_get_service(uploader):
   assert uploader._get_analytics_service() is not None
-
-
-def test_work_with_empty_elements(uploader, mocker, caplog):
-  mocker.patch.object(uploader, '_get_analytics_service')
-  uploader.process([],)
-  uploader._get_analytics_service.assert_not_called()
-  assert 'Skipping upload, received no elements.' in caplog.text
-
-
-def test_fail_having_more_than_one_execution(uploader):
-  exec1 = Execution(
-      _account_config,
-      Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers']),
-      Destination('dest1', DestinationType.GA_DATA_IMPORT,
-                  ['a', 'b', 'c', 'd', 'e', 'f']))
-  exec2 = Execution(
-      _account_config,
-      Source('orig2', SourceType.BIG_QUERY, ['dt2', 'buyers2']),
-      Destination('dest2', DestinationType.GA_DATA_IMPORT,
-                  ['a', 'b', 'c', 'd', 'e', 'f']))
-
-  with pytest.raises(ValueError,
-                     match='At least two Execution in a single call'):
-    uploader.process([{
-        'execution': exec1,
-        'row': ()
-    }, {
-        'execution': exec2,
-        'row': ()
-    }],)
-
-
-def test_fail_with_wrong_action(uploader, mocker):
-  service = mocker.MagicMock()
-
-  mocker.patch.object(uploader, '_get_analytics_service')
-  uploader._get_analytics_service.return_value = service
-
-  service.management().customDataSources().list().execute.return_value = {
-      'items': [{
-          'id': 1,
-          'name': 'data_import_name'
-      }]
-  }
-
-  execution = Execution(
-      _account_config,
-      Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers']),
-      Destination('dest1', DestinationType.ADS_SSD_UPLOAD,
-                  ['UA-1234-12', 'data_import_name', 'c', 'd', 'e', 'f']))
-
-  with pytest.raises(ValueError,
-                     match='Wrong DestinationType received'):
-    uploader.process([{'execution': execution, 'row': {}}],)
-
-
-def test_fail_missing_destination_metadata(uploader, caplog):
-  execution = Execution(
-      _account_config,
-      Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers']),
-      Destination('dest1', DestinationType.GA_DATA_IMPORT, ['a']))
-
-  with pytest.raises(ValueError,
-                     match='Missing destination information'):
-    uploader.process([{'execution': execution, 'row': ()}],)
 
 
 def test_elements_uploading(mocker, uploader):
@@ -132,28 +68,22 @@ def test_elements_uploading(mocker, uploader):
   service.management().uploads().uploadData.side_effect = my_mock
 
   # Act
-  uploader.process([{
-      'execution': execution,
-      'row': {
+  uploader.process(Batch(execution, [{
           'user_id': '12',
           'cd1': 'value1a',
           'cd2': 'value2a'
-      }
-  }, {
-      'execution': execution,
-      'row': {
+      },
+      {
           'user_id': '34',
           'cd1': 'value1b',
           'cd2': 'value2b'
-      }
-  }, {
-      'execution': execution,
-      'row': {
+      },
+      {
           'user_id': '56',
           'cd1': None,
           'cd2': ''
-      }
-  }])
+      }]))
+  
 
   # Called once
   my_mock.assert_called_once()

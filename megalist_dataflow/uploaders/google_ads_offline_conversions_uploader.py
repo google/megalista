@@ -1,4 +1,4 @@
-# Copyright 2020 Google LLC
+# Copyright 2021 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ import logging
 import apache_beam as beam
 from uploaders import google_ads_utils as ads_utils
 from uploaders import utils
-from utils.execution import DestinationType
+from utils.execution import Batch, DestinationType, Execution
 
 
 class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
@@ -37,7 +37,7 @@ class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
     pass
 
   @staticmethod
-  def _assert_conversion_name_is_present(execution):
+  def _assert_conversion_name_is_present(execution: Execution):
     destination = execution.destination.destination_metadata
     if len(destination) != 1:
       raise ValueError('Missing destination information. Found {}'.format(
@@ -49,24 +49,20 @@ class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
 
   @utils.safe_process(
       logger=logging.getLogger('megalista.GoogleAdsOfflineUploader'))
-  def process(self, elements_batch, **kwargs):
+  def process(self, batch: Batch, **kwargs):
     if not self.active:
       logging.getLogger().warning(
           'Skipping upload, parameters not configured.')
       return
-
-    ads_utils.assert_elements_have_same_execution(elements_batch)
-    any_execution = elements_batch[0]['execution']
-    ads_utils.assert_right_type_action(any_execution,
-                                       DestinationType.ADS_OFFLINE_CONVERSION)
-    self._assert_conversion_name_is_present(any_execution)
+    execution = batch.execution
+    self._assert_conversion_name_is_present(execution)
 
     oc_service = self._get_oc_service(
-        any_execution.account_config.google_ads_account_id)
+        execution.account_config.google_ads_account_id)
 
     self._do_upload(oc_service,
-                    any_execution.destination.destination_metadata[0],
-                    utils.extract_rows(elements_batch))
+                    execution.destination.destination_metadata[0],
+                    batch.elements)
 
   @staticmethod
   def _do_upload(oc_service, conversion_name, rows):

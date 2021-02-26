@@ -16,7 +16,7 @@
 import pytest
 from apache_beam.options.value_provider import StaticValueProvider
 from utils.oauth_credentials import OAuthCredentials
-from utils.execution import Execution, SourceType, DestinationType, Source, AccountConfig, Destination
+from utils.execution import Execution, SourceType, DestinationType, Source, AccountConfig, Destination, Batch
 from utils.google_analytics_data_import_eraser import GoogleAnalyticsDataImportEraser
 
 
@@ -30,56 +30,6 @@ def eraser(mocker):
     refresh = StaticValueProvider(str, "refresh")
     credentials = OAuthCredentials(client_id, secret, access, refresh)
     return GoogleAnalyticsDataImportEraser(credentials)
-
-
-def test_fail_with_wrong_action(eraser):
-    execution = Execution(AccountConfig('', False, '', '', ''),
-                          Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers']),
-                          Destination('dest1', DestinationType.ADS_SSD_UPLOAD, ['a', 'b', 'c', 'd', 'e', 'f']))
-
-    with pytest.raises(ValueError, match='Wrong DestinationType received'):
-        next(eraser.process(execution))
-
-
-def test_fail_missing_destination_metadata(eraser):
-    execution = Execution(AccountConfig('', False, '', '', ''),
-                          Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers']),
-                          Destination('dest1', DestinationType.GA_DATA_IMPORT, ['a']))
-
-    with pytest.raises(ValueError, match='Missing destination information'):
-        next(eraser.process(execution))
-
-    assert_empty_destination_metadata(eraser, ('a', ''))
-
-
-def assert_empty_destination_metadata(eraser, destination_metadata):
-    execution = Execution(AccountConfig('', False, '', '', ''),
-                          Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers']),
-                          Destination('dest1', DestinationType.GA_DATA_IMPORT, destination_metadata))
-
-    with pytest.raises(ValueError, match='Missing destination information'):
-        next(eraser.process(execution))
-
-
-def test_empty_bigquery_table(mocker, eraser):
-    service = mocker.MagicMock()
-
-    mocker.patch.object(eraser, '_get_analytics_service')
-    eraser._get_analytics_service.return_value = service
-
-    mocker.patch.object(eraser, '_is_table_empty')
-    eraser._is_table_empty.return_value = True
-
-    execution = Execution(AccountConfig('', False, '', '', ''),
-                          Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers']),
-                          Destination('dest1', DestinationType.GA_DATA_IMPORT, ['web_property', 'data_import_name']))
-    # Act
-    try:
-        next(eraser.process(execution))
-    except StopIteration:
-        pass
-
-    service.management().customDataSources().list().execute.assert_not_called()
 
 
 def test_analytics_has_not_data_sources(mocker, eraser, caplog):
@@ -100,7 +50,7 @@ def test_analytics_has_not_data_sources(mocker, eraser, caplog):
                           Destination('dest1', DestinationType.GA_DATA_IMPORT, ['web_property', 'data_import_name']))
     # Act
     try:
-        next(eraser.process(execution))
+        next(eraser.process(Batch(execution, [])))
     except StopIteration:
         pass
 
@@ -125,7 +75,7 @@ def test_data_source_not_found(mocker, eraser, caplog):
                           Destination('dest1', DestinationType.GA_DATA_IMPORT, ['web_property', 'data_import_name']))
     # Act
     try:
-        next(eraser.process(execution))
+        next(eraser.process(Batch(execution, [])))
     except StopIteration:
         pass
 
@@ -158,7 +108,7 @@ def test_no_files_found(mocker, eraser):
     service.management().uploads().deleteUploadData.side_effect = delete_call_mock
 
     # Act
-    next(eraser.process(execution))
+    next(eraser.process(Batch(execution, [])))
 
     # Called once
     delete_call_mock.assert_not_called()
@@ -190,7 +140,7 @@ def test_files_deleted(mocker, eraser):
     service.management().uploads().deleteUploadData.side_effect = delete_call_mock
 
     # Act
-    next(eraser.process(execution))
+    next(eraser.process(Batch(execution, [])))
 
     # Called once
     delete_call_mock.assert_called_once()

@@ -1,4 +1,4 @@
-# Copyright 2020 Google LLC
+# Copyright 2021 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ from googleapiclient.http import MediaInMemoryUpload
 
 from uploaders import google_ads_utils as ads_utils
 from uploaders import utils as utils
-from utils.execution import DestinationType
+from utils.execution import Batch, DestinationType
 
 
 class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
@@ -30,7 +30,6 @@ class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
                  oauth_credentials):
         super().__init__()
         self.oauth_credentials = oauth_credentials
-        self.active = True
 
     def _get_analytics_service(self):
         credentials = Credentials(
@@ -106,23 +105,16 @@ class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
             raise ValueError('Missing destination information. Received {}'.format(str(destination)))
 
     @utils.safe_process(logger=logging.getLogger("megalista.GoogleAnalyticsUserListUploader"))
-    def process(self, elements, **kwargs):
+    def process(self, batch: Batch, **kwargs):
+        execution = batch.execution
+        self._assert_all_list_names_are_present(execution)
 
-        if not self.active:
-            logging.getLogger().warning('Skipping upload to GA, parameters not configured.')
-            return
-
-        ads_utils.assert_elements_have_same_execution(elements)
-        any_execution = elements[0]['execution']
-        ads_utils.assert_right_type_action(any_execution, DestinationType.GA_USER_LIST_UPLOAD)
-        self._assert_all_list_names_are_present(any_execution)
-
-        ads_customer_id = any_execution.account_config.google_ads_account_id
-        mcc = any_execution.account_config.mcc
-        ga_account_id = any_execution.account_config.google_analytics_account_id
+        ads_customer_id = execution.account_config.google_ads_account_id
+        mcc = execution.account_config.mcc
+        ga_account_id = execution.account_config.google_analytics_account_id
 
         # Reads all metadata parameters
-        metadata = any_execution.destination.destination_metadata
+        metadata = execution.destination.destination_metadata
 
         web_property_id = metadata[0]
         view_id = metadata[1]
@@ -136,7 +128,7 @@ class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
 
         self._do_upload_data(web_property_id, view_id, data_import_name, user_id_list_name, user_id_custom_dim,
                              buyer_custom_dim, custom_dim_field, ga_account_id, ads_customer_id, mcc,
-                             utils.extract_rows(elements))
+                             batch.elements)
 
     def _do_upload_data(self, web_property_id, view_id, data_import_name, user_id_list_name, user_id_custom_dim,
                         buyer_custom_dim, custom_dim_field, ga_account_id, ads_customer_id, mcc, rows):

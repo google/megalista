@@ -21,6 +21,7 @@ from google.cloud.bigquery import SchemaField
 
 from uploaders import google_ads_utils as ads_utils
 from uploaders import utils
+from utils.execution import Batch
 
 
 class TransactionalEventsResultsWriter(beam.DoFn):
@@ -34,19 +35,17 @@ class TransactionalEventsResultsWriter(beam.DoFn):
     self._bq_ops_dataset = bq_ops_dataset
 
   @utils.safe_process(logger=logging.getLogger("megalista.TransactionalEventsResultsWriter"))
-  def process(self, elements, *args, **kwargs):
-    self._do_process(elements, datetime.now().timestamp())
+  def process(self, batch: Batch, *args, **kwargs):
+    self._do_process(batch, datetime.now().timestamp())
 
-  def _do_process(self, elements, now):
-    ads_utils.assert_elements_have_same_execution(elements)
-    any_execution = elements[0]['execution']
+  def _do_process(self, batch: Batch, now):
+    execution = batch.execution
 
-    table_name = self._bq_ops_dataset.get() + '.' + any_execution.source.source_metadata[1] + "_uploaded"
+    table_name = self._bq_ops_dataset.get() + '.' + execution.source.source_metadata[1] + "_uploaded"
 
-    rows = utils.extract_rows(elements)
+    rows = batch.elements
     client = self._get_bq_client()
     table = client.get_table(table_name)
-    print(table_name)
     results = client.insert_rows(table, [{'uuid': row['uuid'], 'timestamp': now} for row in rows],
                                  (SchemaField("uuid", "string"), SchemaField("timestamp", "timestamp")))
 

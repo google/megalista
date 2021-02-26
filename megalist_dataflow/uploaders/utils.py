@@ -24,15 +24,15 @@ def extract_rows(elements):
 def safe_process(logger):
   def deco(func):
     def inner(*args, **kwargs):
-      elements = args[1]
-      if not elements:
+      batch = args[1]
+      if not batch:
         logger.warning('Skipping upload, received no elements.')
         return
-      logger.info(f'Uploading {len(elements)} rows...')
+      logger.info(f'Uploading {len(batch.elements)} rows...')
       try:
         return func(*args, *kwargs)
       except Exception as e:
-        logger.error(f'Error uploading data for :{extract_rows(elements)}')
+        logger.error(f'Error uploading data for :{batch.elements}')
         logger.error(e, exc_info=True)
         logger.exception('Error uploading data.')
 

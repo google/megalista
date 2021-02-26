@@ -20,7 +20,7 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
 from uploaders import google_ads_utils as ads_utils
-from utils.execution import DestinationType
+from utils.execution import DestinationType, Batch
 
 
 class GoogleAnalyticsDataImportEraser(beam.DoFn):
@@ -59,15 +59,9 @@ class GoogleAnalyticsDataImportEraser(beam.DoFn):
         if not destination[0] or not destination[1]:
             raise ValueError('Missing destination information. Received {}'.format(str(destination)))
 
-    def process(self, execution, **kwargs):
-
-        ads_utils.assert_right_type_action(execution, DestinationType.GA_DATA_IMPORT)
+    def process(self, batch: Batch, **kwargs):
+        execution = batch.execution
         self._assert_all_list_names_are_present(execution)
-
-        if self._is_table_empty(execution):
-            logging.getLogger("megalista.GoogleAnalyticsDataImportUploader").error(
-                "No data found in table for Execution %s" % execution)
-            return
 
         ga_account_id = execution.account_config.google_analytics_account_id
 
@@ -87,7 +81,7 @@ class GoogleAnalyticsDataImportEraser(beam.DoFn):
             data_source_id = data_source_results[0]['id']
             try:
                 self._call_delete_api(analytics, data_import_name, ga_account_id, data_source_id, web_property_id)
-                yield execution
+                yield batch
             except Exception as e:
                 logging.getLogger("megalista.GoogleAnalyticsDataImportUploader").error(
                     'Error while delete GA Data Import files: %s' % e)

@@ -16,7 +16,7 @@ import pytest
 from apache_beam.options.value_provider import StaticValueProvider
 
 from uploaders.google_analytics_4_measurement_protocol import GoogleAnalytics4MeasurementProtocolUploaderDoFn
-from utils.execution import Execution, SourceType, DestinationType, Source, AccountConfig, Destination
+from utils.execution import Execution, SourceType, DestinationType, Source, AccountConfig, Destination, Batch
 
 import requests
 import requests_mock
@@ -29,150 +29,133 @@ _account_config = AccountConfig('account_id', False, 'ga_account_id', '', '')
 
 @pytest.fixture
 def uploader():
-  return GoogleAnalytics4MeasurementProtocolUploaderDoFn()
+    return GoogleAnalytics4MeasurementProtocolUploaderDoFn()
 
 
 def test_exception_event_and_user_property(uploader, caplog):
-  with requests_mock.Mocker() as m:
-    m.post(requests_mock.ANY, status_code=204)
-    destination = Destination(
-      'dest1', DestinationType.GA_4_MEASUREMENT_PROTOCOL, [
-          'api_secret',
-          'True',
-          'True',
-          '',
-          'some_id',
-          ''
-    ])
-    source = Source('orig1', SourceType.BIG_QUERY, [])
-    execution = Execution(_account_config, source, destination)
-    with pytest.raises(ValueError, match="GA4 MP should be called either for sending events"):
-        next(uploader.process([{
-            'execution': execution,
-            'row': ()
-        }]))
+    with requests_mock.Mocker() as m:
+        m.post(requests_mock.ANY, status_code=204)
+        destination = Destination(
+            'dest1', DestinationType.GA_4_MEASUREMENT_PROTOCOL, [
+                'api_secret',
+                'True',
+                'True',
+                '',
+                'some_id',
+                ''
+            ])
+        source = Source('orig1', SourceType.BIG_QUERY, [])
+        execution = Execution(_account_config, source, destination)
+        with pytest.raises(ValueError, match="GA4 MP should be called either for sending events"):
+            next(uploader.process(Batch(execution, [])))
 
 
 def test_exception_no_event_nor_user_property(uploader, caplog):
-  with requests_mock.Mocker() as m:
-    m.post(requests_mock.ANY, status_code=204)
-    destination = Destination(
-      'dest1', DestinationType.GA_4_MEASUREMENT_PROTOCOL, [
-          'api_secret',
-          'False',
-          'False',
-          '',
-          'some_id',
-          ''
-    ])
-    source = Source('orig1', SourceType.BIG_QUERY, [])
-    execution = Execution(_account_config, source, destination)
-    with pytest.raises(ValueError, match="GA4 MP should be called either for sending events"):
-        next(uploader.process([{
-            'execution': execution,
-            'row': ()
-        }]))
+    with requests_mock.Mocker() as m:
+        m.post(requests_mock.ANY, status_code=204)
+        destination = Destination(
+            'dest1', DestinationType.GA_4_MEASUREMENT_PROTOCOL, [
+                'api_secret',
+                'False',
+                'False',
+                '',
+                'some_id',
+                ''
+            ])
+        source = Source('orig1', SourceType.BIG_QUERY, [])
+        execution = Execution(_account_config, source, destination)
+        with pytest.raises(ValueError, match="GA4 MP should be called either for sending events"):
+            next(uploader.process(Batch(execution, [])))
 
 
 def test_exception_app_and_web(uploader, caplog):
-  with requests_mock.Mocker() as m:
-    m.post(requests_mock.ANY, status_code=204)
-    destination = Destination(
-      'dest1', DestinationType.GA_4_MEASUREMENT_PROTOCOL, [
-          'api_secret',
-          'False',
-          'True',
-          '',
-          'some_app_id',
-          'some_web_id'
-    ])
-    source = Source('orig1', SourceType.BIG_QUERY, [])
-    execution = Execution(_account_config, source, destination)
-    with pytest.raises(ValueError, match="GA4 MP should be called either with a firebase_app_id"):
-      next(uploader.process([{
-          'execution': execution,
-          'row': {
-              'name': 'event_name',
-          }
-      }]))
+    with requests_mock.Mocker() as m:
+        m.post(requests_mock.ANY, status_code=204)
+        destination = Destination(
+            'dest1', DestinationType.GA_4_MEASUREMENT_PROTOCOL, [
+                'api_secret',
+                'False',
+                'True',
+                '',
+                'some_app_id',
+                'some_web_id'
+            ])
+        source = Source('orig1', SourceType.BIG_QUERY, [])
+        execution = Execution(_account_config, source, destination)
+        with pytest.raises(ValueError, match="GA4 MP should be called either with a firebase_app_id"):
+            next(uploader.process(Batch(execution, [{
+                'name': 'event_name',
+            }])))
+
 
 def test_exception_no_id(uploader, caplog):
-  with requests_mock.Mocker() as m:
-    m.post(requests_mock.ANY, status_code=204)
-    destination = Destination(
-      'dest1', DestinationType.GA_4_MEASUREMENT_PROTOCOL, [
-          'api_secret',
-          'False',
-          'True',
-          '',
-          '',
-          ''
-    ])
-    source = Source('orig1', SourceType.BIG_QUERY, [])
-    execution = Execution(_account_config, source, destination)
-    with pytest.raises(ValueError, match="GA4 MP should be called either with a firebase_app_id"):
-      next(uploader.process([{
-          'execution': execution,
-          'row': {
-              'name': 'event_name',
-              'value': '123'
-          }
-      }]))
+    with requests_mock.Mocker() as m:
+        m.post(requests_mock.ANY, status_code=204)
+        destination = Destination(
+            'dest1', DestinationType.GA_4_MEASUREMENT_PROTOCOL, [
+                'api_secret',
+                'False',
+                'True',
+                '',
+                '',
+                ''
+            ])
+        source = Source('orig1', SourceType.BIG_QUERY, [])
+        execution = Execution(_account_config, source, destination)
+        with pytest.raises(ValueError, match="GA4 MP should be called either with a firebase_app_id"):
+            next(uploader.process(Batch(execution, [{
+                'name': 'event_name',
+                'value': '123'
+            }])))
+
 
 def test_succesful_app_event_call(uploader, caplog):
-  with requests_mock.Mocker() as m:
-    m.post(requests_mock.ANY, status_code=204)
-    destination = Destination(
-      'dest1', DestinationType.GA_4_MEASUREMENT_PROTOCOL, [
-          'api_secret',
-          'True',
-          'False',
-          '',
-          'some_id',
-          ''
-    ])
-    source = Source('orig1', SourceType.BIG_QUERY, [])
-    execution = Execution(_account_config, source, destination)
-    next(uploader.process([{
-        'execution': execution,
-        'row': {
+    with requests_mock.Mocker() as m:
+        m.post(requests_mock.ANY, status_code=204)
+        destination = Destination(
+            'dest1', DestinationType.GA_4_MEASUREMENT_PROTOCOL, [
+                'api_secret',
+                'True',
+                'False',
+                '',
+                'some_id',
+                ''
+            ])
+        source = Source('orig1', SourceType.BIG_QUERY, [])
+        execution = Execution(_account_config, source, destination)
+        next(uploader.process(Batch(execution, [{
             'firebase_app_id': '123',
             'name': 'event_name',
             'value': '42',
             'important_event': 'False'
-        }
-    }]))
+        }])))
 
-    assert m.call_count == 1
-    assert m.last_request.json()["events"][0]["params"]["value"] == '42'
+        assert m.call_count == 1
+        assert m.last_request.json()["events"][0]["params"]["value"] == '42'
+
 
 def test_succesful_web_user_property_call(uploader, caplog):
-  with requests_mock.Mocker() as m:
-    m.post(requests_mock.ANY, status_code=204)
-    destination = Destination(
-      'dest1', DestinationType.GA_4_MEASUREMENT_PROTOCOL, [
-          'api_secret',
-          'False',
-          'True',
-          '',
-          '',
-          'some_id'
-    ])
-    source = Source('orig1', SourceType.BIG_QUERY, [])
-    execution = Execution(_account_config, source, destination)
-    next(uploader.process([{
-        'execution': execution,
-        'row': {
+    with requests_mock.Mocker() as m:
+        m.post(requests_mock.ANY, status_code=204)
+        destination = Destination(
+            'dest1', DestinationType.GA_4_MEASUREMENT_PROTOCOL, [
+                'api_secret',
+                'False',
+                'True',
+                '',
+                '',
+                'some_id'
+            ])
+        source = Source('orig1', SourceType.BIG_QUERY, [])
+        execution = Execution(_account_config, source, destination)
+        next(uploader.process(Batch(execution, [{
             'user_ltv': '42'
-        }
-    },
-    {
-        'execution': execution,
-        'row': {
+        },
+        {
             'user_will_churn': 'Maybe'
         }
-    },]))
+        ])))
 
-    assert m.call_count == 2
-    assert m.last_request.json()["userProperties"]["user_will_churn"]["value"] == 'Maybe'
-
+        assert m.call_count == 2
+        assert m.last_request.json(
+        )["userProperties"]["user_will_churn"]["value"] == 'Maybe'

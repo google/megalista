@@ -16,100 +16,76 @@ import apache_beam as beam
 import logging
 
 from uploaders import google_ads_utils as ads_utils
-from uploaders import utils as utils
-from utils.execution import DestinationType
+from uploaders import utils
+from utils.execution import DestinationType, Batch, Execution
 
 
 class GoogleAdsSSDUploaderDoFn(beam.DoFn):
 
-  def __init__(self, oauth_credentials, developer_token):
-    super().__init__()
-    self.oauth_credentials = oauth_credentials
-    self.developer_token = developer_token
-    self.active = developer_token is not None
+    def __init__(self, oauth_credentials, developer_token):
+        super().__init__()
+        self.oauth_credentials = oauth_credentials
+        self.developer_token = developer_token
+        self.active = developer_token is not None
 
-  def _get_ssd_service(self, customer_id):
-    return ads_utils.get_ads_service('OfflineDataUploadService', 'v201809',
-                                     self.oauth_credentials,
-                                     self.developer_token.get(), customer_id)
+    def _get_ssd_service(self, customer_id):
+        return ads_utils.get_ads_service('OfflineDataUploadService', 'v201809',
+                                         self.oauth_credentials,
+                                         self.developer_token.get(), customer_id)
 
-  def start_bundle(self):
-    pass
+    @staticmethod
+    def _assert_conversion_metadata_is_present(execution: Execution):
+        metadata = execution.destination.destination_metadata
+        if len(metadata) != 2:
+            raise ValueError(
+                f'Missing destination information. Received {len(metadata)} entry(ies)')
 
-  @staticmethod
-  def _assert_conversion_metadata_is_present(execution):
-    destination = execution.destination.destination_metadata
-    print(destination)
-    if len(destination) != 2:
-      raise ValueError(
-          f'Missing destination information. '
-          f'Found {len(destination)} entry(ies)')
+    @utils.safe_process(
+        logger=logging.getLogger('megalista.GoogleAdsSSDUploader'))
+    def process(self, batch: Batch, **kwargs):
+        execution = batch.execution
+        self._assert_conversion_metadata_is_present(execution)
 
-    if not destination[0] or not destination[1]:
-      raise ValueError(
-          f'Missing destination information. '
-          f'Received {str(destination)} entry(ies)')
+        ssd_service = self._get_ssd_service(
+            execution.account_config._google_ads_account_id)
+        self._do_upload(ssd_service,
+                        execution.destination.destination_metadata[0],
+                        execution.destination.destination_metadata[1], batch.elements)
 
-  @utils.safe_process(
-      logger=logging.getLogger('megalista.GoogleAdsSSDUploader'))
-  def process(self, elements, **kwargs):
-    """Args:
+    @staticmethod
+    def _do_upload(ssd_service, conversion_name, ssd_external_upload_id, rows):
+        upload_data = [{
+            'StoreSalesTransaction': {
+                'userIdentifiers': [{
+                    'userIdentifierType': 'HASHED_EMAIL',
+                    'value': conversion['hashedEmail']
+                }],
+                'transactionTime': ads_utils.format_date(conversion['time']),
+                'transactionAmount': {
+                    'currencyCode': 'BRL',
+                    'money': {
+                        'microAmount': conversion['amount']
+                    }
+                },
+                'conversionName': conversion_name
+            }
+        } for conversion in rows]
 
-       elements: List of dict with two elements: 'execution' and 'row'. All
-       executions must be equal.
-    """
-    if not self.active:
-      logging.getLogger('megalista.GoogleAdsSSDUploader').warning(
-          'Skipping upload to ads, parameters not configured.')
-      return
-
-    ads_utils.assert_elements_have_same_execution(elements)
-    any_execution = elements[0]['execution']
-    ads_utils.assert_right_type_action(any_execution,
-                                       DestinationType.ADS_SSD_UPLOAD)
-    self._assert_conversion_metadata_is_present(any_execution)
-
-    ssd_service = self._get_ssd_service(
-        any_execution.account_config._google_ads_account_id)
-    rows = utils.extract_rows(elements)
-    self._do_upload(ssd_service,
-                    any_execution.destination.destination_metadata[0],
-                    any_execution.destination.destination_metadata[1], rows)
-
-  @staticmethod
-  def _do_upload(ssd_service, conversion_name, ssd_external_upload_id, rows):
-    upload_data = [{
-        'StoreSalesTransaction': {
-            'userIdentifiers': [{
-                'userIdentifierType': 'HASHED_EMAIL',
-                'value': conversion['hashedEmail']
-            }],
-            'transactionTime': ads_utils.format_date(conversion['time']),
-            'transactionAmount': {
-                'currencyCode': 'BRL',
-                'money': {
-                    'microAmount': conversion['amount']
+        offline_data_upload = {
+            'externalUploadId': ssd_external_upload_id,
+            'offlineDataList': upload_data,
+            'uploadType': 'STORE_SALES_UPLOAD_FIRST_PARTY',
+            'uploadMetadata': {
+                'StoreSalesUploadCommonMetadata': {
+                    'xsi_type': 'FirstPartyUploadMetadata',
+                    'loyaltyRate': 1.0,
+                    'transactionUploadRate': 1.0,
                 }
-            },
-            'conversionName': conversion_name
-        }
-    } for conversion in rows]
-
-    offline_data_upload = {
-        'externalUploadId': ssd_external_upload_id,
-        'offlineDataList': upload_data,
-        'uploadType': 'STORE_SALES_UPLOAD_FIRST_PARTY',
-        'uploadMetadata': {
-            'StoreSalesUploadCommonMetadata': {
-                'xsi_type': 'FirstPartyUploadMetadata',
-                'loyaltyRate': 1.0,
-                'transactionUploadRate': 1.0,
             }
         }
-    }
 
-    add_conversions_operation = {
-        'operand': offline_data_upload,
-        'operator': 'ADD'
-    }
-    ssd_service.mutate([add_conversions_operation])
+        add_conversions_operation = {
+            'operand': offline_data_upload,
+            'operator': 'ADD'
+        }
+        ssd_service.mutate([add_conversions_operation])

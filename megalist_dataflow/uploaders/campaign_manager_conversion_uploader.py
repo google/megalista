@@ -1,5 +1,5 @@
 """Campaign Manager Conversion Uploader beam module."""
-# Copyright 2020 Google LLC
+# Copyright 2021 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ from googleapiclient.discovery import build
 
 from uploaders import google_ads_utils as ads_utils
 from uploaders import utils
-from utils.execution import DestinationType
+from utils.execution import DestinationType, Batch
 
 _LOGGER_NAME: str = 'megalista.CampaignManagerConversionsUploader'
 
@@ -34,7 +34,6 @@ class CampaignManagerConversionUploaderDoFn(beam.DoFn):
   def __init__(self, oauth_credentials):
     super().__init__()
     self.oauth_credentials = oauth_credentials
-    self.active = oauth_credentials is not None
 
   def _get_dcm_service(self):
     credentials = Credentials(
@@ -66,27 +65,20 @@ class CampaignManagerConversionUploaderDoFn(beam.DoFn):
           f'Missing destination information. Received {str(destination)}')
 
   @utils.safe_process(logger=logging.getLogger(_LOGGER_NAME))
-  def process(self, elements, **kwargs):
-    self._do_process(elements, time.time())
+  def process(self, batch: Batch, **kwargs):
+    self._do_process(batch, time.time())
+    yield batch
 
-  def _do_process(self, elements, timestamp):
-    if not self.active:
-      logging.getLogger(_LOGGER_NAME).warning(
-          'Skipping upload to Campaign Manager, parameters not configured.')
-      return
-
-    ads_utils.assert_elements_have_same_execution(elements)
-    any_execution = elements[0]['execution']
-    ads_utils.assert_right_type_action(
-        any_execution, DestinationType.CM_OFFLINE_CONVERSION)
-    self._assert_all_list_names_are_present(any_execution)
+  def _do_process(self, batch: Batch, timestamp):
+    execution = batch.execution
+    self._assert_all_list_names_are_present(execution)
 
     self._do_upload_data(
-        any_execution.destination.destination_metadata[0],
-        any_execution.destination.destination_metadata[1],
-        any_execution.account_config.campaign_manager_account_id,
+        execution.destination.destination_metadata[0],
+        execution.destination.destination_metadata[1],
+        execution.account_config.campaign_manager_account_id,
         timestamp,
-        utils.extract_rows(elements))
+        batch.elements)
 
   def _do_upload_data(
       self,

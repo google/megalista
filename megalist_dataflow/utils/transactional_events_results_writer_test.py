@@ -20,15 +20,18 @@ from utils.execution import DestinationType
 from utils.execution import Execution
 from utils.execution import Source
 from utils.execution import SourceType
+from utils.execution import Batch
 import pytest
 from utils.transactional_events_results_writer import TransactionalEventsResultsWriter
 
 from google.cloud.bigquery import SchemaField
 
+from apache_beam.options.value_provider import StaticValueProvider
+
 
 @pytest.fixture
 def uploader():
-  return TransactionalEventsResultsWriter('bq_ops_dataset')
+  return TransactionalEventsResultsWriter(StaticValueProvider(str, 'bq_ops_dataset'))
 
 
 def test_bigquery_write(
@@ -51,10 +54,7 @@ def test_bigquery_write(
   source = Source("orig1", SourceType.BIG_QUERY, ["dt1", "buyers"])
   execution = Execution(account_config, source, destination)
 
-  uploader._do_process(
-      ({"execution": execution, "row": {"uuid": "uuid-1"}},
-       {"execution": execution, "row": {"uuid": "uuid-2"}}),
-      now)
+  uploader._do_process(Batch(execution, [{"uuid": "uuid-1"}, {"uuid": "uuid-2"}]), now)
 
   bq_client.insert_rows.assert_called_once_with(
       table,
@@ -82,6 +82,7 @@ def test_bigquery_write_failure(
       ["web_property", "view", "c", "list", "d", "buyers_custom_dim"])
 
   execution = Execution(account_config, source, destination)
-  uploader.process([{"execution": execution, "row": {"uuid": "uuid-1"}}])
+
+  uploader.process(Batch(execution, [{"uuid": "uuid-1"}]))
 
   assert error_message in caplog.text

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from enum import Enum
-from typing import List
+from typing import Dict, List
 
 OK_STATUS = 'OK'
 
@@ -32,6 +32,8 @@ class DestinationType(Enum):
     GA_4_MEASUREMENT_PROTOCOL = range(11)
 
     def __eq__(self, other):
+      if other is None:
+        return False
       return self.name == other.name
 
 
@@ -125,7 +127,7 @@ class Source:
                and self.source_metadata == other.source_metadata
 
     def __hash__(self):
-        return hash((self.source_name, self.source_type, self.source_metadata))
+        return hash((self.source_name, self.source_type, self.source_metadata[0], self.source_metadata[1]))
 
 
 class Destination:
@@ -156,7 +158,7 @@ class Destination:
                and self.destination_metadata == other.destination_metadata
 
     def __hash__(self):
-        return hash((self.destination_name, self.destination_type, self.destination_metadata))
+        return hash((self.destination_name, self.destination_type.name, self.destination_metadata[0]))
 
 
 class Execution:
@@ -188,9 +190,40 @@ class Execution:
                                                                           self.destination.destination_name)
 
     def __eq__(self, other):
+        if other is None:
+            return False
         return self.source == other.source \
                and self.destination == other.destination \
                and self.account_config == other.account_config
 
     def __hash__(self):
         return hash((self.source, self.destination, self.account_config))
+
+
+class Batch:
+    def __init__(
+            self,
+            execution: Execution,
+            elements: List[Dict[str, str]]
+    ):
+        self._execution = execution
+        self._elements = elements
+
+    @property
+    def execution(self) -> Execution:
+        return self._execution
+
+    @property
+    def elements(self) -> List[Dict[str, str]]:
+        return self._elements
+
+    def __str__(self):
+        return f'Execution: {self._execution}. Elements: {self._elements}'
+
+    def __eq__(self, other):
+        if other is None:
+            return False
+        return self.execution == other.execution and self.elements == other.elements 
+
+    def __hash__(self):
+        return hash(('Batch', self.execution))

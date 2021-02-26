@@ -1,4 +1,4 @@
-# Copyright 2019 Google LLC
+# Copyright 2021 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from megalist_dataflow.mappers.ads_user_list_pii_hashing_mapper import AdsUserListPIIHashingMapper
+from mappers.ads_user_list_pii_hashing_mapper import AdsUserListPIIHashingMapper
+
+from utils.execution import Batch
 
 
 def test_get_should_hash_fields():
@@ -53,18 +55,15 @@ def test_pii_hashing(mocker):
     execution = mocker.MagicMock()
     execution.destination.destination_metadata = ['Audience', 'ADD']
 
-    dicts = [
-        {'execution': execution, 'row': users[0]},
-        {'execution': execution, 'row': users[1]}
-    ]
+    batch = Batch(execution, [users[0], users[1]])
 
     # Call
     hasher = AdsUserListPIIHashingMapper()
-    hashed = hasher.hash_users(dicts)
+    hashed = hasher.hash_users(batch).elements
 
     assert len(hashed) == 2
 
-    assert hashed[0]['row'] == {
+    assert hashed[0] == {
         'hashedEmail': 'd709f370e52b57b4eb75f04e2b3422c4d41a05148cad8f81776d94a048fb70af',
         'addressInfo': {
             'countryCode': 'US',
@@ -73,7 +72,7 @@ def test_pii_hashing(mocker):
             'zipCode': '12345'
         }}
 
-    assert hashed[1]['row'] == {
+    assert hashed[1] == {
         'hashedEmail': '7c815580ad3844bcb627c74d24eaf700e1a711d9c23e9beb62ab8d28e8cb7954',
         'addressInfo': {
             'countryCode': 'US',
@@ -103,18 +102,15 @@ def test_avoid_pii_hashing(mocker):
     execution = mocker.MagicMock()
     execution.destination.destination_metadata = ['Audience', 'ADD', 'False']
 
-    dicts = [
-        {'execution': execution, 'row': users[0]},
-        {'execution': execution, 'row': users[1]}
-    ]
+    batch = Batch(execution, [users[0], users[1]])
 
     # Call
     hasher = AdsUserListPIIHashingMapper()
-    hashed = hasher.hash_users(dicts)
+    hashed = hasher.hash_users(batch).elements
 
     assert len(hashed) == 2
 
-    assert hashed[0]['row'] == {
+    assert hashed[0] == {
         'hashedEmail': 'john@doe.com',
         'addressInfo': {
             'countryCode': 'US',
@@ -123,7 +119,7 @@ def test_avoid_pii_hashing(mocker):
             'zipCode': '12345'
         }}
 
-    assert hashed[1]['row'] == {
+    assert hashed[1] == {
         'hashedEmail': 'jane@doe.com',
         'addressInfo': {
             'countryCode': 'US',

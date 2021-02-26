@@ -23,7 +23,7 @@ from aiohttp import ClientSession, ClientTimeout
 
 from uploaders import google_ads_utils as ads_utils
 from uploaders import utils as utils
-from utils.execution import DestinationType
+from utils.execution import DestinationType, Batch
 
 
 class AppsFlyerS2SUploaderDoFn(beam.DoFn):
@@ -38,10 +38,9 @@ class AppsFlyerS2SUploaderDoFn(beam.DoFn):
     pass
 
 
-  async def _prepare_and_send(self, session, element, success_elements):
+  async def _prepare_and_send(self, session, row, success_elements):
 
     #prepare payload
-    row = element['row']
     payload = {
       "appsflyer_id": row['appsflyer_id'],
       "eventName": row['event_eventName'],
@@ -65,7 +64,7 @@ class AppsFlyerS2SUploaderDoFn(beam.DoFn):
     # run request asyncronously.
     response = await self._send_http_request(session, payload, 1)
     if response == 200:
-      success_elements.append(element)
+      success_elements.append(row)
     return response
 
 
@@ -120,26 +119,25 @@ class AppsFlyerS2SUploaderDoFn(beam.DoFn):
 
 
   @utils.safe_process(logger=logging.getLogger("megalista.AppsFlyerS2SUploader"))
-  def process(self, elements, **kwargs):
+  def process(self, batch: Batch, **kwargs):
     success_elements = []
     start_datetime = datetime.now()
-    ads_utils.assert_elements_have_same_execution(elements)
-    any_execution = elements[0]['execution']
-    ads_utils.assert_right_type_action(any_execution, DestinationType.APPSFLYER_S2S_EVENTS)
-    self.app_id = any_execution.destination.destination_metadata[0]
+    execution = batch.execution
+    
+    self.app_id = execution.destination.destination_metadata[0]
 
     #send all requests asyncronously
     loop = asyncio.new_event_loop()
-    future = asyncio.ensure_future(self._async_request_runner(elements, success_elements), loop = loop)
+    future = asyncio.ensure_future(self._async_request_runner(batch.elements, success_elements), loop = loop)
     responses = loop.run_until_complete(future)
 
 
     #wait to avoid api trotle
     delta_sec = (datetime.now()-start_datetime).total_seconds()
-    min_duration_sec = len(elements)/500 #Using Rate limitation = 500 per sec
+    min_duration_sec = len(batch.elements)/500 #Using Rate limitation = 500 per sec
     if delta_sec < min_duration_sec:
       time.sleep(min_duration_sec - delta_sec)
     logging.getLogger("megalista.AppsFlyerS2SUploader").info(
-      f"Successfully uploaded {len(success_elements)}/{len(elements)} events.")
+      f"Successfully uploaded {len(success_elements)}/{len(batch.elements)} events.")
 
-    yield success_elements
+    yield Batch(execution, success_elements)

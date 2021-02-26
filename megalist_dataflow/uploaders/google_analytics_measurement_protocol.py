@@ -22,7 +22,7 @@ import requests
 
 from uploaders import google_ads_utils as ads_utils
 from uploaders import utils as utils
-from utils.execution import DestinationType
+from utils.execution import DestinationType, Batch
 
 
 class GoogleAnalyticsMeasurementProtocolUploaderDoFn(beam.DoFn):
@@ -38,16 +38,13 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(beam.DoFn):
     return "&".join([key + "=" + quote(str(value)) for key, value in payload.items() if value is not None])
 
   @utils.safe_process(logger=logging.getLogger("megalista.GoogleAnalyticsMeasurementProtocolUploader"))
-  def process(self, elements, **kwargs):
-    ads_utils.assert_elements_have_same_execution(elements)
-    any_execution = elements[0]['execution']
-    ads_utils.assert_right_type_action(any_execution, DestinationType.GA_MEASUREMENT_PROTOCOL)
-
-    rows = utils.extract_rows(elements)
+  def process(self, batch: Batch, **kwargs):
+    execution = batch.execution
+    rows = batch.elements
     payloads = [{
       "v": 1,
-      "tid": any_execution.destination.destination_metadata[0],
-      "ni": any_execution.destination.destination_metadata[1],
+      "tid": execution.destination.destination_metadata[0],
+      "ni": execution.destination.destination_metadata[1],
       "t": "event",
       "ds": "mp - megalista",
       "cid": row['client_id'],
@@ -67,4 +64,4 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(beam.DoFn):
       raise Exception(
         f"Error uploading to Analytics HTTP {response.status_code}: {response.raw}")
     else:
-      yield elements
+      yield batch
