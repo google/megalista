@@ -61,8 +61,8 @@ class BatchesFromExecutions(beam.PTransform):
     def __init__(self, batch_size: int):
         self._batch_size = batch_size
 
-    def process(self, element: Tuple[Any, Iterable[Any]], executions: Iterable[Execution]):
-        execution = next((execution for execution in executions if str(hash(execution)) == element[0]), None)
+    def process(self, element, executions: Iterable[Execution]):
+        execution = next((execution for execution in executions if str(hash(execution)) == element[0]))
         for i in range(0, len(element[1]), self._batch_size):
             yield Batch(execution, element[1][i:i+self._batch_size])
 

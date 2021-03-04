@@ -20,26 +20,26 @@ OK_STATUS = 'OK'
 
 class DestinationType(Enum):
     CM_OFFLINE_CONVERSION, \
-    ADS_OFFLINE_CONVERSION, \
-    ADS_SSD_UPLOAD, \
-    ADS_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD, \
-    ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD, \
-    ADS_CUSTOMER_MATCH_USER_ID_UPLOAD, \
-    GA_USER_LIST_UPLOAD, \
-    APPSFLYER_S2S_EVENTS, \
-    GA_MEASUREMENT_PROTOCOL, \
-    GA_DATA_IMPORT, \
-    GA_4_MEASUREMENT_PROTOCOL = range(11)
+        ADS_OFFLINE_CONVERSION, \
+        ADS_SSD_UPLOAD, \
+        ADS_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD, \
+        ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD, \
+        ADS_CUSTOMER_MATCH_USER_ID_UPLOAD, \
+        GA_USER_LIST_UPLOAD, \
+        APPSFLYER_S2S_EVENTS, \
+        GA_MEASUREMENT_PROTOCOL, \
+        GA_DATA_IMPORT, \
+        GA_4_MEASUREMENT_PROTOCOL = range(11)
 
     def __eq__(self, other):
-      if other is None:
-        return False
-      return self.name == other.name
+        if other is None:
+            return False
+        return self.name == other.name
 
 
 class SourceType(Enum):
     BIG_QUERY, \
-    CSV = range(2)
+        CSV = range(2)
     # TODO: CSV not yet implemented
 
 
@@ -58,7 +58,6 @@ class AccountConfig:
         self._campaign_manager_account_id = campaign_manager_account_id
         self._app_id = app_id
 
-    
     @property
     def google_ads_account_id(self) -> str:
         return self._google_ads_account_id
@@ -89,9 +88,9 @@ class AccountConfig:
 
     def __eq__(self, other):
         return self.google_ads_account_id == other.google_ads_account_id \
-               and self.google_analytics_account_id == other.google_analytics_account_id \
-               and self.campaign_manager_account_id == other.campaign_manager_account_id \
-               and self.app_id == other.app_id
+            and self.google_analytics_account_id == other.google_analytics_account_id \
+            and self.campaign_manager_account_id == other.campaign_manager_account_id \
+            and self.app_id == other.app_id
 
     def __hash__(self):
         return hash((self.google_ads_account_id, self.google_analytics_account_id,
@@ -123,8 +122,8 @@ class Source:
 
     def __eq__(self, other):
         return self.source_name == other.source_name \
-               and self.source_type == other.source_type \
-               and self.source_metadata == other.source_metadata
+            and self.source_type == other.source_type \
+            and self.source_metadata == other.source_metadata
 
     def __hash__(self):
         return hash((self.source_name, self.source_type, self.source_metadata[0], self.source_metadata[1]))
@@ -154,10 +153,9 @@ class Destination:
         return self._destination_metadata
 
     def __eq__(self, other) -> bool:
-        return self.destination_name == other.destination_name \
-               and self.destination_metadata == other.destination_metadata
+        return bool(self.destination_name == other.destination_name and self.destination_metadata[0] == other.destination_metadata[0])
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.destination_name, self.destination_type.name, self.destination_metadata[0]))
 
 
@@ -193,8 +191,8 @@ class Execution:
         if other is None:
             return False
         return self.source == other.source \
-               and self.destination == other.destination \
-               and self.account_config == other.account_config
+            and self.destination == other.destination \
+            and self.account_config == other.account_config
 
     def __hash__(self):
         return hash((self.source, self.destination, self.account_config))
@@ -223,7 +221,7 @@ class Batch:
     def __eq__(self, other):
         if other is None:
             return False
-        return self.execution == other.execution and self.elements == other.elements 
+        return self.execution == other.execution and self.elements == other.elements
 
     def __hash__(self):
         return hash(('Batch', self.execution))

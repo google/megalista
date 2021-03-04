@@ -66,7 +66,7 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(beam.DoFn):
           raise ValueError(
             f"GA4 MP should be called either for sending events or a user properties")        
     
-    payload = {
+    payload: Dict[str, Any] = {
       "nonPersonalizedAds": non_personalized_ads
     }
 

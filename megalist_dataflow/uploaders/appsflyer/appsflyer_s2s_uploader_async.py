@@ -17,6 +17,7 @@ import logging
 import apache_beam as beam
 import time
 from datetime import datetime
+from typing import Any, List
 
 import asyncio
 from aiohttp import ClientSession, ClientTimeout
@@ -119,7 +120,7 @@ class AppsFlyerS2SUploaderDoFn(beam.DoFn):
 
   @utils.safe_process(logger=logging.getLogger("megalista.AppsFlyerS2SUploader"))
   def process(self, batch: Batch, **kwargs):
-    success_elements = []
+    success_elements: List[Any] = []
     start_datetime = datetime.now()
     execution = batch.execution
     

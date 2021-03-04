@@ -34,8 +34,7 @@ def uploader():
   return TransactionalEventsResultsWriter(StaticValueProvider(str, 'bq_ops_dataset'))
 
 
-def test_bigquery_write(
-    mocker, uploader: TransactionalEventsResultsWriter):
+def test_bigquery_write(mocker, uploader):
   bq_client = mocker.MagicMock()
 
   mocker.patch.object(uploader, "_get_bq_client")
@@ -64,8 +63,7 @@ def test_bigquery_write(
        SchemaField("timestamp", "timestamp")))
 
 
-def test_bigquery_write_failure(
-    mocker, uploader: TransactionalEventsResultsWriter, caplog):
+def test_bigquery_write_failure(mocker, uploader, caplog):
   bq_client = mocker.MagicMock()
 
   mocker.patch.object(uploader, "_get_bq_client")

@@ -34,7 +34,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
     self.active = True
     if self.developer_token is None:
       self.active = False
-    self._user_list_id_cache = {}
+    self._user_list_id_cache: Dict[str, str] = {}
 
   def start_bundle(self):
     pass
@@ -77,7 +77,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
       logging.getLogger(_DEFAULT_LOGGER).info('List found %s with id: %d',
                                               list_name, list_id)
 
-    return list_id
+    return str(list_id)
 
   # just to facilitate mocking
   def _get_user_list_service(self, customer_id):
@@ -135,7 +135,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
     return [{key: row.get(key) for key in keys} for row in rows]
 
   def get_list_definition(self, account_config: AccountConfig,
-                          list_name: str) -> Dict[str, Any]:
+                          destination_metadata: List[str]) -> Dict[str, Any]:
     pass
 
   def get_row_keys(self) -> List[str]:
