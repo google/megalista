@@ -19,7 +19,7 @@ import logging
 from google.cloud import bigquery
 from apache_beam.io.gcp.bigquery import ReadFromBigQueryRequest
 
-from utils.execution import DestinationType, Execution, Batch
+from models.execution import DestinationType, Execution, Batch
 
 class BatchesFromExecutions(beam.PTransform):
   """

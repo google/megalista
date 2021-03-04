@@ -14,7 +14,7 @@
 
 from mappers.ads_user_list_pii_hashing_mapper import AdsUserListPIIHashingMapper
 
-from utils.execution import Batch
+from models.execution import Batch
 
 
 def test_get_should_hash_fields():

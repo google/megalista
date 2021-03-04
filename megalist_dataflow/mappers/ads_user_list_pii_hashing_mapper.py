@@ -14,7 +14,7 @@
 
 import logging
 
-from utils.execution import Batch
+from models.execution import Batch
 
 
 class FieldHasher:

@@ -17,10 +17,10 @@ import logging
 from apache_beam.options.value_provider import ValueProvider
 
 from sources.base_bounded_source import BaseBoundedSource
-from utils.execution import Destination, DestinationType
-from utils.execution import Execution, AccountConfig
-from utils.execution import Source, SourceType
-from utils.sheets_config import SheetsConfig
+from models.execution import Destination, DestinationType
+from models.execution import Execution, AccountConfig
+from models.execution import Source, SourceType
+from models.sheets_config import SheetsConfig
 
 
 class SpreadsheetExecutionSource(BaseBoundedSource):
