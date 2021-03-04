@@ -13,6 +13,7 @@
 # limitations under the License.
 import math
 import time
+import logging
 
 from apache_beam.options.value_provider import StaticValueProvider
 from uploaders.campaign_manager_conversion_uploader import CampaignManagerConversionUploaderDoFn
@@ -84,7 +85,6 @@ def test_conversion_upload(mocker, uploader):
             'ordinal': math.floor(current_time * 10e5),
             'timestampMicros': math.floor(current_time * 10e5)
         }],
-        'encryptionInfo': 'AD_SERVING'
     }
 
     uploader._get_dcm_service().conversions().batchinsert.assert_any_call(
@@ -118,7 +118,6 @@ def test_conversion_upload_match_id(mocker, uploader):
             'ordinal': math.floor(current_time * 10e5),
             'timestampMicros': math.floor(current_time * 10e5)
         }],
-        'encryptionInfo': 'AD_SERVING'
     }
 
     uploader._get_dcm_service().conversions().batchinsert.assert_any_call(
@@ -126,6 +125,7 @@ def test_conversion_upload_match_id(mocker, uploader):
 
 
 def test_error_on_api_call(mocker, uploader, caplog):
+    caplog.set_level(logging.INFO, 'megalista.CampaignManagerConversionsUploader')
     mocker.patch.object(uploader, '_get_dcm_service')
     service = mocker.MagicMock()
     uploader._get_dcm_service.return_value = service
@@ -145,8 +145,9 @@ def test_error_on_api_call(mocker, uploader, caplog):
         'dest1', DestinationType.CM_OFFLINE_CONVERSION, ['a', 'b'])
     execution = Execution(_account_config, source, destination)
 
+    uploader._do_process(Batch(execution, [{'gclid': '123'}]), time.time())
 
-    uploader.process(Batch(execution, [{'gclid': '123'}]))
+    print (caplog.records)
 
     assert 'Error(s) inserting conversions:' in caplog.text
-    assert '\t[123]: error_returned' in caplog.text
+    assert '[123]: error_returned' in caplog.text
