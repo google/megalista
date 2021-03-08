@@ -38,11 +38,12 @@ class AdsUserListPIIHashingMapper:
 
     def _hash_user(self, user, hasher):
 
-        hashed = dict()
+        hashed = user.copy()
 
         try:
             if 'email' in user:
                 hashed['hashedEmail'] = hasher.hash_field(user['email'])
+                del hashed['email']
         except:
             self.logger.error("Error hashing email for user: %s" % user)
 
@@ -54,18 +55,24 @@ class AdsUserListPIIHashingMapper:
                     'countryCode': user['mailing_address_country'],
                     'zipCode': user['mailing_address_zip']
                 }
+                del hashed['mailing_address_first_name']
+                del hashed['mailing_address_last_name']
+                del hashed['mailing_address_country']
+                del hashed['mailing_address_zip']
         except:
             self.logger.error("Error hashing address for user: %s" % user)
 
         try:
             if 'phone' in user:
                 hashed['hashedPhoneNumber'] = hasher.hash_field(user['phone'])
+                del hashed['phone']
         except:
             self.logger.error("Error hashing phone for user: %s" % user)
 
         try:
             if 'mobile_device_id' in user:
                 hashed['mobileId'] = user['mobile_device_id']
+                del hashed['mobile_device_id']
         except:
             self.logger.error(
                 "Error hashing mobile_device_id for user: %s" % user)
@@ -73,6 +80,7 @@ class AdsUserListPIIHashingMapper:
         try:
             if 'user_id' in user:
                 hashed['userId'] = user['user_id']
+                del hashed['user_id']
         except:
             self.logger.error("Error hashing user_id for user: %s" % user)
 

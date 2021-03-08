@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from enum import Enum
-from typing import Dict, List
+from typing import Dict, List, Union
 
 OK_STATUS = 'OK'
 
@@ -22,6 +22,7 @@ class DestinationType(Enum):
     CM_OFFLINE_CONVERSION, \
         ADS_OFFLINE_CONVERSION, \
         ADS_SSD_UPLOAD, \
+        ADS_ENHANCED_CONVERSION, \
         ADS_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD, \
         ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD, \
         ADS_CUSTOMER_MATCH_USER_ID_UPLOAD, \
@@ -29,7 +30,7 @@ class DestinationType(Enum):
         APPSFLYER_S2S_EVENTS, \
         GA_MEASUREMENT_PROTOCOL, \
         GA_DATA_IMPORT, \
-        GA_4_MEASUREMENT_PROTOCOL = range(11)
+        GA_4_MEASUREMENT_PROTOCOL = range(12)
 
     def __eq__(self, other):
         if other is None:
@@ -202,7 +203,7 @@ class Batch:
     def __init__(
             self,
             execution: Execution,
-            elements: List[Dict[str, str]]
+            elements: List[Dict[str, Union[str, Dict[str, str]]]]
     ):
         self._execution = execution
         self._elements = elements
@@ -212,7 +213,7 @@ class Batch:
         return self._execution
 
     @property
-    def elements(self) -> List[Dict[str, str]]:
+    def elements(self) -> List[Dict[str, Union[str, Dict[str, str]]]]:
         return self._elements
 
     def __str__(self):

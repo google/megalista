@@ -147,7 +147,5 @@ def test_error_on_api_call(mocker, uploader, caplog):
 
     uploader._do_process(Batch(execution, [{'gclid': '123'}]), time.time())
 
-    print (caplog.records)
-
     assert 'Error(s) inserting conversions:' in caplog.text
     assert '[123]: error_returned' in caplog.text

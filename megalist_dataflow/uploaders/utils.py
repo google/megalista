@@ -55,7 +55,7 @@ def safe_process(logger):
                 return
             logger.info(f'Uploading {len(batch.elements)} rows...')
             try:
-                return func(*args, *kwargs)
+                return func(*args, **kwargs)
             except Exception as e:
                 logger.error(f'Error uploading data for :{batch.elements}')
                 logger.error(e, exc_info=True)

@@ -22,7 +22,7 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaInMemoryUpload
 
 from uploaders import utils
-from models.execution import DestinationType, Batch
+from models.execution import DestinationType, Batch, Union
 
 
 class GoogleAnalyticsDataImportUploaderDoFn(beam.DoFn):
@@ -85,7 +85,7 @@ class GoogleAnalyticsDataImportUploaderDoFn(beam.DoFn):
                              ga_account_id, batch.elements)
 
     def _do_upload_data(self, web_property_id, data_import_name, ga_account_id,
-                        rows: List[Dict[str, str]]):
+                        rows: List[Dict[str, Union[str, Dict[str, str]]]]):
         analytics = self._get_analytics_service()
         data_sources = analytics.management().customDataSources().list(
             accountId=ga_account_id,

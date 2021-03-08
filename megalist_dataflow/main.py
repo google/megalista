@@ -29,6 +29,7 @@ from uploaders.google_ads.customer_match.mobile_uploader import GoogleAdsCustome
 from uploaders.google_ads.customer_match.user_id_uploader import GoogleAdsCustomerMatchUserIdUploaderDoFn
 from uploaders.google_ads.conversions.google_ads_offline_conversions_uploader import GoogleAdsOfflineUploaderDoFn
 from uploaders.google_ads.conversions.google_ads_ssd_uploader import GoogleAdsSSDUploaderDoFn
+from uploaders.google_ads.conversions.google_ads_enhanced_conversions_uploader import GoogleAdsEnhancedConversionsUploaderDoFn
 from uploaders.google_analytics.google_analytics_data_import_uploader import GoogleAnalyticsDataImportUploaderDoFn
 from uploaders.google_analytics.google_analytics_measurement_protocol import GoogleAnalyticsMeasurementProtocolUploaderDoFn
 from uploaders.google_analytics.google_analytics_user_list_uploader import GoogleAnalyticsUserListUploaderDoFn
@@ -58,6 +59,14 @@ class MegalistaStep(beam.PTransform):
     def expand(self, executions):
         pass
 
+class GoogleAdsEnhancedConversionsStep(MegalistaStep):
+    def expand(self, executions):
+        return (
+            executions
+            | 'Load Data - Google Ads Enhanced Conversions' >> BatchesFromExecutions(DestinationType.ADS_ENHANCED_CONVERSION)
+            | 'Hash Users - Google Ads Enhanced Conversions' >> beam.Map(self._hasher.hash_users)
+            | 'Upload - Google Ads Enhanced Conversions' >> beam.ParDo(GoogleAdsEnhancedConversionsUploaderDoFn(self._oauth_credentials))
+        )
 
 class GoogleAdsSSDStep(MegalistaStep):
     def expand(self, executions):
@@ -181,7 +190,7 @@ def run(argv=None):
     oauth_credentials = OAuthCredentials(
         dataflow_options.client_id,
         dataflow_options.client_secret,
-        dataflow_options.developer_token,
+        dataflow_options.access_token,
         dataflow_options.refresh_token)
 
     sheets_config = SheetsConfig(oauth_credentials)
@@ -208,6 +217,7 @@ def run(argv=None):
             oauth_credentials, dataflow_options)
         executions | CampaignManagerConversionStep(oauth_credentials, dataflow_options)
         executions | AppsFlyerEventsStep(oauth_credentials, dataflow_options)
+        executions | GoogleAdsEnhancedConversionsStep(oauth_credentials, dataflow_options, AdsUserListPIIHashingMapper())
 
         # todo: update trix at the end
 
