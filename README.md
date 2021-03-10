@@ -36,7 +36,6 @@ The solution consists in #1 a Google Spreadsheet (template) in which all rules a
   - **Billing** enabled
   - **BigQuery** enabled
   - **Dataflow** enabled
-  - **Datastore** enabled
   - **Cloud storage** enabled
   - **Cloud scheduler** enabled
 - At least one of:
@@ -93,7 +92,7 @@ This bucket will hold the deployed code for this solution. To create it, navigat
 To deploy, use the following command:
 `./deploy_cloud.sh project_id bucket_name region_name`
 
-## Manually executing pipeline
+#### Manually executing pipeline using Dataflow UI
 To execute the pipeline, use the following steps: 
 - Go to **Dataflow** on GCP console
 - Click on *Create job from template*
@@ -101,7 +100,7 @@ To execute the pipeline, use the following steps:
 - Find the *megalist* file on the bucket you've created, on the templates folder
 - Fill in the parameters required and execute
 
-## Scheduling pipeline
+### Scheduling pipeline
 To schedule daily/hourly runs, go to **Cloud Scheduler**:
 - Click on *create job* 
 - Add a name and frequency as desired
@@ -111,7 +110,7 @@ To schedule daily/hourly runs, go to **Cloud Scheduler**:
 - Add OAuth Headers
 - Scope: https://www.googleapis.com/auth/cloud-platform
 
-## Creating a Service Account
+#### Creating a Service Account
 It's recommended to create a new Service Account to be used with the Cloud Scheduler
 - Go to IAM & Admin > Service Accounts
 - Create a new Service Account with the following roles:
