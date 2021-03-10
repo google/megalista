@@ -88,6 +88,28 @@ In order to create it, follow these steps:
 ### Creating a bucket on Cloud Storage
 This bucket will hold the deployed code for this solution. To create it, navigate to the *Storage* link on the top-left menu on GCP and click on *Create bucket*. You can use Regional location and Standard data type for this bucket.
 
+## Running Megalista
+
+We recommend first running it locally and make sure that everything works. 
+Make some sample tables on BigQuery for one of the uploaders and make sure that the data is getting correctly to the destination.
+After that is done, upload the Dataflow template to GCP and try running it manually via the UI to make sure it works.
+Lastly, configure the Cloud Scheduler to run Megalista in the frequency desired and you'll have a fully functional data integration pipeline.
+
+### Running locally
+```bash
+python3 megalist_dataflow/main.py \
+  --runner DirectRunner \
+  --developer_token ${GOOGLE_ADS_DEVELOPER_TOKEN} \
+  --setup_sheet_id ${CONFIGURATION_SHEET_ID} \
+  --refresh_token ${REFRESH_TOKEN} \
+  --access_token ${ACCESS_TOKEN} \
+  --client_id ${CLIENT_ID} \
+  --client_secret ${CLIENT_SECRET} \
+  --project ${GCP_PROJECT_ID} \
+  --region us-central1 \
+  --temp_location gs://{$GCS_BUCKET}/tmp
+```
+
 ### Deploying Pipeline
 To deploy, use the following command:
 `./deploy_cloud.sh project_id bucket_name region_name`
