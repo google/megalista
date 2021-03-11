@@ -19,6 +19,7 @@ from urllib.parse import quote
 
 import apache_beam as beam
 import requests
+import re
 
 from uploaders import utils
 from models.execution import DestinationType, Batch
@@ -46,13 +47,14 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(beam.DoFn):
       "ni": execution.destination.destination_metadata[1],
       "t": "event",
       "ds": "mp - megalista",
-      "cid": row['client_id'],
+      **{'cid': row[key] for key in row.keys() if key.startswith("client_id")},
+      **{'uid': row[key] for key in row.keys() if key.startswith("user_id")},
       "ea": row['event_action'],
       "ec": row['event_category'],
       "ev": row.get('event_value'),
       "el": row.get('event_label'),
       "ua": self.UA,
-      **{key: row[key] for key in list(filter(lambda key: key.startswith("cd"), row.keys()))}
+      **{key: row[key] for key in row.keys() if re.match('c[dm]\d+',key)}
     } for row in rows]
 
     encoded = [self._format_hit(payload) for payload in payloads]
