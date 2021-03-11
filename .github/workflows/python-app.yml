@@ -5,9 +5,9 @@ name: Python testing
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ develop ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main ]
 
 jobs:
   unit_testing:
