@@ -114,8 +114,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
 
     rows = self.get_filtered_rows(
         batch.elements, self.get_row_keys())
-    logging.getLogger(_DEFAULT_LOGGER).warning(
-        'Uploading %d rows to Google Ads', len(rows))
+        
     mutate_members_operation = {
         'operand': {
             'userListId': list_id,
@@ -125,8 +124,6 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
     }
     
     utils.safe_call_api(self.call_api, logging, user_list_service, [mutate_members_operation])
-    logging.getLogger(_DEFAULT_LOGGER).warning(
-      'Uploaded %d rows to Google Ads', len(rows))
 
   def call_api(self, service, operations):
     service.mutateMembers(operations)
