@@ -134,6 +134,31 @@ def test_succesful_app_event_call(uploader, caplog):
         assert m.last_request.json()["events"][0]["params"]["value"] == '42'
 
 
+def test_succesful_app_event_call_with_user_id(uploader, caplog):
+    with requests_mock.Mocker() as m:
+        m.post(requests_mock.ANY, status_code=204)
+        destination = Destination(
+            'dest1', DestinationType.GA_4_MEASUREMENT_PROTOCOL, [
+                'api_secret',
+                'True',
+                'False',
+                '',
+                'some_id',
+                ''
+            ])
+        source = Source('orig1', SourceType.BIG_QUERY, [])
+        execution = Execution(_account_config, source, destination)
+        next(uploader.process(Batch(execution, [{
+            'firebase_app_id': '123',
+            'name': 'event_name',
+            'value': '42',
+            'user_id': 'Id42'
+        }])))
+
+        assert m.call_count == 1
+        assert m.last_request.json()["user_id"] == 'Id42'
+
+
 def test_succesful_web_user_property_call(uploader, caplog):
     with requests_mock.Mocker() as m:
         m.post(requests_mock.ANY, status_code=204)
@@ -159,3 +184,28 @@ def test_succesful_web_user_property_call(uploader, caplog):
         assert m.call_count == 2
         assert m.last_request.json(
         )["userProperties"]["user_will_churn"]["value"] == 'Maybe'
+
+def test_succesful_web_user_property_call_with_user_id(uploader, caplog):
+    with requests_mock.Mocker() as m:
+        m.post(requests_mock.ANY, status_code=204)
+        destination = Destination(
+            'dest1', DestinationType.GA_4_MEASUREMENT_PROTOCOL, [
+                'api_secret',
+                'False',
+                'True',
+                '',
+                '',
+                'some_id'
+            ])
+        source = Source('orig1', SourceType.BIG_QUERY, [])
+        execution = Execution(_account_config, source, destination)
+        next(uploader.process(Batch(execution, [{
+            'user_ltv': '42',
+            'user_id': 'Id42'
+        }
+        ])))
+
+        assert m.call_count == 1
+        assert m.last_request.json(
+        )["user_id"] == 'Id42'
+

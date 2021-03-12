@@ -75,17 +75,18 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(beam.DoFn):
     for row in batch.elements:
       app_instance_id = row.get('app_instance_id')
       client_id = row.get('client_id')
+      user_id = row.get('user_id')
 
       if not self._exactly_one_of(app_instance_id, client_id):
         logging.getLogger("megalista.GoogleAnalytics4MeasurementProtocolUploader").error(
           f"GA4 MP should be called either with an app_instance_id (for apps) or a client_id (for web)")
     
       if is_event:
-        params = {k: v for k, v in row.items() if k not in ("name", "app_instance_id", "client_id", "uuid")}
+        params = {k: v for k, v in row.items() if k not in ("name", "app_instance_id", "client_id", "uuid", "user_id")}
         payload["events"] = [{"name": row["name"], "params": params}]
 
       if is_user_property: 
-        payload["userProperties"] = {k: {"value": v} for k, v in row.items() if k not in ("app_instance_id", "client_id", "uuid")}
+        payload["userProperties"] = {k: {"value": v} for k, v in row.items() if k not in ("app_instance_id", "client_id", "uuid", "user_id")}
         payload["events"] = {"name": "user_property_addition_event", "params": {}}
 
       url_container = [f"{self.API_URL}?api_secret={api_secret}"]
@@ -97,6 +98,9 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(beam.DoFn):
       if measurement_id:
         url_container.append(f"&measurement_id={measurement_id}")
         payload["client_id"] = client_id
+
+      if user_id:
+        payload['user_id'] = user_id
 
       url = ''.join(url_container)
       response = requests.post(url,data=json.dumps(payload))
