@@ -79,7 +79,7 @@ class AdsUserListPIIHashingMapper:
 
         try:
             if 'user_id' in user:
-                hashed['userId'] = user['user_id']
+                hashed['userId'] = hasher.hash_field(user['user_id'])
                 del hashed['user_id']
         except:
             self.logger.error("Error hashing user_id for user: %s" % user)

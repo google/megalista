@@ -123,6 +123,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
         },
         'operator': execution.destination.destination_metadata[1]
     }
+    
     utils.safe_call_api(self.call_api, logging, user_list_service, [mutate_members_operation])
     logging.getLogger(_DEFAULT_LOGGER).warning(
       'Uploaded %d rows to Google Ads', len(rows))
