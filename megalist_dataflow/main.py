@@ -74,6 +74,7 @@ class GoogleAdsCustomerMatchMobileDeviceIdStep(MegalistaStep):
         return (
             executions
             | 'Load Data - Google Ads Customer Match Mobile Device Id' >> BatchesFromExecutions(DestinationType.ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD)
+            | 'Hash Users - Google Ads Customer Match Contact Info' >> beam.Map(self._hasher.hash_users)
             | 'Upload - Google Ads Customer Match Mobile Device Id' >> beam.ParDo(
                 GoogleAdsCustomerMatchMobileUploaderDoFn(self._oauth_credentials, self._dataflow_options.developer_token))
         )
@@ -95,6 +96,7 @@ class GoogleAdsCustomerMatchUserIdStep(MegalistaStep):
         return (
             executions
             | 'Load Data - Google Ads Customer Match User Id' >> BatchesFromExecutions(DestinationType.ADS_CUSTOMER_MATCH_USER_ID_UPLOAD)
+            | 'Hash Users - Google Ads Customer Match Contact Info' >> beam.Map(self._hasher.hash_users)
             | 'Upload - Google Ads Customer User Device Id' >> beam.ParDo(
                 GoogleAdsCustomerMatchUserIdUploaderDoFn(self._oauth_credentials, self._dataflow_options.developer_token))
         )
