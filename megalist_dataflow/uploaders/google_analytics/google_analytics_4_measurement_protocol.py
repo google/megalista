@@ -1,13 +1,13 @@
 # Copyright 2021 Google LLC
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the Apache License, Version 2.0 (the 'License');
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     https://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
+# distributed under the License is distributed on an 'AS IS' BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
@@ -28,7 +28,7 @@ from models.execution import DestinationType, Batch
 class GoogleAnalytics4MeasurementProtocolUploaderDoFn(beam.DoFn):
   def __init__(self):
     super().__init__()
-    self.API_URL = "https://www.google-analytics.com/mp/collect"
+    self.API_URL = 'https://www.google-analytics.com/mp/collect'
 
   def start_bundle(self):
     pass
@@ -41,7 +41,7 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(beam.DoFn):
   def _exactly_one_of(a: Any, b: Any) -> bool:
     return (a and not b) or (not a and b)
 
-  @utils.safe_process(logger=logging.getLogger("megalista.GoogleAnalytics4MeasurementProtocolUploader"))
+  @utils.safe_process(logger=logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader'))
   def process(self, batch: Batch, **kwargs):
     execution = batch.execution
 
@@ -60,14 +60,14 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(beam.DoFn):
      
     if not self._exactly_one_of(firebase_app_id, measurement_id):
           raise ValueError(
-            f"GA4 MP should be called either with a firebase_app_id (for apps) or a measurement_id (for web)")      
+            f'GA4 MP should be called either with a firebase_app_id (for apps) or a measurement_id (for web)')      
 
     if not self._exactly_one_of(is_event, is_user_property):
           raise ValueError(
-            f"GA4 MP should be called either for sending events or a user properties")        
+            f'GA4 MP should be called either for sending events or a user properties')        
     
     payload: Dict[str, Any] = {
-      "nonPersonalizedAds": non_personalized_ads
+      'nonPersonalizedAds': non_personalized_ads
     }
 
     accepted_elements = []
@@ -78,26 +78,26 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(beam.DoFn):
       user_id = row.get('user_id')
 
       if not self._exactly_one_of(app_instance_id, client_id):
-        logging.getLogger("megalista.GoogleAnalytics4MeasurementProtocolUploader").error(
-          f"GA4 MP should be called either with an app_instance_id (for apps) or a client_id (for web)")
+        logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').error(
+          f'GA4 MP should be called either with an app_instance_id (for apps) or a client_id (for web)')
     
       if is_event:
-        params = {k: v for k, v in row.items() if k not in ("name", "app_instance_id", "client_id", "uuid", "user_id")}
-        payload["events"] = [{"name": row["name"], "params": params}]
+        params = {k: v for k, v in row.items() if k not in ('name', 'app_instance_id', 'client_id', 'uuid', 'user_id')}
+        payload['events'] = [{'name': row['name'], 'params': params}]
 
       if is_user_property: 
-        payload["userProperties"] = {k: {"value": v} for k, v in row.items() if k not in ("app_instance_id", "client_id", "uuid", "user_id")}
-        payload["events"] = {"name": "user_property_addition_event", "params": {}}
+        payload['userProperties'] = {k: {'value': v} for k, v in row.items() if k not in ('app_instance_id', 'client_id', 'uuid', 'user_id')}
+        payload['events'] = {'name': 'user_property_addition_event', 'params': {}}
 
-      url_container = [f"{self.API_URL}?api_secret={api_secret}"]
+      url_container = [f'{self.API_URL}?api_secret={api_secret}']
 
       if firebase_app_id:
-        url_container.append(f"&firebase_app_id={firebase_app_id}")
-        payload["app_instance_id"] = app_instance_id
+        url_container.append(f'&firebase_app_id={firebase_app_id}')
+        payload['app_instance_id'] = app_instance_id
 
       if measurement_id:
-        url_container.append(f"&measurement_id={measurement_id}")
-        payload["client_id"] = client_id
+        url_container.append(f'&measurement_id={measurement_id}')
+        payload['client_id'] = client_id
 
       if user_id:
         payload['user_id'] = user_id
@@ -105,11 +105,11 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(beam.DoFn):
       url = ''.join(url_container)
       response = requests.post(url,data=json.dumps(payload))
       if response.status_code != 204:
-        logging.getLogger("megalista.GoogleAnalytics4MeasurementProtocolUploader").error(
-          f"Error calling GA4 MP {response.status_code}: {response.raw}")
+        logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').error(
+          f'Error calling GA4 MP {response.status_code}: {response.raw}')
       else:
         accepted_elements.append(row)
 
-    logging.getLogger("megalista.GoogleAnalytics4MeasurementProtocolUploader").info(
-      f"Successfully uploaded {len(accepted_elements)}/{len(batch.elements)} events.")
+    logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(
+      f'Successfully uploaded {len(accepted_elements)}/{len(batch.elements)} events.')
     yield Batch(execution, accepted_elements)
