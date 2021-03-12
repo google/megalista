@@ -60,11 +60,11 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(beam.DoFn):
      
     if not self._exactly_one_of(firebase_app_id, measurement_id):
           raise ValueError(
-            f'GA4 MP should be called either with a firebase_app_id (for apps) or a measurement_id (for web)')      
+            'GA4 MP should be called either with a firebase_app_id (for apps) or a measurement_id (for web)')      
 
     if not self._exactly_one_of(is_event, is_user_property):
           raise ValueError(
-            f'GA4 MP should be called either for sending events or a user properties')        
+            'GA4 MP should be called either for sending events or a user properties')        
     
     payload: Dict[str, Any] = {
       'nonPersonalizedAds': non_personalized_ads
@@ -78,8 +78,8 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(beam.DoFn):
       user_id = row.get('user_id')
 
       if not self._exactly_one_of(app_instance_id, client_id):
-        logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').error(
-          f'GA4 MP should be called either with an app_instance_id (for apps) or a client_id (for web)')
+        raise ValueError(
+          'GA4 MP should be called either with an app_instance_id (for apps) or a client_id (for web)')
     
       if is_event:
         params = {k: v for k, v in row.items() if k not in ('name', 'app_instance_id', 'client_id', 'uuid', 'user_id')}
@@ -93,10 +93,16 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(beam.DoFn):
 
       if firebase_app_id:
         url_container.append(f'&firebase_app_id={firebase_app_id}')
+        if not app_instance_id:
+          raise ValueError(
+            'GA4 MP needs an app_instance_id parameter when used for an App Stream.')
         payload['app_instance_id'] = app_instance_id
-
+        
       if measurement_id:
         url_container.append(f'&measurement_id={measurement_id}')
+        if not client_id:
+          raise ValueError(
+            'GA4 MP needs a client_id parameter when used for a Web Stream.')
         payload['client_id'] = client_id
 
       if user_id:

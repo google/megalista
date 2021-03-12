@@ -108,6 +108,49 @@ def test_exception_no_id(uploader, caplog):
                 'value': '123'
             }])))
 
+def test_exception_app_event_without_app_instance_id(uploader, caplog):
+    with requests_mock.Mocker() as m:
+        m.post(requests_mock.ANY, status_code=204)
+        destination = Destination(
+            'dest1', DestinationType.GA_4_MEASUREMENT_PROTOCOL, [
+                'api_secret',
+                'True',
+                'False',
+                '',
+                'some_id',
+                ''
+            ])
+        source = Source('orig1', SourceType.BIG_QUERY, [])
+        execution = Execution(_account_config, source, destination)
+        with pytest.raises(ValueError, match='GA4 MP needs an app_instance_id parameter when used for an App Stream.'):
+            next(uploader.process(Batch(execution, [{
+                'client_id': '123',
+                'name': 'event_name',
+                'value': '42',
+                'important_event': 'False'
+            }])))
+
+def test_exception_web_event_without_client_id(uploader, caplog):
+    with requests_mock.Mocker() as m:
+        m.post(requests_mock.ANY, status_code=204)
+        destination = Destination(
+            'dest1', DestinationType.GA_4_MEASUREMENT_PROTOCOL, [
+                'api_secret',
+                'True',
+                'False',
+                '',
+                '',
+                'some_id'
+            ])
+        source = Source('orig1', SourceType.BIG_QUERY, [])
+        execution = Execution(_account_config, source, destination)
+        with pytest.raises(ValueError, match='GA4 MP needs a client_id parameter when used for a Web Stream.'):
+            next(uploader.process(Batch(execution, [{
+                'app_instance_id': '123',
+                'name': 'event_name',
+                'value': '42',
+                'important_event': 'False'
+            }])))
 
 def test_succesful_app_event_call(uploader, caplog):
     with requests_mock.Mocker() as m:
@@ -124,7 +167,7 @@ def test_succesful_app_event_call(uploader, caplog):
         source = Source('orig1', SourceType.BIG_QUERY, [])
         execution = Execution(_account_config, source, destination)
         next(uploader.process(Batch(execution, [{
-            'firebase_app_id': '123',
+            'app_instance_id': '123',
             'name': 'event_name',
             'value': '42',
             'important_event': 'False'
@@ -149,7 +192,7 @@ def test_succesful_app_event_call_with_user_id(uploader, caplog):
         source = Source('orig1', SourceType.BIG_QUERY, [])
         execution = Execution(_account_config, source, destination)
         next(uploader.process(Batch(execution, [{
-            'firebase_app_id': '123',
+            'app_instance_id': '123',
             'name': 'event_name',
             'value': '42',
             'user_id': 'Id42'
@@ -174,10 +217,12 @@ def test_succesful_web_user_property_call(uploader, caplog):
         source = Source('orig1', SourceType.BIG_QUERY, [])
         execution = Execution(_account_config, source, destination)
         next(uploader.process(Batch(execution, [{
-            'user_ltv': '42'
+            'user_ltv': '42',
+            'client_id': 'some_id'
         },
         {
-            'user_will_churn': 'Maybe'
+            'user_will_churn': 'Maybe',
+            'client_id': 'some_id'
         }
         ])))
 
@@ -201,7 +246,8 @@ def test_succesful_web_user_property_call_with_user_id(uploader, caplog):
         execution = Execution(_account_config, source, destination)
         next(uploader.process(Batch(execution, [{
             'user_ltv': '42',
-            'user_id': 'Id42'
+            'user_id': 'Id42',
+            'client_id': 'someId'
         }
         ])))
 
