@@ -10,3 +10,4 @@ generate_csv.sh
 .terraform
 .idea
 .venv
+.vscode
