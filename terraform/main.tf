@@ -17,7 +17,7 @@ locals {
         "jobName": "megalist_daily",
         "parameters": {
             "developer_token": "${var.developer_token}",
-            "client_id": "${var.client_id},
+            "client_id": "${var.client_id}",
             "client_secret": "${var.client_secret}",
             "access_token": "${var.access_token}",
             "refresh_token": "${var.refresh_token}",
