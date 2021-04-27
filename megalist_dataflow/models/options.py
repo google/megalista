@@ -38,6 +38,8 @@ class DataflowOptions(PipelineOptions):
     parser.add_value_provider_argument(
         '--setup_firestore_collection', help='Name of Google Cloud Firestore collection with execution info (don\'t set if using Sheet or JSON)')
     parser.add_value_provider_argument(
+        '--setup_firestore_collection', help='Name of Firestore collection with execution info')
+    parser.add_value_provider_argument(
         '--bq_ops_dataset',
         help='Auxliary bigquery dataset used for Megalista operations')
     # Google Ads
