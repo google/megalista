@@ -126,8 +126,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
     utils.safe_call_api(self.call_api, logging, user_list_service, [mutate_members_operation])
 
   def call_api(self, service, operations):
-    r = service.mutateMembers(operations)
-    print(f'\n\n{r}\n\n')
+    service.mutateMembers(operations)
 
   def get_filtered_rows(self, rows: List[Any],
                         keys: List[str]) -> List[Dict[str, Any]]:
