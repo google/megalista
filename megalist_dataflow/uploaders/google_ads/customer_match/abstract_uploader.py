@@ -114,7 +114,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
 
     rows = self.get_filtered_rows(
         batch.elements, self.get_row_keys())
-    
+        
     mutate_members_operation = {
         'operand': {
             'userListId': list_id,
