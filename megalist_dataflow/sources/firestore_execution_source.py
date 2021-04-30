@@ -1,4 +1,4 @@
-# Copyright 2020 Google LLC
+# Copyright 2021 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -57,12 +57,12 @@ class FirestoreExecutionSource(BaseBoundedSource):
   
     if not account_data:
       raise Exception('Firestore collection is absent')
-    google_ads_id = account_data.get('google_ads_id', 'chave_vazia')
+    google_ads_id = account_data.get('google_ads_id', 'empty')
     mcc_trix = account_data.get('mcc_trix', 'FALSE')
     mcc = False if mcc_trix is None else bool(distutils.util.strtobool(mcc_trix))
-    app_id = account_data.get('app_id', 'chave_vazia')
-    google_analytics_account_id = account_data.get('google_analytics_account_id', 'chave_vazia')
-    campaign_manager_account_id = account_data.get('campaign_manager_account_id', 'chave_vazia')
+    app_id = account_data.get('app_id', 'empty')
+    google_analytics_account_id = account_data.get('google_analytics_account_id', 'empty')
+    campaign_manager_account_id = account_data.get('campaign_manager_account_id', 'empty')
     
     account_config = AccountConfig(google_ads_id, mcc, google_analytics_account_id, campaign_manager_account_id, app_id)
     logging.getLogger("megalista.FirestoreExecutionSource").info(f"Loaded: {account_config}")
@@ -97,8 +97,8 @@ class FirestoreExecutionSource(BaseBoundedSource):
         'ADS_OFFLINE_CONVERSION': ['gads_conversion_name'],
         'ADS_SSD_UPLOAD': ['gads_conversion_name', 'gads_external_upload_id'],
         'ADS_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD': ['gads_audience_name', 'gads_operation', 'gads_hash'],
-        'ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD': ['gads_audience_name', 'gads_operation', 'gads_metadata3', 'gads_app_id'],
-        'ADS_CUSTOMER_MATCH_USER_ID_UPLOAD': ['gads_audience_name', 'gads_operation', 'gads_metadata3'],
+        'ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD': ['gads_audience_name', 'gads_operation'],
+        'ADS_CUSTOMER_MATCH_USER_ID_UPLOAD': ['gads_audience_name', 'gads_operation'],
         'GA_MEASUREMENT_PROTOCOL': ['google_analytics_property_id', 'google_analytics_non_interaction'],
         'CM_OFFLINE_CONVERSION': ['campaign_manager_floodlight_activity_id', 'campaign_manager_floodlight_configuration_id'],
         'APPSFLYER_S2S_EVENTS': ['appsflyer_app_id'],
