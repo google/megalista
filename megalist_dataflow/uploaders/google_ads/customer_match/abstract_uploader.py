@@ -213,3 +213,4 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
 
   def get_action_type(self) -> DestinationType:
     pass
+    
