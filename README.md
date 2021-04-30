@@ -111,8 +111,11 @@ python3 megalist_dataflow/main.py \
 ```
 
 ### Deploying Pipeline
-To deploy, use the following command:
-`./deploy_cloud.sh project_id bucket_name region_name`
+To deploy, use the following commands from the root folder:
+```
+cd terraform
+./scripts/deploy_cloud.sh project_id bucket_name region_name
+```
 
 #### Manually executing pipeline using Dataflow UI
 To execute the pipeline, use the following steps: 
