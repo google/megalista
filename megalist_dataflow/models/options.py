@@ -30,7 +30,11 @@ class DataflowOptions(PipelineOptions):
         '--access_token', help='OAUTH Access Token for the Google APIs')
     # Set up
     parser.add_value_provider_argument(
-        '--setup_sheet_id', help='Id of Spreadsheet with execution info')
+        '--setup_sheet_id',
+        help='Id of Spreadsheet with execution info (don\'t set if using JSON)')
+    parser.add_value_provider_argument(
+        '--setup_json_url',
+        help='URL of JSON file with execution info (don\'t set if using Sheet)')
     parser.add_value_provider_argument(
         '--bq_ops_dataset',
         help='Auxliary bigquery dataset used for Megalista operations')

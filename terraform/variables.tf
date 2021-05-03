@@ -39,7 +39,12 @@ variable "refresh_token" {
 
 variable "setup_sheet_id" {
     type = string
-    description = "Setup Sheet Id"
+    description = "Setup Sheet Id (leave blank if using JSON)"
+}
+
+variable "setup_json_url" {
+    type = string
+    description = "URL for JSON configuration (leave blank if using Sheets)"
 }
 
 variable "location" {
