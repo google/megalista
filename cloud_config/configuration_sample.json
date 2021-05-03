@@ -1,0 +1,45 @@
+{
+  "GoogleAdsAccountId": "",
+  "GoogleAdsMCC": false,
+  "AppId": "",
+  "GoogleAnalyticsAccountId": "",
+  "CampaignManagerAccountId": "",
+  "Sources": [
+    {
+      "Name": "example Ads offline conversions source",
+      "Type": "BIG_QUERY",
+      "Dataset": "my_source_dataset",
+      "Table": "my_offline_conversions_table"
+    },
+    {
+      "Name": "example measurement protocol source",
+      "Type": "BIG_QUERY",
+      "Dataset": "my_source_dataset",
+      "Table": "my_analytics_table"
+    }
+  ],
+  "Destinations": [
+    {
+      "Name": "example Ads offline conversions destination",
+      "Type": "ADS_OFFLINE_CONVERSION",
+      "Metadata": ["Ads_Conversion_Name"]
+    },
+    {
+      "Name": "example measurement protocol destination",
+      "Type": "GA_MEASUREMENT_PROTOCOL",
+      "Metadata": ["GA_Property_ID", 1]
+    }
+  ],
+  "Connections": [
+    {
+      "Enabled": true,
+      "Source": "example Ads offline conversions source",
+      "Destination": "example Ads offline conversions destination"
+    },
+    {
+      "Enabled": true,
+      "Source": "example measurement protocol source",
+      "Destination": "example measurement protocol destination"
+    }
+  ]
+}

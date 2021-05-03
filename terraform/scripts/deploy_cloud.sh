@@ -20,7 +20,6 @@ if [ $# != 3 ]; then
 fi
 
 echo "Move to megalist_dataflow folder"
-cd ..
 cd megalist_dataflow
 echo "Configuration GCP project in gcloud"
 gcloud config set project "$1"
