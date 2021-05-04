@@ -20,7 +20,7 @@ from apache_beam.options.pipeline_options import PipelineOptions
 
 from mappers.ads_ssd_hashing_mapper import AdsSSDHashingMapper
 from mappers.ads_user_list_pii_hashing_mapper import AdsUserListPIIHashingMapper
-from sources.spreadsheet_execution_source import SpreadsheetExecutionSource
+from sources.primary_execution_source import PrimaryExecutionSource
 from sources.batches_from_executions import BatchesFromExecutions
 from uploaders.appsflyer.appsflyer_s2s_uploader_async import AppsFlyerS2SUploaderDoFn
 from uploaders.campaign_manager.campaign_manager_conversion_uploader import CampaignManagerConversionUploaderDoFn
@@ -39,6 +39,7 @@ from models.execution import DestinationType
 from models.execution import Execution
 from models.oauth_credentials import OAuthCredentials
 from models.options import DataflowOptions
+from models.json_config import JsonConfig
 from models.sheets_config import SheetsConfig
 
 warnings.filterwarnings(
@@ -147,7 +148,7 @@ class GoogleAnalytics4MeasurementProtocolStep(MegalistaStep):
     def expand(self, executions):
         return (
             executions
-            | 'Load Data - GA 4 measurement protocol' >> BatchesFromExecutions(DestinationType.GA_4_MEASUREMENT_PROTOCOL, 20, 
+            | 'Load Data - GA 4 measurement protocol' >> BatchesFromExecutions(DestinationType.GA_4_MEASUREMENT_PROTOCOL, 20,
               transactional=True)
             | 'Upload - GA 4 measurement protocol' >>
               beam.ParDo(GoogleAnalytics4MeasurementProtocolUploaderDoFn())
@@ -186,10 +187,14 @@ def run(argv=None):
         dataflow_options.refresh_token)
 
     sheets_config = SheetsConfig(oauth_credentials)
+    json_config = JsonConfig()
+    execution_source = PrimaryExecutionSource(sheets_config,
+        json_config,
+        dataflow_options.setup_sheet_id,
+        dataflow_options.setup_json_url)
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
-        executions = (pipeline | 'Load executions' >> beam.io.Read(
-            SpreadsheetExecutionSource(sheets_config, dataflow_options.setup_sheet_id)))
+        executions = (pipeline | 'Load executions' >> beam.io.Read(execution_source))
 
         executions | GoogleAdsSSDStep(
             oauth_credentials, dataflow_options, AdsSSDHashingMapper())

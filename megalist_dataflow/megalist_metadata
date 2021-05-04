@@ -34,6 +34,11 @@
             "help_text": "Google Sheets id for config"
         },
         {
+            "name": "setup_json_url",
+            "label": "URL for JSON config file",
+            "help_text": "URL for JSON config file"
+        },
+        {
             "name": "bq_ops_dataset",
             "label": "Auxliary bigquery dataset used for Megalista operations",
             "help_text": "Auxliary bigquery dataset used for Megalista operations"

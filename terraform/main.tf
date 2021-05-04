@@ -11,6 +11,10 @@ resource "google_bigquery_dataset" "dataset" {
   delete_contents_on_destroy = true
 }
 
+resource "null_resource" "only_one_configuration_provided" {
+  count = ("${var.setup_sheet_id}" != "" && "${var.setup_json_url}" != "") ? "Cannot provide both Sheet and JSON configs" : 0
+}
+
 locals {
     scheduler_body = <<EOF
     {
@@ -22,6 +26,7 @@ locals {
             "access_token": "${var.access_token}",
             "refresh_token": "${var.refresh_token}",
             "setup_sheet_id": "${var.setup_sheet_id}",
+            "setup_json_url": "${var.setup_json_url}",
             "bq_ops_dataset": "${var.bq_ops_dataset}",
         },
         "environment": {
