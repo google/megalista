@@ -34,6 +34,7 @@ def get_ads_service(service_name, version, oauth_credentials, developer_token,
         oauth2_client,
         'MegaList Dataflow',
         client_customer_id=customer_id)
+    client.partial_failure = True
     return client.GetService(service_name, version=version)
 
 

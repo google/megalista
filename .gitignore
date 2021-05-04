@@ -11,3 +11,4 @@ generate_csv.sh
 .idea
 .venv
 .vscode
+my_serv_acc.json
