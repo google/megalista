@@ -40,7 +40,7 @@ class TransactionalEventsResultsWriter(beam.DoFn):
   def _do_process(self, batch: Batch, now):
     execution = batch.execution
 
-    table_name = self._bq_ops_dataset.get() + '.' + execution.source.source_metadata[1] + "_uploaded"
+    table_name = execution.source.source_metadata[0] + '.' + execution.source.source_metadata[1] + "_uploaded"
 
     rows = batch.elements
     client = self._get_bq_client()
