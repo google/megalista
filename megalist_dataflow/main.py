@@ -191,7 +191,8 @@ def run(argv=None):
     execution_source = PrimaryExecutionSource(sheets_config,
         json_config,
         dataflow_options.setup_sheet_id,
-        dataflow_options.setup_json_url)
+        dataflow_options.setup_json_url,
+        dataflow_options.setup_firestore_collection)
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
         executions = (pipeline | 'Load executions' >> beam.io.Read(execution_source))
@@ -223,3 +224,4 @@ if __name__ == '__main__':
     logging.getLogger("megalista").setLevel(logging.INFO)
     run()
     logging.getLogger("megalista").info("Completed successfully!")
+    

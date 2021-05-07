@@ -18,6 +18,7 @@ from apache_beam.options.value_provider import ValueProvider
 
 from sources.base_bounded_source import BaseBoundedSource
 from sources.spreadsheet_execution_source import SpreadsheetExecutionSource
+from sources.firestore_execution_source import FirestoreExecutionSource
 from sources.json_execution_source import JsonExecutionSource
 from models.execution import Destination, DestinationType
 from models.execution import Execution, AccountConfig
@@ -36,19 +37,25 @@ class PrimaryExecutionSource(BaseBoundedSource):
         sheets_config: SheetsConfig,
         json_config: JsonConfig,
         setup_sheet_id: ValueProvider,
-        setup_json_url: ValueProvider):
+        setup_json_url: ValueProvider,
+        setup_firestore_collection: ValueProvider):
     super().__init__()
     self._setup_sheet_id = setup_sheet_id
     self._setup_json_url = setup_json_url
+    self._setup_firestore_collection = setup_firestore_collection
     self._sheets_execution_source = SpreadsheetExecutionSource(sheets_config,
                                                                setup_sheet_id)
     self._json_execution_source = JsonExecutionSource(json_config,
                                                       setup_json_url)
+    self._firestore_execution_source = FirestoreExecutionSource(setup_firestore_collection)
 
   def _do_count(self):
     if self._setup_sheet_id.get():
       logging.getLogger("megalista").info("Using Sheets count")
       return self._sheets_execution_source._do_count()
+    elif self._setup_firestore_collection.get():
+      logging.getLogger("megalista").info("Using Firestore count")
+      return self._firestore_execution_source._do_count()
     else:
       logging.getLogger("megalista").info("Using JSON count")
       return self._json_execution_source._do_count()
@@ -57,6 +64,10 @@ class PrimaryExecutionSource(BaseBoundedSource):
     if self._setup_sheet_id.get():
       logging.getLogger("megalista").info("Reading Sheets configuration")
       return self._sheets_execution_source.read(range_tracker)
+    elif self._setup_firestore_collection.get():
+      logging.getLogger("megalista").info("Reading Firestore configuration")
+      return self._firestore_execution_source.read(range_tracker)
     else:
       logging.getLogger("megalista").info("Reading JSON configuration")
       return self._json_execution_source.read(range_tracker)
+      
