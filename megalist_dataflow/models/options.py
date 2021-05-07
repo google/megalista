@@ -31,10 +31,12 @@ class DataflowOptions(PipelineOptions):
     # Set up
     parser.add_value_provider_argument(
         '--setup_sheet_id',
-        help='Id of Spreadsheet with execution info (don\'t set if using JSON)')
+        help='Id of Spreadsheet with execution info (don\'t set if using JSON or Firestore)')
     parser.add_value_provider_argument(
         '--setup_json_url',
-        help='URL of JSON file with execution info (don\'t set if using Sheet)')
+        help='URL of JSON file with execution info (don\'t set if using Sheet or Firestore)')
+    parser.add_value_provider_argument(
+        '--setup_firestore_collection', help='Name of Google Cloud Firestore collection with execution info (don\'t set if using Sheet or JSON)')
     parser.add_value_provider_argument(
         '--bq_ops_dataset',
         help='Auxliary bigquery dataset used for Megalista operations')
