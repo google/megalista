@@ -73,8 +73,8 @@ class FirestoreExecutionSource(BaseBoundedSource):
       for entry in entries:
         if entry['active'].upper() == 'YES':
           logging.getLogger("megalista.FirestoreExecutionSource").info(
-            f"Executing step Source:{sources[entry['id'] + '_source'].source_name} -> Destination:{destinations[entry['id'] + '_destination'].destination_name}")
-          yield Execution(account_config, sources[entry['id'] + '_source'], destinations[entry['id'] + '_destination'])
+            f"Executing step Source:{sources[entry['source_name']].source_name} -> Destination:{destinations[entry['destination_name']].destination_name}")
+          yield Execution(account_config, sources[entry['source_name']], destinations[entry['destination_name']])
     else:
       logging.getLogger("megalista.FirestoreExecutionSource").warn("No schedules found!")
 
@@ -84,7 +84,7 @@ class FirestoreExecutionSource(BaseBoundedSource):
     if entries:
       for entry in entries:
         metadata = [entry['bq_dataset'], entry['bq_table']] #TODO: flexibilize for other source types
-        source = Source(entry['id'] + '_source', SourceType[entry['source']], metadata)
+        source = Source(entry['source_name'], SourceType[entry['source']], metadata)
         sources[source.source_name] = source
     else:
       logging.getLogger("megalista.FirestoreExecutionSource").warn("No sources found!")
@@ -120,7 +120,7 @@ class FirestoreExecutionSource(BaseBoundedSource):
     destinations = {}
     if entries:
       for entry in entries:
-        destination = Destination(entry['id'] + '_destination', DestinationType[entry['type']], create_metadata_list(entry))
+        destination = Destination(entry['destination_name'], DestinationType[entry['type']], create_metadata_list(entry))
         destinations[destination.destination_name] = destination
     else:
       logging.getLogger("megalista.FirestoreExecutionSource").warn("No destinations found!")
