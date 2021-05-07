@@ -47,6 +47,11 @@
             "is_optional": "true"
         },
         {
+            "name": "setup_firestore_collection",
+            "label": "Collection name for Firestore config",
+            "help_text": "Collection name for Firestore config"
+        },
+        {
             "name": "bq_ops_dataset",
             "label": "Auxliary bigquery dataset used for Megalista operations",
             "help_text": "Auxliary bigquery dataset used for Megalista operations"
