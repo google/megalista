@@ -201,13 +201,14 @@ After that is done, upload the Dataflow template to GCP and try running it manua
 Lastly, configure the Cloud Scheduler to run Megalista in the frequency desired and you'll have a fully functional data integration pipeline.
 
 ### Running locally
-Only set one configuration parameter (either setup_sheet_id or setup_json_url)
+Only set one configuration parameter (setup_sheet_id, setup_json_url or setup_firestore_collection)
 ```bash
 python3 megalist_dataflow/main.py \
   --runner DirectRunner \
   --developer_token ${GOOGLE_ADS_DEVELOPER_TOKEN} \
   --setup_sheet_id ${CONFIGURATION_SHEET_ID} \
   --setup_json_url ${CONFIGURATION_JSON_URL} \
+  --setup_firestore_collection ${CONFIGURATION_FIRESTORE_COLLECTION}
   --refresh_token ${REFRESH_TOKEN} \
   --access_token ${ACCESS_TOKEN} \
   --client_id ${CLIENT_ID} \
