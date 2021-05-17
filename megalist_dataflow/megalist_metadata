@@ -31,19 +31,20 @@
         {
             "name": "setup_sheet_id",
             "label": "Google Sheets id for config",
-            "help_text": "Google Sheets id for config",
+            "help_text": "Google Sheets id for config. Use only for Google Sheets parametrization.",
             "is_optional": "true"
         },
         {
             "name": "setup_json_url",
             "label": "URL for JSON config file",
-            "help_text": "URL for JSON config file",
+            "help_text": "URL for JSON config file. Use only for JSON parametrization.",
             "is_optional": "true"
         },
         {
             "name": "setup_firestore_collection",
             "label": "Collection name for Firestore config",
-            "help_text": "Collection name for Firestore config"
+            "help_text": "Collection name for Firestore config. Use only for Firestore parametrization.",
+            "is_optional": "true"
         },
         {
             "name": "bq_ops_dataset",
