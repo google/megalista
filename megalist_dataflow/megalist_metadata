@@ -49,7 +49,8 @@
         {
             "name": "setup_firestore_collection",
             "label": "Collection name for Firestore config",
-            "help_text": "Collection name for Firestore config"
+            "help_text": "Collection name for Firestore config. Use only for Firestore parametrization.",
+            "is_optional": "true"
         },
         {
             "name": "bq_ops_dataset",
