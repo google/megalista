@@ -13,5 +13,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-terraform init terraform/
-terraform apply -auto-approve terraform/
+terraform -chdir=terraform init 
+terraform -chdir=terraform apply -auto-approve
