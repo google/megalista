@@ -42,18 +42,18 @@ class AdsUserListPIIHashingMapper:
 
         try:
             if 'email' in user:
-                hashed['hashedEmail'] = hasher.hash_field(user['email'])
+                hashed['hashed_email'] = hasher.hash_field(user['email'])
                 del hashed['email']
         except:
             self.logger.error("Error hashing email for user: %s" % user)
 
         try:
             if 'mailing_address_first_name' in user and 'mailing_address_last_name' in user:
-                hashed['addressInfo'] = {
-                    'hashedFirstName': hasher.hash_field(user['mailing_address_first_name']),
-                    'hashedLastName': hasher.hash_field(user['mailing_address_last_name']),
-                    'countryCode': user['mailing_address_country'],
-                    'zipCode': user['mailing_address_zip']
+                hashed['address_info'] = {
+                    'hashed_first_name': hasher.hash_field(user['mailing_address_first_name']),
+                    'hashed_last_name': hasher.hash_field(user['mailing_address_last_name']),
+                    'country_code': user['mailing_address_country'],
+                    'postal_code': user['mailing_address_zip']
                 }
                 del hashed['mailing_address_first_name']
                 del hashed['mailing_address_last_name']
@@ -64,14 +64,14 @@ class AdsUserListPIIHashingMapper:
 
         try:
             if 'phone' in user:
-                hashed['hashedPhoneNumber'] = hasher.hash_field(user['phone'])
+                hashed['hashed_phone_number'] = hasher.hash_field(user['phone'])
                 del hashed['phone']
         except:
             self.logger.error("Error hashing phone for user: %s" % user)
 
         try:
             if 'mobile_device_id' in user:
-                hashed['mobileId'] = user['mobile_device_id']
+                hashed['mobile_id'] = user['mobile_device_id']
                 del hashed['mobile_device_id']
         except:
             self.logger.error(
@@ -79,7 +79,7 @@ class AdsUserListPIIHashingMapper:
 
         try:
             if 'user_id' in user:
-                hashed['userId'] = hasher.hash_field(user['user_id'])
+                hashed['third_party_user_id'] = hasher.hash_field(user['user_id'])
                 del hashed['user_id']
         except:
             self.logger.error("Error hashing user_id for user: %s" % user)

@@ -30,8 +30,6 @@ _account_config = AccountConfig('1234567890', False, '1234567890', '', '')
 
 @pytest.fixture
 def uploader(mocker):
-  mocker.patch('googleads.oauth2.GoogleRefreshTokenClient')
-  mocker.patch('googleads.adwords.AdWordsClient')
   client_id = StaticValueProvider(str, 'id')
   secret = StaticValueProvider(str, 'secret')
   access = StaticValueProvider(str, 'access')

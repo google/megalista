@@ -26,19 +26,18 @@ class GoogleAdsCustomerMatchContactInfoUploaderDoFn(GoogleAdsCustomerMatchAbstra
   def get_list_definition(self, account_config: AccountConfig, destination_metadata: List[str]) -> Dict[str, Any]:
     list_name = destination_metadata[0]
     return {
-      'operand': {
-        'xsi_type': 'CrmBasedUserList',
-        'name': list_name,
-        'description': list_name,
-        # CRM-based user lists can use a membershipLifeSpan of 10000 to indicate
-        # unlimited; otherwise normal values apply.
-        'membershipLifeSpan': 10000,
-        'uploadKeyType': 'CONTACT_INFO'
+      'membership_status': 'OPEN',
+      'name': list_name,
+      'description': 'List created automatically by Megalista',
+      'membership_life_span': 10000,
+      'crm_based_user_list': {
+        'upload_key_type': 'CONTACT_INFO', #CONTACT_INFO, CRM_ID, MOBILE_ADVERTISING_ID
+        'data_source_type': 'FIRST_PARTY',
       }
     }
 
   def get_row_keys(self) -> List[str]:
-    return ['hashedEmail', 'addressInfo', 'hashedPhoneNumber']
+    return ['hashed_email', 'address_info', 'hashed_phone_number']
 
   def get_action_type(self) -> DestinationType:
     return DestinationType.ADS_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD

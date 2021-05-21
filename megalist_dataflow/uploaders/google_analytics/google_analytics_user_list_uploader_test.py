@@ -22,8 +22,6 @@ from models.execution import Execution, SourceType, DestinationType, Source, Acc
 
 @pytest.fixture
 def uploader(mocker):
-    mocker.patch('googleads.oauth2.GoogleRefreshTokenClient')
-    mocker.patch('googleads.adwords.AdWordsClient')
     client_id = StaticValueProvider(str, 'id')
     secret = StaticValueProvider(str, 'secret')
     access = StaticValueProvider(str, 'access')

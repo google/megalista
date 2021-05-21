@@ -27,19 +27,18 @@ class GoogleAdsCustomerMatchUserIdUploaderDoFn(
       destination_metadata: List[str]) -> Dict[str, Any]:
     list_name = destination_metadata[0]
     return {
-      'operand': {
-        'xsi_type': 'CrmBasedUserList',
-        'name': list_name,
-        'description': list_name,
-        # CRM-based user list_name can use a membershipLifeSpan of 10000 to indicate
-        # unlimited; otherwise normal values apply.
-        'membershipLifeSpan': 10000,
-        'uploadKeyType': 'CRM_ID'
+      'membership_status': 'OPEN',
+      'name': list_name,
+      'description': 'List created automatically by Megalista',
+      'membership_life_span': 10000,
+      'crm_based_user_list': {
+        'upload_key_type': 'CRM_ID',
+        'data_source_type': 'FIRST_PARTY',
       }
     }
 
   def get_row_keys(self) -> List[str]:
-    return ['userId']
+    return ['third_party_user_id']
 
   def get_action_type(self) -> DestinationType:
     return DestinationType.ADS_CUSTOMER_MATCH_USER_ID_UPLOAD
