@@ -93,9 +93,11 @@ def convert_datetime_tz(dt, origin_tz, destination_tz):
 
 
 def print_partial_error_messages(logger_name, action, response):
-    if 'partial_failure_error' in response:
-        message = f'Error on {action}: {response.partial_failure_error.message}.'
+    partial_failure = getattr(response, 'partial_failure_error', None)
+    if partial_failure is not None and partial_failure.message != '':
+        message = f'Error on {action}: {partial_failure.message}.'
         logging.getLogger(logger_name).error(message)
-    for result in response.results:
+    results = getattr(response, 'results', [])
+    for result in results:
         message = f'gclid {result.gclid} uploaded.'
         logging.getLogger(logger_name).debug(message)
