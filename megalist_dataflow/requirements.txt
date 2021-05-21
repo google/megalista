@@ -1,4 +1,4 @@
-googleads==24.1.0
+google-ads==11.0.0
 httplib2==0.17.4
 protobuf==3.13.0
 google-api-python-client==1.12.8

@@ -16,6 +16,8 @@ import datetime
 from models.execution import DestinationType
 from models.execution import Execution
 import pytz
+import logging
+
 
 MAX_RETRIES = 3
 
@@ -24,17 +26,18 @@ timezone = pytz.timezone('America/Sao_Paulo')
 
 def get_ads_service(service_name, version, oauth_credentials, developer_token,
                     customer_id):
-    from googleads import adwords
-    from googleads import oauth2
-    oauth2_client = oauth2.GoogleRefreshTokenClient(
+    from google.ads.googleads.client import GoogleAdsClient
+    from google.ads.googleads import oauth2
+
+    oauth2_client = oauth2.get_installed_app_credentials(
         oauth_credentials.get_client_id(), oauth_credentials.get_client_secret(),
         oauth_credentials.get_refresh_token())
-    client = adwords.AdWordsClient(
-        developer_token,
-        oauth2_client,
-        'MegaList Dataflow',
-        client_customer_id=customer_id)
-    return client.GetService(service_name, version=version)
+
+    client = GoogleAdsClient(
+        oauth2_client, developer_token,
+        login_customer_id=customer_id)
+
+    return client.get_service(service_name, version=version)
 
 
 def format_date(date):
@@ -43,7 +46,9 @@ def format_date(date):
     else:
         pdate = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%f')
 
-    return f'{datetime.datetime.strftime(pdate, "%Y%m%d %H%M%S")} {timezone.zone}'
+    pdate = timezone.localize(pdate)
+    str_timezone = pdate.strftime("%z")
+    return f'{datetime.datetime.strftime(pdate, "%Y-%m-%d %H:%M:%S")}{str_timezone[-5:-2]}:{str_timezone[-2:]}'
 
 
 def safe_process(logger):
@@ -85,3 +90,12 @@ def _do_safe_call_api(function, logger, current_retry, *args, **kwargs):
 def convert_datetime_tz(dt, origin_tz, destination_tz):
     datetime_obj = pytz.timezone(origin_tz).localize(dt)
     return datetime_obj.astimezone(pytz.timezone(destination_tz))
+
+
+def print_partial_error_messages(logger_name, action, response):
+    if 'partial_failure_error' in response:
+        message = f'Error on {action}: {response.partial_failure_error.message}.'
+        logging.getLogger(logger_name).error(message)
+    for result in response.results:
+        message = f'gclid {result.gclid} uploaded.'
+        logging.getLogger(logger_name).debug(message)
