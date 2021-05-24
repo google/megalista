@@ -95,13 +95,19 @@ class FirestoreExecutionSource(BaseBoundedSource):
     def create_metadata_list(entry):
       metadata_list = {
         'ADS_OFFLINE_CONVERSION': ['gads_conversion_name'],
+        'ADS_ENHANCED_CONVERSION': ['gads_conversion_label', 'gads_conversion_tracking_id', 'gads_currency_code'],
         'ADS_SSD_UPLOAD': ['gads_conversion_name', 'gads_external_upload_id'],
         'ADS_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD': ['gads_audience_name', 'gads_operation', 'gads_hash'],
         'ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD': ['gads_audience_name', 'gads_operation'],
         'ADS_CUSTOMER_MATCH_USER_ID_UPLOAD': ['gads_audience_name', 'gads_operation'],
         'GA_MEASUREMENT_PROTOCOL': ['google_analytics_property_id', 'google_analytics_non_interaction'],
-        'CM_OFFLINE_CONVERSION': ['campaign_manager_floodlight_activity_id', 'campaign_manager_floodlight_configuration_id'],
-        'APPSFLYER_S2S_EVENTS': ['appsflyer_app_id'],
+        'GA_DATA_IMPORT': ['google_analytics_property_id', 'google_analytics_data_import_name'],
+        'GA_USER_LIST_UPLOAD': ['google_analytics_property_id', 'google_analytics_view_id',
+          'google_analytics_data_import_name', 'google_analytics_user_id_list_name',
+          'google_analytics_user_id_custom_dim', 'google_analytics_buyer_custom_dim'],
+        'CM_OFFLINE_CONVERSION': ['campaign_manager_floodlight_activity_id',
+          'campaign_manager_floodlight_configuration_id'],
+        'APPSFLYER_S2S_EVENTS': ['appsflyer_app_id']
       }
 
       entry_type = entry['type']
