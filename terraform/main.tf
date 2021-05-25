@@ -18,7 +18,7 @@ resource "null_resource" "only_one_configuration_provided" {
 locals {
     scheduler_body = <<EOF
     {
-        "jobName": "megalist_daily",
+        "jobName": "megalista_daily",
         "parameters": {
             "developer_token": "${var.developer_token}",
             "client_id": "${var.client_id}",
