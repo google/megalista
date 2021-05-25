@@ -162,6 +162,24 @@ Google Analytics - Measurement Protocol
 | google_analytics_non_interaction | 1/0. Indicates whether the event is a non-interaction hit |
 | type | GA_MEASUREMENT_PROTOCOL |
 
+Google Analytics - Data Import
+| Field name  | Description  |
+|---|---|
+| google_analytics_property_id | Google Analytics property ID (UA) |
+| google_analytics_data_import_name | Name of the data import set in Google Analytics |
+| type | GA_DATA_IMPORT |
+
+Google Analytics - User List
+| Field name  | Description  |
+|---|---|
+| google_analytics_property_id | Google Analytics property ID (UA) |
+| google_analytics_view_id | Google Analytics view ID in the property selected |
+| google_analytics_data_import_name | Name of the data import set in Google Analytics |
+| google_analytics_user_id_list_name | Name of the user ID list |
+| google_analytics_user_id_custom_dim | User ID custom dimension |
+| google_analytics_buyer_custom_dim | Buyer custom dimension |
+| type | GA_USER_LIST_UPLOAD |
+
 Campaign Manager
 | Field name  | Description  |
 |---|---|
