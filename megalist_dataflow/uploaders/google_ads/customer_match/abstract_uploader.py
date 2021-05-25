@@ -69,7 +69,6 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
         'partial_failure': False,
         'validate_only': False,
         'operations': [{
-          # 'create': **list_definition
           'create': list_definition
         }]
       }
