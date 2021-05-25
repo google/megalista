@@ -31,12 +31,14 @@
         {
             "name": "setup_sheet_id",
             "label": "Google Sheets id for config",
-            "help_text": "Google Sheets id for config"
+            "help_text": "Google Sheets id for config",
+            "is_optional": "true"
         },
         {
             "name": "setup_json_url",
             "label": "URL for JSON config file",
-            "help_text": "URL for JSON config file"
+            "help_text": "URL for JSON config file",
+            "is_optional": "true"
         },
         {
             "name": "bq_ops_dataset",
