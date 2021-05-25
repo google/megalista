@@ -16,12 +16,12 @@ import setuptools
 
 setuptools.setup(
     name='megalist_dataflow',
-    version='0.1',
-    author='Alvaro Stivi',
-    author_email='astivi@google.com',
-    url='https://cse.googlesource.com/solutions/megalist',
-    install_requires=['google-ads==11.0.0', 'google-api-python-client==1.10.0',
-                      'google-cloud-core==1.3.0', 'google-cloud-bigquery==1.26.0',
+    version='4.0',
+    author='Google',
+    author_email='megalista-admin@google.com',
+    url='https://github.com/google/megalista/',
+    install_requires=['google-ads==11.0.0', 'google-api-python-client==1.12.8',
+                      'google-cloud-core==1.4.1', 'google-cloud-bigquery==1.27.2',
                       'google-cloud-datastore==1.13.1', 'aiohttp==3.6.2',
                       'google-cloud-storage==1.38.0'],
     packages=setuptools.find_packages(),
