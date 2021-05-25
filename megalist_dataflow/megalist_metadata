@@ -53,8 +53,8 @@
         },
         {
             "name": "bq_ops_dataset",
-            "label": "Auxliary bigquery dataset used for Megalista operations",
-            "help_text": "Auxliary bigquery dataset used for Megalista operations"
+            "label": "Auxiliary BigQuery dataset used for Megalista operations",
+            "help_text": "Auxiliary BigQuery dataset used for Megalista operations"
         },
         {
             "name": "appsflyer_dev_key",
