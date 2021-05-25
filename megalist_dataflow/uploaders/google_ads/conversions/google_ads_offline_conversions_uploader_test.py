@@ -29,8 +29,8 @@ _account_config = AccountConfig('account_id', False, 'ga_account_id', '', '')
 
 @pytest.fixture
 def uploader(mocker):
-  mocker.patch('googleads.oauth2.GoogleRefreshTokenClient')
-  mocker.patch('googleads.adwords.AdWordsClient')
+  mocker.patch('google.ads.googleads.client.GoogleAdsClient')
+  mocker.patch('google.ads.googleads.oauth2')
   credential_id = StaticValueProvider(str, 'id')
   secret = StaticValueProvider(str, 'secret')
   access = StaticValueProvider(str, 'access')
@@ -56,7 +56,6 @@ def test_not_active(mocker, caplog):
   uploader_dofn._get_oc_service.assert_not_called()
   assert 'Skipping upload, parameters not configured.' in caplog.text
 
-
 def test_conversion_upload(mocker, uploader):
   mocker.patch.object(uploader, '_get_oc_service')
   conversion_name = 'user_list'
@@ -66,10 +65,10 @@ def test_conversion_upload(mocker, uploader):
   execution = Execution(_account_config, source, destination)
 
   time1 = '2020-04-09T14:13:55.0005'
-  time1_result = '20200409 141355 America/Sao_Paulo'
+  time1_result = '2020-04-09 14:13:55-03:00'
 
   time2 = '2020-04-09T13:13:55.0005'
-  time2_result = '20200409 131355 America/Sao_Paulo'
+  time2_result = '2020-04-09 13:13:55-03:00'
 
   batch = Batch(execution, [{
           'time': time1,
@@ -80,23 +79,21 @@ def test_conversion_upload(mocker, uploader):
           'amount': '234',
           'gclid': '567'
       }])
-
   uploader.process(batch)
 
-  uploader._get_oc_service.return_value.mutate.assert_any_call([{
-      'operator': 'ADD',
-      'operand': {
-          'conversionName': conversion_name,
-          'conversionTime': time1_result,
-          'conversionValue': '123',
-          'googleClickId': '456'
-      }
-  }, {
-      'operator': 'ADD',
-      'operand': {
-          'conversionName': conversion_name,
-          'conversionTime': time2_result,
-          'conversionValue': '234',
-          'googleClickId': '567'
-      }
-  }])
+  uploader._get_oc_service.return_value.upload_click_conversions.assert_any_call(request = {
+    'customer_id': 'account_id',
+    'partial_failure': True,
+    'validate_only': False,
+    'conversions': [{
+      'conversion_action': None,
+      'conversion_date_time': time1_result,
+      'conversion_value': 123,
+      'gclid': '456'
+    }, {
+      'conversion_action': None,
+      'conversion_date_time': time2_result,
+      'conversion_value': 234,
+      'gclid': '567'
+    }]
+  })

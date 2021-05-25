@@ -22,8 +22,6 @@ from uploaders.google_analytics.google_analytics_data_import_eraser import Googl
 
 @pytest.fixture
 def eraser(mocker):
-    mocker.patch('googleads.oauth2.GoogleRefreshTokenClient')
-    mocker.patch('googleads.adwords.AdWordsClient')
     client_id = StaticValueProvider(str, "id")
     secret = StaticValueProvider(str, "secret")
     access = StaticValueProvider(str, "access")

@@ -27,10 +27,11 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
         self.developer_token = developer_token
         self.active = developer_token is not None
 
-    def _get_ssd_service(self, customer_id):
-        return utils.get_ads_service('OfflineDataUploadService', 'v201809',
+    def _get_offline_user_data_job_service(self, customer_id):
+        return utils.get_ads_service('OfflineUserDataJobService', 'v7',
                                          self.oauth_credentials,
-                                         self.developer_token.get(), customer_id)
+                                         self.developer_token.get(), 
+                                         customer_id)
 
     @staticmethod
     def _assert_conversion_metadata_is_present(execution: Execution):
@@ -44,47 +45,55 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
     def process(self, batch: Batch, **kwargs):
         execution = batch.execution
         self._assert_conversion_metadata_is_present(execution)
+        customer_id = execution.account_config.google_ads_account_id.replace('-', '')
 
-        ssd_service = self._get_ssd_service(
-            execution.account_config._google_ads_account_id)
-        self._do_upload(ssd_service,
+        offline_user_data_job_service = self._get_offline_user_data_job_service(
+            customer_id)
+        self._do_upload(offline_user_data_job_service,
+                        customer_id,
                         execution.destination.destination_metadata[0],
                         execution.destination.destination_metadata[1], batch.elements)
 
     @staticmethod
-    def _do_upload(ssd_service, conversion_name, ssd_external_upload_id, rows):
-        upload_data = [{
-            'StoreSalesTransaction': {
-                'userIdentifiers': [{
-                    'userIdentifierType': 'HASHED_EMAIL',
-                    'value': conversion['hashedEmail']
-                }],
-                'transactionTime': utils.format_date(conversion['time']),
-                'transactionAmount': {
-                    'currencyCode': 'BRL',
-                    'money': {
-                        'microAmount': conversion['amount']
-                    }
-                },
-                'conversionName': conversion_name
-            }
-        } for conversion in rows]
+    def _do_upload(offline_user_data_job_service, customer_id, conversion_name, ssd_external_upload_id, rows):
+        # Upload is divided into 3 parts:
+        # 1. Create Job
+        # 2. Create operations (data insertion)
+        # 3. Run the Job
 
-        offline_data_upload = {
-            'externalUploadId': ssd_external_upload_id,
-            'offlineDataList': upload_data,
-            'uploadType': 'STORE_SALES_UPLOAD_FIRST_PARTY',
-            'uploadMetadata': {
-                'StoreSalesUploadCommonMetadata': {
-                    'xsi_type': 'FirstPartyUploadMetadata',
-                    'loyaltyRate': 1.0,
-                    'transactionUploadRate': 1.0,
+        # 1. Create Job
+        job_creation_payload = {
+            'type_': 'STORE_SALES_UPLOAD_FIRST_PARTY',
+            'external_id': int(ssd_external_upload_id),
+            'store_sales_metadata': {
+                'loyalty_fraction': 1.0,
+                'transaction_upload_fraction': 1.0
+            }
+        }
+        
+        job_resource_name = offline_user_data_job_service.create_offline_user_data_job(customer_id = customer_id, job = job_creation_payload).resource_name
+
+        # 2. Crete operations (data insertion)
+        data_insertion_payload = {
+            'resource_name': job_resource_name,
+            'enable_partial_failure': True,
+            'operations': [{
+                'create': {
+                    'user_identifiers': [{
+                        'hashed_email': conversion['hashedEmail']
+                    }],
+                    'transaction_attribute': {
+                        'conversion_action': conversion_name,
+                        'currency_code': 'BRL',
+                        'transaction_amount_micros': conversion['amount'],
+                        'transaction_date_time': utils.format_date(conversion['time'])
+                    },
+                    'user_attribute': ''
                 }
-            }
+            } for conversion in rows]
         }
 
-        add_conversions_operation = {
-            'operand': offline_data_upload,
-            'operator': 'ADD'
-        }
-        ssd_service.mutate([add_conversions_operation])
+        data_insertion_response = offline_user_data_job_service.add_offline_user_data_job_operations(request = data_insertion_payload)
+        
+        # 3. Run the Job
+        offline_user_data_job_service.run_offline_user_data_job(resource_name = job_resource_name)
