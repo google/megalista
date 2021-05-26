@@ -7,6 +7,9 @@ htmlcov
 cloud_config/scheduler.json
 run_local.sh
 generate_csv.sh
+/terraform/.terraform*
+/terraform/terraform.*
 .terraform
 .idea
 .venv
+.vscode

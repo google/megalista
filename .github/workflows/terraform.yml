@@ -1,0 +1,34 @@
+name: Terraform Validate
+
+on: ['push']
+
+jobs:
+  terraform-actions:
+    name: Workflow
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./terraform
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@master
+
+      - name: HashiCorp - Setup Terraform
+        uses: hashicorp/setup-terraform@v1.2.1
+        with:
+          terraform_version: 0.14.6
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+        continue-on-error: true
+
+      - name: Terraform Fmt
+        id: fmt
+        run: terraform fmt -check -diff
+        continue-on-error: true
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+        continue-on-error: false

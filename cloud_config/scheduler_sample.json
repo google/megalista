@@ -6,7 +6,8 @@
         "client_secret": "GCP OAuth Client Secret",
         "access_token": "GCP OAuth access token",
         "refresh_token": "GCP OAuth refresh token",
-        "setup_sheet_id": "Setup Google Sheets Id",
+        "setup_sheet_id": "Setup Google Sheets Id (not needed for JSON config)",
+        "setup_json_url": "Setup JSON URL (not needed for Sheets config)",
         "bq_ops_dataset": "Auxliary bigquery dataset used for Megalista operations",
 	"appsflyer_dev_key": "Apps flyer dev key"
     },

@@ -1,43 +1,3 @@
-variable "bucket_name" {
-    type = string
-    description = "Google Cloud Storage Bucket to create"
-}
-
-variable "bq_ops_dataset" {
-    type = string
-    description = "Auxliary bigquery dataset for Megalista operations to create"
-}
-
-variable "developer_token" {
-    type = string
-    description = "Google Ads developer Token"
-}
-
-variable "client_id" {
-    type = string
-    description = "OAuth Client Id"
-}
-
-variable "client_secret" {
-    type = string
-    description = "OAuth Client Secret"
-}
-
-variable "access_token" {
-    type = string
-    description = "Access Token"
-}
-
-variable "refresh_token" {
-    type = string
-    description = "Refresh Token"
-}
-
-variable "setup_sheet_id" {
-    type = string
-    description = "Setup Sheet Id"
-}
-
 data "google_client_config" "current" {
 }
 
@@ -45,9 +5,14 @@ data "google_client_openid_userinfo" "me" {
 }
 
 resource "google_bigquery_dataset" "dataset" {
-  dataset_id                  = "${var.bq_ops_dataset}"
-  location                    = "US"
+  dataset_id                  = var.bq_ops_dataset
+  location                    = var.location
+  description                 = "Auxliary bigquery dataset for Megalista operations to create"
   delete_contents_on_destroy = true
+}
+
+resource "null_resource" "only_one_configuration_provided" {
+  count = ("${var.setup_sheet_id}" != "" && "${var.setup_json_url}" != "") ? "Cannot provide both Sheet and JSON configs" : 0
 }
 
 locals {
@@ -61,11 +26,12 @@ locals {
             "access_token": "${var.access_token}",
             "refresh_token": "${var.refresh_token}",
             "setup_sheet_id": "${var.setup_sheet_id}",
+            "setup_json_url": "${var.setup_json_url}",
             "bq_ops_dataset": "${var.bq_ops_dataset}",
         },
         "environment": {
             "tempLocation": "gs://${var.bucket_name}/tmp",
-            "zone": "us-central1-f"
+            "zone": "${var.zone}"
         }
     }
     EOF
@@ -73,9 +39,9 @@ locals {
 
 resource "google_storage_bucket" "my_storage" {
   name          = var.bucket_name
-  location      = "US"
+  location      = var.location
   force_destroy = true
-  bucket_policy_only = true
+  uniform_bucket_level_access = true
 }
 
 resource "google_project_iam_member" "cloudscheduler-creator" {
@@ -160,13 +126,13 @@ resource "google_cloud_scheduler_job" "megalista_job" {
   name             = "megalista_job"
   description      = "Daily Runner for Megalista"
   schedule         = "0 0 * * *"
-  time_zone        = "America/Sao_Paulo"
+  time_zone        = local.time_zone
   attempt_deadline = "320s"
-  region           = "us-central1"
+  region           = var.region
 
   http_target {
     http_method = "POST"
-    uri         = "https://dataflow.googleapis.com/v1b3/projects/${data.google_client_config.current.project}/templates:launch?gcsPath=gs://${var.bucket_name}/templates/megalist"
+    uri         = "https://dataflow.googleapis.com/v1b3/projects/${data.google_client_config.current.project}/templates:launch?gcsPath=gs://${var.bucket_name}/templates/megalista"
     body        = base64encode(local.scheduler_body)
     oauth_token {
       service_account_email = google_service_account.sa.email

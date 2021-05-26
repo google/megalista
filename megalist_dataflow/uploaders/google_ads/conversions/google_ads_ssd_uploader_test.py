@@ -30,8 +30,8 @@ _account_config = AccountConfig('account_id', False, 'ga_account_id', '', '')
 
 @pytest.fixture
 def uploader(mocker):
-    mocker.patch('googleads.oauth2.GoogleRefreshTokenClient')
-    mocker.patch('googleads.adwords.AdWordsClient')
+    mocker.patch('google.ads.googleads.client.GoogleAdsClient')
+    mocker.patch('google.ads.googleads.oauth2')
     id = StaticValueProvider(str, 'id')
     secret = StaticValueProvider(str, 'secret')
     access = StaticValueProvider(str, 'access')
@@ -42,22 +42,23 @@ def uploader(mocker):
 
 
 def test_get_service(mocker, uploader):
-    assert uploader._get_ssd_service(mocker.ANY) is not None
+    assert uploader._get_offline_user_data_job_service(mocker.ANY) is not None
 
 
 def test_fail_missing_destination_metadata(uploader, mocker):
-    mocker.patch.object(uploader, '_get_ssd_service')
+    mocker.patch.object(uploader, '_get_offline_user_data_job_service')
     source = Source('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'))
     destination = Destination('dest1', DestinationType.ADS_SSD_UPLOAD, ['1'])
     execution = Execution(_account_config, source, destination)
     batch = Batch(execution, [])
     uploader.process(batch)
-    uploader._get_ssd_service.assert_not_called()
+    uploader._get_offline_user_data_job_service.assert_not_called()
 
 
 def test_conversion_upload(mocker, uploader):
-    mocker.patch.object(uploader, '_get_ssd_service')
+    mocker.patch.object(uploader, '_get_offline_user_data_job_service')
     conversion_name = 'ssd_conversion'
+    resource_name = uploader._get_offline_user_data_job_service.return_value.create_offline_user_data_job.return_value.resource_name
     external_upload_id = '123'
     source = Source('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'))
     destination = Destination('dest1', DestinationType.ADS_SSD_UPLOAD,
@@ -65,10 +66,10 @@ def test_conversion_upload(mocker, uploader):
     execution = Execution(_account_config, source, destination)
 
     time1 = '2020-04-09T14:13:55.0005'
-    time1_result = '20200409 141355 America/Sao_Paulo'
+    time1_result = '2020-04-09 14:13:55-03:00'
 
     time2 = '2020-04-09T13:13:55.0005'
-    time2_result = '20200409 131355 America/Sao_Paulo'
+    time2_result = '2020-04-09 13:13:55-03:00'
 
     batch = Batch(execution, [{
         'hashedEmail': 'a@a.com',
@@ -82,50 +83,36 @@ def test_conversion_upload(mocker, uploader):
 
     uploader.process(batch)
 
-    upload_data = [{
-        'StoreSalesTransaction': {
-            'userIdentifiers': [{
-                'userIdentifierType': 'HASHED_EMAIL',
-                'value': 'a@a.com'
-            }],
-            'transactionTime': time1_result,
-            'transactionAmount': {
-                'currencyCode': 'BRL',
-                'money': {
-                    'microAmount': '123'
-                }
-            },
-            'conversionName': conversion_name
-        }
-    }, {
-        'StoreSalesTransaction': {
-            'userIdentifiers': [{
-                'userIdentifierType': 'HASHED_EMAIL',
-                'value': 'b@b.com'
-            }],
-            'transactionTime': time2_result,
-            'transactionAmount': {
-                'currencyCode': 'BRL',
-                'money': {
-                    'microAmount': '234'
-                }
-            },
-            'conversionName': conversion_name
-        }
-    }]
-
-    uploader._get_ssd_service.return_value.mutate.assert_any_call([{
-        'operand': {
-            'externalUploadId': external_upload_id,
-            'offlineDataList': upload_data,
-            'uploadType': 'STORE_SALES_UPLOAD_FIRST_PARTY',
-            'uploadMetadata': {
-                'StoreSalesUploadCommonMetadata': {
-                    'xsi_type': 'FirstPartyUploadMetadata',
-                    'loyaltyRate': 1.0,
-                    'transactionUploadRate': 1.0,
-                }
+    data_insertion_payload = {
+        'resource_name': resource_name,
+        'enable_partial_failure': True,
+        'operations': [{
+            'create': {
+                'user_identifiers': [{
+                    'hashed_email': 'a@a.com'
+                }],
+                'transaction_attribute': {
+                    'conversion_action': conversion_name,
+                    'currency_code': 'BRL',
+                    'transaction_amount_micros': '123',
+                    'transaction_date_time': time1_result
+                },
+                'user_attribute': ''
             }
-        },
-        'operator': 'ADD'
-    }])
+        }, {
+            'create': {
+                'user_identifiers': [{
+                    'hashed_email': 'b@b.com'
+                }],
+                'transaction_attribute': {
+                    'conversion_action': conversion_name,
+                    'currency_code': 'BRL',
+                    'transaction_amount_micros': '234',
+                    'transaction_date_time': time2_result
+                },
+                'user_attribute': ''
+            }
+        }]
+    }
+
+    uploader._get_offline_user_data_job_service.return_value.add_offline_user_data_job_operations.assert_any_call(request = data_insertion_payload)

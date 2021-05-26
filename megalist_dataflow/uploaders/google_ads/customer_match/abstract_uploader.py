@@ -39,51 +39,79 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
   def start_bundle(self):
     pass
 
-  def _create_list_if_it_does_not_exist(self, user_list_service, list_name: str,
+  def _create_list_if_it_does_not_exist(self, 
+                                        customer_id: str,
+                                        list_name: str,
                                         list_definition: Dict[str, Any]) -> str:
 
     if self._user_list_id_cache.get(list_name) is None:
       self._user_list_id_cache[list_name] = \
         self._do_create_list_if_it_does_not_exist(
-            user_list_service, list_name, list_definition)
+            customer_id, list_name, list_definition)
 
     return self._user_list_id_cache[list_name]
 
-  def _do_create_list_if_it_does_not_exist(self, user_list_service,
+  def _do_create_list_if_it_does_not_exist(self,
+                                           customer_id: str,
                                            list_name: str,
                                            list_definition: Dict[str, Any]
                                            ) -> str:
-    response = user_list_service.get([{
-        'fields': ['Id', 'Name'],
-        'predicates': [{
-            'field': 'Name',
-            'operator': 'EQUALS',
-            'values': [list_name]
-        }]
-    }])
-
-    if not response.entries:
+    
+    resource_name = self._get_user_list_resource_name(customer_id, list_name)
+    
+    if resource_name is None:
+      # Create list
       logging.getLogger(_DEFAULT_LOGGER).info(
-          '%s list does not exist, creating...', list_name)
-      result = user_list_service.mutate([{
-          'operator': 'ADD',
-          **list_definition
-      }])
-      list_id = result['value'][0]['id']
-      logging.getLogger(_DEFAULT_LOGGER).info('List %s created with id: %d',
-                                              list_name, list_id)
+        '%s list does not exist, creating...', list_name)
+      user_list_service = self._get_user_list_service(customer_id)
+      request = {
+        'customer_id': customer_id,
+        'partial_failure': False,
+        'validate_only': False,
+        'operations': [{
+          'create': list_definition
+        }]
+      }
+      
+      user_list_service = self._get_user_list_service(customer_id)
+      user_list_service_response = user_list_service.mutate_user_lists(request)
+      for result in user_list_service_response.results:
+        resource_name = result.resource_name
+      logging.getLogger(_DEFAULT_LOGGER).info('List %s created with resource name: %s',
+                                              list_name, resource_name)
     else:
-      list_id = response.entries[0]['id']
-      logging.getLogger(_DEFAULT_LOGGER).info('List found %s with id: %d',
-                                              list_name, list_id)
+      logging.getLogger(_DEFAULT_LOGGER).info('List %s found with resource name: %s',
+                                              list_name, resource_name)
+    return resource_name
 
-    return str(list_id)
+  def _get_user_list_resource_name(self, customer_id: str, list_name: str):
+    resource_name = None
+    service = self._get_ads_service(customer_id)
+    query = f"SELECT user_list.name, user_list.resource_name FROM user_list WHERE user_list.name='{list_name}'"
+    response_query = service.search_stream(customer_id=customer_id, query=query)
+    for batch in response_query:
+      for row in batch.results:
+        resource_name = row.user_list.resource_name
+    return resource_name
 
   # just to facilitate mocking
-  def _get_user_list_service(self, customer_id):
-    return utils.get_ads_service('AdwordsUserListService', 'v201809',
+  def _get_ads_service(self, customer_id: str):
+    return utils.get_ads_service('GoogleAdsService', 'v7',
                                      self.oauth_credentials,
-                                     self.developer_token.get(), customer_id)
+                                     self.developer_token.get(), 
+                                     customer_id)
+  
+  def _get_user_list_service(self, customer_id: str):
+    return utils.get_ads_service('UserListService', 'v7',
+                                     self.oauth_credentials,
+                                     self.developer_token.get(), 
+                                     customer_id)
+
+  def _get_offline_user_data_job_service(self, customer_id: str):
+    return utils.get_ads_service('OfflineUserDataJobService', 'v7',
+                                    self.oauth_credentials,
+                                    self.developer_token.get(), 
+                                    customer_id)
 
   def _assert_execution_is_valid(self, execution) -> None:
     destination = execution.destination.destination_metadata
@@ -104,29 +132,64 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
 
     self._assert_execution_is_valid(execution)
 
+    customer_id = execution.account_config.google_ads_account_id.replace('-', '')
+
+    # get API services
     user_list_service = self._get_user_list_service(
-        execution.account_config.google_ads_account_id)
-    list_id = self._create_list_if_it_does_not_exist(
-        user_list_service, execution.destination.destination_metadata[0],
-        self.get_list_definition(
-            execution.account_config,
-            execution.destination.destination_metadata))
+      customer_id)
+    offline_user_data_job_service = self._get_offline_user_data_job_service(
+      customer_id)
+
+
+    list_resource_name = self._create_list_if_it_does_not_exist(
+      customer_id, execution.destination.destination_metadata[0],
+      self.get_list_definition(
+        execution.account_config,
+        execution.destination.destination_metadata))
 
     rows = self.get_filtered_rows(
-        batch.elements, self.get_row_keys())
-        
-    mutate_members_operation = {
-        'operand': {
-            'userListId': list_id,
-            'membersList': rows
-        },
-        'operator': execution.destination.destination_metadata[1]
-    }
-    
-    utils.safe_call_api(self.call_api, logging, user_list_service, [mutate_members_operation])
+      batch.elements, self.get_row_keys())
 
-  def call_api(self, service, operations):
-    service.mutateMembers(operations)
+    # Upload is divided into 3 parts:
+    # 1. Create Job
+    # 2. Create operations (data insertion)
+    # 3. Run the Job
+
+    # 1. Create Job
+    job_creation_payload = {
+      'type_': 'CUSTOMER_MATCH_USER_LIST',
+      'customer_match_user_list_metadata': {
+        'user_list': list_resource_name
+      }
+    }
+
+    job_resource_name = offline_user_data_job_service.create_offline_user_data_job(customer_id = customer_id, job = job_creation_payload).resource_name
+
+    # 2. Crete operations (data insertion)
+    operator = self._get_list_operator(execution.destination.destination_metadata[1])
+    data_insertion_payload = {
+      'resource_name': job_resource_name,
+      'enable_partial_failure': True,
+      'operations': [{
+        operator: {
+          'user_identifiers': rows
+        }
+      }]
+    }
+
+    data_insertion_response = offline_user_data_job_service.add_offline_user_data_job_operations(request = data_insertion_payload)
+
+    utils.print_partial_error_messages(_DEFAULT_LOGGER, 'uploading customer match', data_insertion_response)
+    
+    # 3. Run the Job
+    offline_user_data_job_service.run_offline_user_data_job(resource_name = job_resource_name)
+
+  def _get_list_operator(self, operator: str) -> str:
+    translation = {
+      'ADD': 'create',
+      'REMOVE': 'remove'
+    }
+    return translation[operator]
 
   def get_filtered_rows(self, rows: List[Any],
                         keys: List[str]) -> List[Dict[str, Any]]:

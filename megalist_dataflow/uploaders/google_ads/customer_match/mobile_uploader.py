@@ -33,20 +33,19 @@ class GoogleAdsCustomerMatchMobileUploaderDoFn(GoogleAdsCustomerMatchAbstractUpl
         app_id = destination_metadata[3]
 
     return {
-      'operand': {
-        'xsi_type': 'CrmBasedUserList',
-        'name': list_name,
-        'description': list_name,
-        # CRM-based user list_name can use a membershipLifeSpan of 10000 to indicate
-        # unlimited; otherwise normal values apply.
-        'membershipLifeSpan': 10000,
-        'appId': app_id,
-        'uploadKeyType': 'MOBILE_ADVERTISING_ID'
+      'membership_status': 'OPEN',
+      'name': list_name,
+      'description': 'List created automatically by Megalista',
+      'membership_life_span': 10000,
+      'crm_based_user_list': {
+        'upload_key_type': 'MOBILE_ADVERTISING_ID', #CONTACT_INFO, CRM_ID, MOBILE_ADVERTISING_ID
+        'data_source_type': 'FIRST_PARTY',
+        'app_id': app_id
       }
     }
 
   def get_row_keys(self) -> List[str]:
-    return ['mobileId']
+    return ['mobile_id']
 
   def get_action_type(self) -> DestinationType:
     return DestinationType.ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD

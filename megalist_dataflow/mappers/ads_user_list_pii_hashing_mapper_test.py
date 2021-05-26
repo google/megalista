@@ -64,21 +64,21 @@ def test_pii_hashing(mocker):
     assert len(hashed) == 2
 
     assert hashed[0] == {
-        'hashedEmail': 'd709f370e52b57b4eb75f04e2b3422c4d41a05148cad8f81776d94a048fb70af',
-        'addressInfo': {
-            'countryCode': 'US',
-            'hashedFirstName': '96d9632f363564cc3032521409cf22a852f2032eec099ed5967c0d000cec607a',
-            'hashedLastName': '799ef92a11af918e3fb741df42934f3b568ed2d93ac1df74f1b8d41a27932a6f',
-            'zipCode': '12345'
+        'hashed_email': 'd709f370e52b57b4eb75f04e2b3422c4d41a05148cad8f81776d94a048fb70af',
+        'address_info': {
+            'country_code': 'US',
+            'hashed_first_name': '96d9632f363564cc3032521409cf22a852f2032eec099ed5967c0d000cec607a',
+            'hashed_last_name': '799ef92a11af918e3fb741df42934f3b568ed2d93ac1df74f1b8d41a27932a6f',
+            'postal_code': '12345'
         }}
 
     assert hashed[1] == {
-        'hashedEmail': '7c815580ad3844bcb627c74d24eaf700e1a711d9c23e9beb62ab8d28e8cb7954',
-        'addressInfo': {
-            'countryCode': 'US',
-            'hashedFirstName': '81f8f6dde88365f3928796ec7aa53f72820b06db8664f5fe76a7eb13e24546a2',
-            'hashedLastName': '799ef92a11af918e3fb741df42934f3b568ed2d93ac1df74f1b8d41a27932a6f',
-            'zipCode': '12345'
+        'hashed_email': '7c815580ad3844bcb627c74d24eaf700e1a711d9c23e9beb62ab8d28e8cb7954',
+        'address_info': {
+            'country_code': 'US',
+            'hashed_first_name': '81f8f6dde88365f3928796ec7aa53f72820b06db8664f5fe76a7eb13e24546a2',
+            'hashed_last_name': '799ef92a11af918e3fb741df42934f3b568ed2d93ac1df74f1b8d41a27932a6f',
+            'postal_code': '12345'
         }}
 
 
@@ -111,19 +111,19 @@ def test_avoid_pii_hashing(mocker):
     assert len(hashed) == 2
 
     assert hashed[0] == {
-        'hashedEmail': 'john@doe.com',
-        'addressInfo': {
-            'countryCode': 'US',
-            'hashedFirstName': 'John',
-            'hashedLastName': 'Doe',
-            'zipCode': '12345'
+        'hashed_email': 'john@doe.com',
+        'address_info': {
+            'country_code': 'US',
+            'hashed_first_name': 'John',
+            'hashed_last_name': 'Doe',
+            'postal_code': '12345'
         }}
 
     assert hashed[1] == {
-        'hashedEmail': 'jane@doe.com',
-        'addressInfo': {
-            'countryCode': 'US',
-            'hashedFirstName': 'Jane',
-            'hashedLastName': 'Doe',
-            'zipCode': '12345'
+        'hashed_email': 'jane@doe.com',
+        'address_info': {
+            'country_code': 'US',
+            'hashed_first_name': 'Jane',
+            'hashed_last_name': 'Doe',
+            'postal_code': '12345'
         }}

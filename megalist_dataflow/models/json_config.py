@@ -12,17 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import setuptools
+import json
+from google.cloud import storage
 
-setuptools.setup(
-    name='megalist_dataflow',
-    version='4.0',
-    author='Google',
-    author_email='megalista-admin@google.com',
-    url='https://github.com/google/megalista/',
-    install_requires=['google-ads==11.0.0', 'google-api-python-client==1.12.8',
-                      'google-cloud-core==1.4.1', 'google-cloud-bigquery==1.27.2',
-                      'google-cloud-datastore==1.13.1', 'aiohttp==3.6.2',
-                      'google-cloud-storage==1.38.0'],
-    packages=setuptools.find_packages(),
-)
+
+class JsonConfig:
+
+  def parse_json_from_url(self, url):
+    url = url.replace("https://", "")
+    url_components = url.split("/", 2)
+    bucket_name, file_path = url_components[1], url_components[2]
+    bucket = storage.Client().get_bucket(bucket_name)
+    blob = bucket.blob(file_path)
+    data = json.loads(blob.download_as_string())
+    return data
+
+  def get_value(self, config_json, key):
+    if key not in config_json or not config_json[key]:
+      return None
+    return config_json[key]
