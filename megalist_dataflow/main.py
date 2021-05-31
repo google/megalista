@@ -107,7 +107,7 @@ class GoogleAdsOfflineConversionsStep(MegalistaStep):
     def expand(self, executions):
         return (
             executions
-            | 'Load Data - GoogleAdsOfflineConversions' >> BatchesFromExecutions(DestinationType.ADS_OFFLINE_CONVERSION)
+            | 'Load Data - GoogleAdsOfflineConversions' >> BatchesFromExecutions(DestinationType.ADS_OFFLINE_CONVERSION, 2000)
             | 'Upload - GoogleAdsOfflineConversions' >> beam.ParDo(GoogleAdsOfflineUploaderDoFn(self._oauth_credentials,
                                                                                                 self._dataflow_options.developer_token))
         )
