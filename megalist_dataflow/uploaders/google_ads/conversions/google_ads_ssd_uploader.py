@@ -76,7 +76,7 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
         # 2. Crete operations (data insertion)
         data_insertion_payload = {
             'resource_name': job_resource_name,
-            'enable_partial_failure': True,
+            'enable_partial_failure': False,
             'operations': [{
                 'create': {
                     'user_identifiers': [{

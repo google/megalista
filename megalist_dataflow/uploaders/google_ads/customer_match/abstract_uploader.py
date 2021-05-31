@@ -169,7 +169,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
     operator = self._get_list_operator(execution.destination.destination_metadata[1])
     data_insertion_payload = {
       'resource_name': job_resource_name,
-      'enable_partial_failure': True,
+      'enable_partial_failure': False,
       'operations': [{
         operator: {
           'user_identifiers': rows
