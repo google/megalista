@@ -87,7 +87,7 @@ class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
     
     upload_data = {
       'customer_id': customer_id,
-      'partial_failure': True,
+      'partial_failure': False,
       'validate_only': False,
       'conversions': conversions
     }

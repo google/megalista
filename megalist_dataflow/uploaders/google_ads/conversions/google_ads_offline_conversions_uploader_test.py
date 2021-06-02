@@ -83,7 +83,7 @@ def test_conversion_upload(mocker, uploader):
 
   uploader._get_oc_service.return_value.upload_click_conversions.assert_any_call(request = {
     'customer_id': 'account_id',
-    'partial_failure': True,
+    'partial_failure': False,
     'validate_only': False,
     'conversions': [{
       'conversion_action': None,
