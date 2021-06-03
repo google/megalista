@@ -84,9 +84,14 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
     return resource_name
 
   def _get_user_list_resource_name(self, customer_id: str, list_name: str):
+    ads_client = utils.get_ads_client(self.oauth_credentials, self.developer_token.get(), customer_id)
+
     resource_name = None
     service = self._get_ads_service(customer_id)
-    query = f"SELECT user_list.name, user_list.resource_name FROM user_list WHERE user_list.name='{list_name}'"
+
+    # Only search for audiences owned by this account, not MCCs above it.
+    query = f"SELECT user_list.resource_name, user_list.access_reason FROM user_list WHERE user_list.name='{list_name}' " \
+            f"AND user_list.access_reason={ads_client.enums.AccessReasonEnum.OWNED.name}"
     response_query = service.search_stream(customer_id=customer_id, query=query)
     for batch in response_query:
       for row in batch.results:
