@@ -17,7 +17,7 @@ from typing import Dict, Any, List
 
 import apache_beam as beam
 from uploaders import utils
-from models.execution import AccountConfig
+from models.execution import AccountConfig, Destination
 from models.execution import DestinationType
 from models.execution import Batch
 from models.oauth_credentials import OAuthCredentials
@@ -63,7 +63,6 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
       # Create list
       logging.getLogger(_DEFAULT_LOGGER).info(
         '%s list does not exist, creating...', list_name)
-      user_list_service = self._get_user_list_service(customer_id)
       request = {
         'customer_id': customer_id,
         'partial_failure': False,
@@ -121,6 +120,14 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
       raise ValueError('Missing destination information. Received {}'.format(
           str(destination)))
 
+  def _get_customer_id(self, account_config:AccountConfig, destination:Destination) -> str:
+    """
+      If the customer_id is present on the destination, returns it, otherwise defaults to the account_config info.
+    """
+    if len(destination.destination_metadata) >= 5 and len(destination.destination_metadata[4]) > 0:
+      return destination.destination_metadata[4].replace('-', '')
+    return account_config.google_ads_account_id.replace('-', '')
+
   @utils.safe_process(logger=logging.getLogger(_DEFAULT_LOGGER))
   def process(self, batch: Batch, **kwargs) -> None:
     if not self.active:
@@ -132,14 +139,11 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
 
     self._assert_execution_is_valid(execution)
 
-    customer_id = execution.account_config.google_ads_account_id.replace('-', '')
+    customer_id = self._get_customer_id(execution.account_config, execution.destination)
 
     # get API services
-    user_list_service = self._get_user_list_service(
-      customer_id)
     offline_user_data_job_service = self._get_offline_user_data_job_service(
       customer_id)
-
 
     list_resource_name = self._create_list_if_it_does_not_exist(
       customer_id, execution.destination.destination_metadata[0],
