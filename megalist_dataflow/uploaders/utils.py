@@ -16,8 +16,7 @@ import datetime
 import logging
 import pytz
 
-from google.ads.googleads.client import GoogleAdsClient
-from google.ads.googleads import oauth2
+
 
 MAX_RETRIES = 3
 
@@ -25,6 +24,9 @@ timezone = pytz.timezone('America/Sao_Paulo')
 
 
 def get_ads_client(oauth_credentials, developer_token, customer_id):
+    from google.ads.googleads.client import GoogleAdsClient
+    from google.ads.googleads import oauth2
+
     oauth2_client = oauth2.get_installed_app_credentials(
         oauth_credentials.get_client_id(), oauth_credentials.get_client_secret(),
         oauth_credentials.get_refresh_token())
