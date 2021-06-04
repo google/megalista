@@ -13,10 +13,9 @@
 # limitations under the License.
 
 import datetime
-from models.execution import DestinationType
-from models.execution import Execution
-import pytz
 import logging
+import pytz
+
 
 
 MAX_RETRIES = 3
@@ -24,8 +23,7 @@ MAX_RETRIES = 3
 timezone = pytz.timezone('America/Sao_Paulo')
 
 
-def get_ads_service(service_name, version, oauth_credentials, developer_token,
-                    customer_id):
+def get_ads_client(oauth_credentials, developer_token, customer_id):
     from google.ads.googleads.client import GoogleAdsClient
     from google.ads.googleads import oauth2
 
@@ -33,11 +31,14 @@ def get_ads_service(service_name, version, oauth_credentials, developer_token,
         oauth_credentials.get_client_id(), oauth_credentials.get_client_secret(),
         oauth_credentials.get_refresh_token())
 
-    client = GoogleAdsClient(
+    return GoogleAdsClient(
         oauth2_client, developer_token,
         login_customer_id=customer_id)
 
-    return client.get_service(service_name, version=version)
+
+def get_ads_service(service_name, version, oauth_credentials, developer_token,
+                    customer_id):
+    return get_ads_client(oauth_credentials, developer_token, customer_id).get_service(service_name, version=version)
 
 
 def format_date(date):
