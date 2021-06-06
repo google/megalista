@@ -224,4 +224,3 @@ if __name__ == '__main__':
     logging.getLogger("megalista").setLevel(logging.INFO)
     run()
     logging.getLogger("megalista").info("Completed successfully!")
-    

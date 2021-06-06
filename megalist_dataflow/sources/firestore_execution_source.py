@@ -97,9 +97,12 @@ class FirestoreExecutionSource(BaseBoundedSource):
         'ADS_OFFLINE_CONVERSION': ['gads_conversion_name'],
         'ADS_ENHANCED_CONVERSION': ['gads_conversion_label', 'gads_conversion_tracking_id', 'gads_currency_code'],
         'ADS_SSD_UPLOAD': ['gads_conversion_name', 'gads_external_upload_id'],
-        'ADS_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD': ['gads_audience_name', 'gads_operation', 'gads_hash'],
-        'ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD': ['gads_audience_name', 'gads_operation'],
-        'ADS_CUSTOMER_MATCH_USER_ID_UPLOAD': ['gads_audience_name', 'gads_operation'],
+        'ADS_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD': ['gads_audience_name', 'gads_operation', 'gads_hash',
+          'metadata_padding', 'gads_account'],
+        'ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD': ['gads_audience_name', 'gads_operation', 
+          'metadata_padding', 'gads_app_id', 'gads_account'],
+        'ADS_CUSTOMER_MATCH_USER_ID_UPLOAD': ['gads_audience_name', 'gads_operation', 'gads_hash', 
+          'metadata_padding', 'gads_account'],
         'GA_MEASUREMENT_PROTOCOL': ['google_analytics_property_id', 'google_analytics_non_interaction'],
         'GA_DATA_IMPORT': ['google_analytics_property_id', 'google_analytics_data_import_name'],
         'GA_USER_LIST_UPLOAD': ['google_analytics_property_id', 'google_analytics_view_id',
@@ -116,7 +119,10 @@ class FirestoreExecutionSource(BaseBoundedSource):
         raise Exception(f'Upload type not implemented: {entry_type}')
       entry_metadata = []
       for m in metadata:
-        if m in entry:
+        # metadata_padding stands for the N/A fields in Sheets, preserving list indexes
+        if m == 'metadata_padding':
+          entry_metadata.append('N/A')
+        elif m in entry:
           entry_metadata.append(entry[m])
         else:
           raise Exception(f'Missing field in Firestore document for {entry_type}: {m}')

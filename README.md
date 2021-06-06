@@ -102,11 +102,11 @@ To configure using Google Sheets:
 
 | Field name  | Description  |
 |---|---|
-| google_ads_id | Google Ads account ID (customer ID) |
+| google_ads_id | Google Ads account ID (customer ID) used by default |
 | mcc_trix  | TRUE/FALSE. Indicates whether the Google Ads account is an MCC (parent account) or not |
 | google_analytics_account_id | Google Analytics account ID |
 | campaign_manager_account_id | Google Campaign Manager account ID |
-| app_id | Android/iOS app ID for Google Ads or Appsflyer |
+| app_id | Android/iOS app ID for Google Ads or Appsflyer used by default |
 
 **Source+Destination document schema:**
 
@@ -139,6 +139,7 @@ Google Ads Customer Match - Contact
 | gads_audience_name | Name of the Google Ads audience registered on the platform |
 | gads_operation | ADD/REMOVE. Indicates whether the user list should be added or removed from the audience |
 | gads_hash | TRUE/FALSE. Enables hashing on data |
+| gads_account | (Optional) Google Ads account ID (Customer ID). Overlaps the default account ID in the account_config document |
 | type | ADS_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD |
 
 Google Ads Customer Match - Mobile
@@ -146,6 +147,8 @@ Google Ads Customer Match - Mobile
 |---|---|
 | gads_audience_name | Name of the Google Ads audience registered on the platform |
 | gads_operation | ADD/REMOVE. Indicates whether the user list should be added or removed from the audience |
+| gads_account | (Optional) Google Ads account ID (Customer ID). Overlaps the default account ID in the account_config document |
+| gads_app_id | (Optional) Android/iOS app ID for Google Ads. Overlaps the default app ID in the account_config document  |
 | type | ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD |
 
 Google Ads Customer Match - User ID
@@ -153,6 +156,8 @@ Google Ads Customer Match - User ID
 |---|---|
 | gads_audience_name | Name of the Google Ads audience registered on the platform |
 | gads_operation | ADD/REMOVE. Indicates whether the user list should be added or removed from the audience |
+| gads_account | (Optional) Google Ads account ID (Customer ID). Overlaps the default account ID in the account_config document |
+| gads_hash | TRUE/FALSE. Enables hashing on data |
 | type | ADS_CUSTOMER_MATCH_USER_ID_UPLOAD |
 
 Google Analytics - Measurement Protocol
