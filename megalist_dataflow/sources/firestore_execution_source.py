@@ -36,8 +36,8 @@ class FirestoreExecutionSource(BaseBoundedSource):
     self._setup_firestore_collection = setup_firestore_collection
 
   def _do_count(self):
-    # TODO: implement count
-    return 3
+    collections = firestore.Client().collection(self._setup_firestore_collection.get()).get()
+    return len(collections)
 
   def read(self, range_tracker):
     def document_to_dict(doc):
