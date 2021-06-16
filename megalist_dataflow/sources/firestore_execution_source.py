@@ -78,8 +78,7 @@ class FirestoreExecutionSource(BaseBoundedSource):
     else:
       logging.getLogger("megalista.FirestoreExecutionSource").warn("No schedules found!")
 
-  @staticmethod
-  def _read_sources(entries):
+  def _read_sources(self, entries):
     sources = {}
     if entries:
       for entry in entries:
@@ -90,8 +89,7 @@ class FirestoreExecutionSource(BaseBoundedSource):
       logging.getLogger("megalista.FirestoreExecutionSource").warn("No sources found!")
     return sources
 
-  @staticmethod
-  def _read_destination(entries):
+  def _read_destination(self, entries):
     def create_metadata_list(entry):
       metadata_list = {
         'ADS_OFFLINE_CONVERSION': ['gads_conversion_name'],
