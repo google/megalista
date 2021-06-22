@@ -16,7 +16,7 @@ import setuptools
 
 setuptools.setup(
     name='megalist_dataflow',
-    version='4.0',
+    version='4.1',
     author='Google',
     author_email='megalista-admin@google.com',
     url='https://github.com/google/megalista/',
