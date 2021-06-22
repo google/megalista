@@ -191,7 +191,8 @@ def run(argv=None):
     execution_source = PrimaryExecutionSource(sheets_config,
         json_config,
         dataflow_options.setup_sheet_id,
-        dataflow_options.setup_json_url)
+        dataflow_options.setup_json_url,
+        dataflow_options.setup_firestore_collection)
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
         executions = (pipeline | 'Load executions' >> beam.io.Read(execution_source))

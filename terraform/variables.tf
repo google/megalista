@@ -39,12 +39,17 @@ variable "refresh_token" {
 
 variable "setup_sheet_id" {
     type = string
-    description = "Setup Sheet Id (leave blank if using JSON)"
+    description = "Setup Sheet Id (leave blank if using JSON or Firestore)"
 }
 
 variable "setup_json_url" {
     type = string
-    description = "URL for JSON configuration (leave blank if using Sheets)"
+    description = "URL for JSON configuration (leave blank if using Sheets or Firestore)"
+}
+
+variable "setup_firestore_collection" {
+    type = string
+    description = "Setup Firestore collection (leave blank if using JSON or Sheets)"
 }
 
 variable "location" {
