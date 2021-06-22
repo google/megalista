@@ -174,7 +174,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
 
     job_resource_name = offline_user_data_job_service.create_offline_user_data_job(customer_id = customer_id, job = job_creation_payload).resource_name
 
-    # 2. Crete operations (data insertion)
+    # 2. Create operations (data insertion)
     operator = self._get_list_operator(execution.destination.destination_metadata[1])
     data_insertion_payload = {
       'resource_name': job_resource_name,
@@ -213,3 +213,4 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
 
   def get_action_type(self) -> DestinationType:
     pass
+    
