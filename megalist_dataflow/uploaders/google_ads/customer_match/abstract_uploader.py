@@ -44,6 +44,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
                                         list_name: str,
                                         list_definition: Dict[str, Any]) -> str:
 
+    # TODO (antoniomoreira): include account id on the cache
     if self._user_list_id_cache.get(list_name) is None:
       self._user_list_id_cache[list_name] = \
         self._do_create_list_if_it_does_not_exist(
