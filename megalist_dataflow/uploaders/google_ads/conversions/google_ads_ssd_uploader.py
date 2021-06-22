@@ -15,8 +15,9 @@
 import apache_beam as beam
 import logging
 
+from models.execution import Batch, Execution
 from uploaders import utils
-from models.execution import DestinationType, Batch, Execution
+from uploaders.google_ads import ADS_API_VERSION
 
 
 class GoogleAdsSSDUploaderDoFn(beam.DoFn):
@@ -28,7 +29,7 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
         self.active = developer_token is not None
 
     def _get_offline_user_data_job_service(self, customer_id):
-        return utils.get_ads_service('OfflineUserDataJobService', 'v8',
+        return utils.get_ads_service('OfflineUserDataJobService', ADS_API_VERSION,
                                          self.oauth_credentials,
                                          self.developer_token.get(), 
                                          customer_id)

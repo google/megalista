@@ -21,6 +21,7 @@ from models.execution import AccountConfig, Destination
 from models.execution import DestinationType
 from models.execution import Batch
 from models.oauth_credentials import OAuthCredentials
+from uploaders.google_ads import ADS_API_VERSION
 
 _DEFAULT_LOGGER: str = 'megalista.GoogleAdsCustomerMatchAbstractUploader'
 
@@ -101,19 +102,19 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
 
   # just to facilitate mocking
   def _get_ads_service(self, customer_id: str):
-    return utils.get_ads_service('GoogleAdsService', 'v8',
+    return utils.get_ads_service('GoogleAdsService', ADS_API_VERSION,
                                      self.oauth_credentials,
                                      self.developer_token.get(), 
                                      customer_id)
   
   def _get_user_list_service(self, customer_id: str):
-    return utils.get_ads_service('UserListService', 'v8',
+    return utils.get_ads_service('UserListService', ADS_API_VERSION,
                                      self.oauth_credentials,
                                      self.developer_token.get(), 
                                      customer_id)
 
   def _get_offline_user_data_job_service(self, customer_id: str):
-    return utils.get_ads_service('OfflineUserDataJobService', 'v8',
+    return utils.get_ads_service('OfflineUserDataJobService', ADS_API_VERSION,
                                     self.oauth_credentials,
                                     self.developer_token.get(), 
                                     customer_id)
