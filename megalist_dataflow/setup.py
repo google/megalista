@@ -16,11 +16,11 @@ import setuptools
 
 setuptools.setup(
     name='megalist_dataflow',
-    version='4.0',
+    version='4.1',
     author='Google',
     author_email='megalista-admin@google.com',
     url='https://github.com/google/megalista/',
-    install_requires=['google-ads==11.0.0', 'google-api-python-client==1.12.8',
+    install_requires=['google-ads==12.0.0', 'google-api-python-client==1.12.8',
                       'google-cloud-core==1.4.1', 'google-cloud-bigquery==1.27.2',
                       'google-cloud-datastore==1.13.1', 'aiohttp==3.6.2',
                       'google-cloud-storage==1.38.0', 'google-cloud-firestore==2.1.1'],

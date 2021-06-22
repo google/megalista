@@ -15,8 +15,9 @@
 import logging
 
 import apache_beam as beam
+from models.execution import Batch, Execution
 from uploaders import utils
-from models.execution import Batch, DestinationType, Execution
+from uploaders.google_ads import ADS_API_VERSION
 
 _DEFAULT_LOGGER: str = 'megalista.GoogleAdsOfflineConversionsUploader'
 
@@ -30,13 +31,13 @@ class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
     self.active = self.developer_token is not None
 
   def _get_ads_service(self, customer_id: str):
-    return utils.get_ads_service('GoogleAdsService', 'v7',
+    return utils.get_ads_service('GoogleAdsService', ADS_API_VERSION,
                                      self.oauth_credentials,
                                      self.developer_token.get(), 
                                      customer_id)
   
   def _get_oc_service(self, customer_id):
-    return utils.get_ads_service('ConversionUploadService', 'v7',
+    return utils.get_ads_service('ConversionUploadService', ADS_API_VERSION,
                                      self.oauth_credentials,
                                      self.developer_token.get(), 
                                      customer_id)
