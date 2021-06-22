@@ -1,5 +1,5 @@
 {
-    "jobName": "megalist_daily",
+    "jobName": "megalista_daily",
     "parameters": {
         "developer_token": "Google Ads Developer Token",
         "client_id": "GCP OAuth Client id",
@@ -13,7 +13,7 @@
 	"appsflyer_dev_key": "Apps flyer dev key"
     },
     "environment": {
-        "tempLocation": "gs://megalist-data/temp",
+        "tempLocation": "gs://megalista-data/temp",
         "zone": "us-central1-f"
     }
 }

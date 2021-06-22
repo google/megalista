@@ -209,8 +209,8 @@ In order to create it, follow these steps:
  - On the **OAuth Consent Screen** and configure an *Application name*
  - Then, go to the **Credentials** and create an *OAuth client Id* with Application type set as *Desktop App*
  - This will generate a *Client Id* and a *Client secret*
- - Run the **generate_megalist_token.sh** script in this folder providing these two values and follow the instructions
-   - Sample: `./generate_megalist_token.sh client_id client_secret`
+ - Run the **generate_megalista_token.sh** script in this folder providing these two values and follow the instructions
+   - Sample: `./generate_megalista_token.sh client_id client_secret`
  - This will generate the *Access Token* and the *Refresh token*
 
 ### Creating a bucket on Cloud Storage
@@ -226,7 +226,7 @@ Lastly, configure the Cloud Scheduler to run Megalista in the frequency desired 
 ### Running locally
 Only set one configuration parameter (setup_sheet_id, setup_json_url or setup_firestore_collection)
 ```bash
-python3 megalist_dataflow/main.py \
+python3 megalista_dataflow/main.py \
   --runner DirectRunner \
   --developer_token ${GOOGLE_ADS_DEVELOPER_TOKEN} \
   --setup_sheet_id ${CONFIGURATION_SHEET_ID} \
@@ -250,7 +250,7 @@ To execute the pipeline, use the following steps:
 - Go to **Dataflow** on GCP console
 - Click on *Create job from template*
 - On the template selection dropdown, select *Custom template*
-- Find the *megalist* file on the bucket you've created, on the templates folder
+- Find the *megalista* file on the bucket you've created, on the templates folder
 - Fill in the parameters required and execute
 
 ### Scheduling pipeline
@@ -258,7 +258,7 @@ To schedule daily/hourly runs, go to **Cloud Scheduler**:
 - Click on *create job*
 - Add a name and frequency as desired
 - For *target* set as HTTP
-- Configure a *POST* for url: https://dataflow.googleapis.com/v1b3/projects/${YOUR_PROJECT_ID}/locations/${LOCATION}/templates:launch?gcsPath=gs://${BUCKET_NAME}/templates/megalist, replacing the params with the actual values
+- Configure a *POST* for url: https://dataflow.googleapis.com/v1b3/projects/${YOUR_PROJECT_ID}/locations/${LOCATION}/templates:launch?gcsPath=gs://${BUCKET_NAME}/templates/megalista, replacing the params with the actual values
 - For a sample on the *body* of the request, check **cloud_config/scheduler_sample.json**
 - Add OAuth Headers
 - Scope: https://www.googleapis.com/auth/cloud-platform

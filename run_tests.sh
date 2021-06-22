@@ -13,5 +13,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-python3 -m mypy megalist_dataflow 
-python3 -m pytest -vv --cov=megalist_dataflow -W ignore::DeprecationWarning
+python3 -m mypy megalista_dataflow 
+python3 -m pytest -vv --cov=megalista_dataflow -W ignore::DeprecationWarning

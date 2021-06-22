@@ -13,7 +13,8 @@
 # limitations under the License.
 
 import logging
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
+from apache_beam.options.value_provider import StaticValueProvider
 
 import apache_beam as beam
 from uploaders import utils
@@ -28,7 +29,7 @@ _DEFAULT_LOGGER: str = 'megalista.GoogleAdsCustomerMatchAbstractUploader'
 
 class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
 
-  def __init__(self, oauth_credentials: OAuthCredentials, developer_token: str):
+  def __init__(self, oauth_credentials: OAuthCredentials, developer_token: StaticValueProvider):
     super().__init__()
     self.oauth_credentials = oauth_credentials
     self.developer_token = developer_token
@@ -83,11 +84,15 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
     else:
       logging.getLogger(_DEFAULT_LOGGER).info('List %s found with resource name: %s',
                                               list_name, resource_name)
-    return resource_name
+    return str(resource_name)
 
+<<<<<<< HEAD
   def _get_user_list_resource_name(self, customer_id: str, list_name: str):
     ads_client = utils.get_ads_client(self.oauth_credentials, self.developer_token.get(), customer_id)
 
+=======
+  def _get_user_list_resource_name(self, customer_id: str, list_name: str) -> Optional[str]:
+>>>>>>> Changes to adhere to MyPy
     resource_name = None
     service = self._get_ads_service(customer_id)
 

@@ -1,6 +1,6 @@
 {
-    "name": "Megalist",
-    "description": "Buyers audience generator and uploader",
+    "name": "Megalista",
+    "description": "Data integration automation solution",
     "parameters": [
         {
             "name": "developer_token",
@@ -54,8 +54,9 @@
         },
         {
             "name": "bq_ops_dataset",
-            "label": "Auxiliary BigQuery dataset used for Megalista operations",
-            "help_text": "Auxiliary BigQuery dataset used for Megalista operations"
+            "label": "Auxiliary bigquery dataset used for Megalista operations",
+            "help_text": "Auxiliary bigquery dataset used for Megalista operations",
+            "is_optional": "true"
         },
         {
             "name": "appsflyer_dev_key",

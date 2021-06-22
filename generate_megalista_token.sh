@@ -18,5 +18,5 @@ if [ $# != 2 ]; then
     exit 1
 fi
 
-pip3 install --user -q -r megalist_dataflow/requirements.txt 
-python3 cloud_config/generate_megalist_token.py --client_id $1 --client_secret $2
+pip3 install --user -q -r megalista_dataflow/requirements.txt 
+python3 cloud_config/generate_megalista_token.py --client_id $1 --client_secret $2

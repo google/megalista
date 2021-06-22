@@ -21,4 +21,4 @@ fi
 
 gcloud config set project $1
 token=$(gcloud auth application-default print-access-token)
-curl -H "Authorization: Bearer $token" -H "Content-Type:application/json" "https://dataflow.googleapis.com/v1b3/projects/$1/locations/$3/templates:launch?gcsPath=gs://$2/templates/megalist" --data-binary "@cloud_config/scheduler.json"
+curl -H "Authorization: Bearer $token" -H "Content-Type:application/json" "https://dataflow.googleapis.com/v1b3/projects/$1/locations/$3/templates:launch?gcsPath=gs://$2/templates/megalista" --data-binary "@cloud_config/scheduler.json"
