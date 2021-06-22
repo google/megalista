@@ -101,19 +101,19 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
 
   # just to facilitate mocking
   def _get_ads_service(self, customer_id: str):
-    return utils.get_ads_service('GoogleAdsService', 'v7',
+    return utils.get_ads_service('GoogleAdsService', 'v8',
                                      self.oauth_credentials,
                                      self.developer_token.get(), 
                                      customer_id)
   
   def _get_user_list_service(self, customer_id: str):
-    return utils.get_ads_service('UserListService', 'v7',
+    return utils.get_ads_service('UserListService', 'v8',
                                      self.oauth_credentials,
                                      self.developer_token.get(), 
                                      customer_id)
 
   def _get_offline_user_data_job_service(self, customer_id: str):
-    return utils.get_ads_service('OfflineUserDataJobService', 'v7',
+    return utils.get_ads_service('OfflineUserDataJobService', 'v8',
                                     self.oauth_credentials,
                                     self.developer_token.get(), 
                                     customer_id)
