@@ -86,13 +86,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
                                               list_name, resource_name)
     return str(resource_name)
 
-<<<<<<< HEAD
-  def _get_user_list_resource_name(self, customer_id: str, list_name: str):
-    ads_client = utils.get_ads_client(self.oauth_credentials, self.developer_token.get(), customer_id)
-
-=======
   def _get_user_list_resource_name(self, customer_id: str, list_name: str) -> Optional[str]:
->>>>>>> Changes to adhere to MyPy
     resource_name = None
     service = self._get_ads_service(customer_id)
 
