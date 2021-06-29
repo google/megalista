@@ -10,6 +10,7 @@
         "setup_json_url": "Setup JSON URL (not needed for Sheets or Firestore config)",
         "setup_firestore_collection": "Setup Firestore collection (not needed for Sheets or JSON config)",
         "bq_ops_dataset": "Auxliary bigquery dataset used for Megalista operations",
+        #TODO(Modularize)
 	"appsflyer_dev_key": "Apps flyer dev key"
     },
     "environment": {

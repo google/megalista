@@ -22,7 +22,6 @@ from mappers.ads_ssd_hashing_mapper import AdsSSDHashingMapper
 from mappers.ads_user_list_pii_hashing_mapper import AdsUserListPIIHashingMapper
 from sources.primary_execution_source import PrimaryExecutionSource
 from sources.batches_from_executions import BatchesFromExecutions
-from uploaders.appsflyer.appsflyer_s2s_uploader_async import AppsFlyerS2SUploaderDoFn
 from uploaders.campaign_manager.campaign_manager_conversion_uploader import CampaignManagerConversionUploaderDoFn
 from uploaders.google_ads.customer_match.contact_info_uploader import GoogleAdsCustomerMatchContactInfoUploaderDoFn
 from uploaders.google_ads.customer_match.mobile_uploader import GoogleAdsCustomerMatchMobileUploaderDoFn
@@ -41,6 +40,7 @@ from models.oauth_credentials import OAuthCredentials
 from models.options import DataflowOptions
 from models.json_config import JsonConfig
 from models.sheets_config import SheetsConfig
+from third_party import THIRD_PARTY_STEPS
 
 warnings.filterwarnings(
     "ignore", "Your application has authenticated using end user credentials")
@@ -165,17 +165,6 @@ class CampaignManagerConversionStep(MegalistaStep):
               TransactionalEventsResultsWriter(self._dataflow_options.bq_ops_dataset))
         )
 
-class AppsFlyerEventsStep(MegalistaStep):
-    def expand(self, executions):
-        return (
-            executions
-            | 'Load Data - AppsFlyer S2S events' >>
-            BatchesFromExecutions(DestinationType.APPSFLYER_S2S_EVENTS, 1000, transactional=True)
-            | 'Upload - AppsFlyer S2S events' >>
-            beam.ParDo(AppsFlyerS2SUploaderDoFn(self._dataflow_options.appsflyer_dev_key))
-            | 'Persist results - AppsFlyer S2S events' >> beam.ParDo(TransactionalEventsResultsWriter(self._dataflow_options.bq_ops_dataset))
-        )
-
 
 def run(argv=None):
     pipeline_options = PipelineOptions()
@@ -214,7 +203,9 @@ def run(argv=None):
         executions | GoogleAnalytics4MeasurementProtocolStep(
             oauth_credentials, dataflow_options)
         executions | CampaignManagerConversionStep(oauth_credentials, dataflow_options)
-        executions | AppsFlyerEventsStep(oauth_credentials, dataflow_options)
+        # Add third party steps
+        for steps in THIRD_PARTY_STEPS:
+          executions | step(oauth_credentials, dataflow_options)
 
         # todo: update trix at the end
 

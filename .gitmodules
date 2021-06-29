@@ -1,0 +1,3 @@
+[submodule "megalista_dataflow/third_party"]
+	path = megalista_dataflow/third_party
+	url = git@github.com:caiotomazelli/megalista-module-template-test.git
