@@ -59,6 +59,7 @@
             "is_optional": "true"
         },
         {
+            # TODO(Modularize)
             "name": "appsflyer_dev_key",
             "label": "Developer key for AppsFlyer S2S API",
             "help_text": "Developer key for AppsFlyer S2S API",

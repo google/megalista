@@ -52,9 +52,9 @@ class FirestoreExecutionSource(BaseBoundedSource):
     db = firestore.Client()
     entries = db.collection(self._setup_firestore_collection.get()).where('active', '==', 'yes').stream()
     entries = [document_to_dict(doc) for doc in entries]
-    
+
     account_data = document_to_dict(db.collection(self._setup_firestore_collection.get()).document('account_config').get())
-  
+
     if not account_data:
       raise Exception('Firestore collection is absent')
     google_ads_id = account_data.get('google_ads_id', 'empty')
@@ -63,10 +63,10 @@ class FirestoreExecutionSource(BaseBoundedSource):
     app_id = account_data.get('app_id', 'empty')
     google_analytics_account_id = account_data.get('google_analytics_account_id', 'empty')
     campaign_manager_account_id = account_data.get('campaign_manager_account_id', 'empty')
-    
+
     account_config = AccountConfig(google_ads_id, mcc, google_analytics_account_id, campaign_manager_account_id, app_id)
     logging.getLogger("megalista.FirestoreExecutionSource").info(f"Loaded: {account_config}")
-    
+
     sources = self._read_sources(entries)
     destinations = self._read_destination(entries)
     if entries:
@@ -97,9 +97,9 @@ class FirestoreExecutionSource(BaseBoundedSource):
         'ADS_SSD_UPLOAD': ['gads_conversion_name', 'gads_external_upload_id'],
         'ADS_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD': ['gads_audience_name', 'gads_operation', 'gads_hash',
           'metadata_padding', 'gads_account'],
-        'ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD': ['gads_audience_name', 'gads_operation', 
+        'ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD': ['gads_audience_name', 'gads_operation',
           'metadata_padding', 'gads_app_id', 'gads_account'],
-        'ADS_CUSTOMER_MATCH_USER_ID_UPLOAD': ['gads_audience_name', 'gads_operation', 'gads_hash', 
+        'ADS_CUSTOMER_MATCH_USER_ID_UPLOAD': ['gads_audience_name', 'gads_operation', 'gads_hash',
           'metadata_padding', 'gads_account'],
         'GA_MEASUREMENT_PROTOCOL': ['google_analytics_property_id', 'google_analytics_non_interaction'],
         'GA_DATA_IMPORT': ['google_analytics_property_id', 'google_analytics_data_import_name'],
@@ -108,12 +108,13 @@ class FirestoreExecutionSource(BaseBoundedSource):
           'google_analytics_user_id_custom_dim', 'google_analytics_buyer_custom_dim'],
         'CM_OFFLINE_CONVERSION': ['campaign_manager_floodlight_activity_id',
           'campaign_manager_floodlight_configuration_id'],
-        'APPSFLYER_S2S_EVENTS': ['appsflyer_app_id']
+        # TODO(Modularize)
+        # 'APPSFLYER_S2S_EVENTS': ['appsflyer_app_id']
       }
 
       entry_type = entry['type']
       metadata = metadata_list.get(entry_type, None)
-      if not metadata: 
+      if not metadata:
         raise Exception(f'Upload type not implemented: {entry_type}')
       entry_metadata = []
       for m in metadata:
