@@ -205,7 +205,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
 
   def get_filtered_rows(self, rows: List[Any],
                         keys: List[str]) -> List[Dict[str, Any]]:
-    return [{key: row.get(key) for key in keys} for row in rows]
+    return [{key: row.get(key) for key in keys if key in row} for row in rows]
 
   def get_list_definition(self, account_config: AccountConfig,
                           destination_metadata: List[str]) -> Dict[str, Any]:

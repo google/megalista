@@ -31,6 +31,12 @@ class FieldHasher:
         return field
 
 
+def _is_data_present(dict, key):
+    return key in dict\
+        and dict[key] is not None\
+        and dict[key] != ''
+
+
 class AdsUserListPIIHashingMapper:
     def __init__(self):
         self.logger = logging.getLogger(
@@ -38,49 +44,40 @@ class AdsUserListPIIHashingMapper:
 
     def _hash_user(self, user, hasher):
 
-        hashed = user.copy()
+        hashed = {}
 
         try:
-            if 'email' in user:
+            if _is_data_present(user, 'email'):
                 hashed['hashed_email'] = hasher.hash_field(user['email'])
-                del hashed['email']
         except:
             self.logger.error("Error hashing email for user: %s" % user)
 
         try:
-            if 'mailing_address_first_name' in user and 'mailing_address_last_name' in user:
+            if _is_data_present(user, 'mailing_address_first_name')\
+             and _is_data_present(user, 'mailing_address_last_name')\
+             and _is_data_present(user, 'mailing_address_country')\
+             and _is_data_present(user, 'mailing_address_zip'):
                 hashed['address_info'] = {
                     'hashed_first_name': hasher.hash_field(user['mailing_address_first_name']),
                     'hashed_last_name': hasher.hash_field(user['mailing_address_last_name']),
                     'country_code': user['mailing_address_country'],
                     'postal_code': user['mailing_address_zip']
                 }
-                del hashed['mailing_address_first_name']
-                del hashed['mailing_address_last_name']
-                del hashed['mailing_address_country']
-                del hashed['mailing_address_zip']
         except:
             self.logger.error("Error hashing address for user: %s" % user)
 
         try:
-            if 'phone' in user:
+            if _is_data_present(user, 'phone'):
                 hashed['hashed_phone_number'] = hasher.hash_field(user['phone'])
-                del hashed['phone']
         except:
             self.logger.error("Error hashing phone for user: %s" % user)
 
-        try:
-            if 'mobile_device_id' in user:
-                hashed['mobile_id'] = user['mobile_device_id']
-                del hashed['mobile_device_id']
-        except:
-            self.logger.error(
-                "Error hashing mobile_device_id for user: %s" % user)
+        if _is_data_present(user, 'mobile_device_id'):
+            hashed['mobile_id'] = user['mobile_device_id']
 
         try:
-            if 'user_id' in user:
+            if _is_data_present(user, 'user_id'):
                 hashed['third_party_user_id'] = hasher.hash_field(user['user_id'])
-                del hashed['user_id']
         except:
             self.logger.error("Error hashing user_id for user: %s" % user)
 
@@ -104,4 +101,6 @@ class AdsUserListPIIHashingMapper:
             batch.execution.destination.destination_metadata)
         self.logger.debug('Should hash fields is %s' % should_hash_fields)
 
-        return Batch(batch.execution, [self._hash_user(element, FieldHasher(should_hash_fields)) for element in batch.elements])
+        hashed_elements = [self._hash_user(element, FieldHasher(should_hash_fields)) for element in batch.elements]
+
+        return Batch(batch.execution, [element for element in hashed_elements if element])
