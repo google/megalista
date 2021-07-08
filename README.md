@@ -74,7 +74,7 @@ Required APIs will depend on upload endpoints in use. We recomend you to enable 
 Megalista can be configured via Google Sheets, a JSON file or a Google Cloud Firestore collection. Expected data schemas (Sources) and metadata (Destinations) for each use case defined in [the Megalista Wiki](https://github.com/google/megalista/wiki).
 
 To configure using Google Sheets:
- - Make a copy of the [Sheets template](https://docs.google.com/spreadsheets/d/1Mu0yj7RWw_cr3bevWCnjXyODlCbdmabWDLsBvPv2EVY)
+ - Make a copy of the [Sheets template](https://docs.google.com/spreadsheets/d/1Mu0yj7RWw_cr3bevWCnjXyODlCbdmabWDLsBvPv2EVY?resourcekey=0-ZqbZ72FJVIa8X4YgelHUHA)
  - In the "Intro" sheet provide Account IDs for Google Ads, Analytics, CM360, etc.
  - Configure source/input data in the "Sources" sheet
  - Configure destinations in the "Destinations" sheet
