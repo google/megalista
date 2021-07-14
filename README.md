@@ -274,3 +274,6 @@ It's recommended to create a new Service Account to be used with the Cloud Sched
 
 ## Usage
 Every upload method expects as source a BigQuery data with specific fields, in addition to specific configuration metadata. For details on how to setup your upload routines, refer to the [Megalista Wiki](https://github.com/google/megalista/wiki) or the [Megalista user guide](https://github.com/google/megalista/blob/main/documentation/Megalista%20-%20Technical%20User%20Guide%20-%20EXTERNAL.pdf).
+
+## Note about Google Ads API access
+Calls to the Google Ads API will fail if the user that generated the OAuth2 credentials (Access Token and Refresh Token) doesn't have direct access to the Google Ads account which the calls are being directed to. It's not enough for the user to have access to a MCC above this account and being able to access the account through the interface, it's required that the user has permissions on the account itself.
