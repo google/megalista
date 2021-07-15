@@ -15,22 +15,24 @@
 from enum import Enum
 from typing import Dict, List, Union
 
-OK_STATUS = 'OK'
+OK_STATUS = "OK"
 
 
 class DestinationType(Enum):
-    CM_OFFLINE_CONVERSION, \
-        ADS_OFFLINE_CONVERSION, \
-        ADS_SSD_UPLOAD, \
-        ADS_ENHANCED_CONVERSION, \
-        ADS_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD, \
-        ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD, \
-        ADS_CUSTOMER_MATCH_USER_ID_UPLOAD, \
-        GA_USER_LIST_UPLOAD, \
-        APPSFLYER_S2S_EVENTS, \
-        GA_MEASUREMENT_PROTOCOL, \
-        GA_DATA_IMPORT, \
-        GA_4_MEASUREMENT_PROTOCOL = range(12)
+    (
+        CM_OFFLINE_CONVERSION,
+        ADS_OFFLINE_CONVERSION,
+        ADS_SSD_UPLOAD,
+        ADS_ENHANCED_CONVERSION,
+        ADS_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD,
+        ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD,
+        ADS_CUSTOMER_MATCH_USER_ID_UPLOAD,
+        GA_USER_LIST_UPLOAD,
+        APPSFLYER_S2S_EVENTS,
+        GA_MEASUREMENT_PROTOCOL,
+        GA_DATA_IMPORT,
+        GA_4_MEASUREMENT_PROTOCOL,
+    ) = range(12)
 
     def __eq__(self, other):
         if other is None:
@@ -39,19 +41,18 @@ class DestinationType(Enum):
 
 
 class SourceType(Enum):
-    BIG_QUERY, \
-        CSV = range(2)
+    BIG_QUERY, CSV = range(2)
     # TODO: CSV not yet implemented
 
 
 class AccountConfig:
     def __init__(
-            self,
-            google_ads_account_id: str,
-            mcc: bool,
-            google_analytics_account_id: str,
-            campaign_manager_account_id: str,
-            app_id: str
+        self,
+        google_ads_account_id: str,
+        mcc: bool,
+        google_analytics_account_id: str,
+        campaign_manager_account_id: str,
+        app_id: str,
     ):
         self._google_ads_account_id = google_ads_account_id
         self._mcc = mcc
@@ -80,30 +81,37 @@ class AccountConfig:
         return self._app_id
 
     def __str__(self) -> str:
-        return f"\n[Account Config]\n\t" \
-               f"Google Ads Customer Id: {self.google_ads_account_id}\n\t" \
-               f"Google Ads MCC: {self._mcc}\n\t" \
-               f"Google Analytics Account Id: {self.google_analytics_account_id}\n\t" \
-               f"Campaign Manager Account Id: {self.campaign_manager_account_id}\n\t" \
-               f"Play Store App Id: {self.app_id}"
+        return (
+            f"\n[Account Config]\n\t"
+            f"Google Ads Customer Id: {self.google_ads_account_id}\n\t"
+            f"Google Ads MCC: {self._mcc}\n\t"
+            f"Google Analytics Account Id: {self.google_analytics_account_id}\n\t"
+            f"Campaign Manager Account Id: {self.campaign_manager_account_id}\n\t"
+            f"Play Store App Id: {self.app_id}"
+        )
 
     def __eq__(self, other):
-        return self.google_ads_account_id == other.google_ads_account_id \
-            and self.google_analytics_account_id == other.google_analytics_account_id \
-            and self.campaign_manager_account_id == other.campaign_manager_account_id \
+        return (
+            self.google_ads_account_id == other.google_ads_account_id
+            and self.google_analytics_account_id == other.google_analytics_account_id
+            and self.campaign_manager_account_id == other.campaign_manager_account_id
             and self.app_id == other.app_id
+        )
 
     def __hash__(self):
-        return hash((self.google_ads_account_id, self.google_analytics_account_id,
-                     self.campaign_manager_account_id, self.app_id))
+        return hash(
+            (
+                self.google_ads_account_id,
+                self.google_analytics_account_id,
+                self.campaign_manager_account_id,
+                self.app_id,
+            )
+        )
 
 
 class Source:
     def __init__(
-            self,
-            source_name: str,
-            source_type: SourceType,
-            source_metadata: List[str]
+        self, source_name: str, source_type: SourceType, source_metadata: List[str]
     ):
         self._source_name = source_name
         self._source_type = source_type
@@ -122,20 +130,29 @@ class Source:
         return self._source_metadata
 
     def __eq__(self, other):
-        return self.source_name == other.source_name \
-            and self.source_type == other.source_type \
+        return (
+            self.source_name == other.source_name
+            and self.source_type == other.source_type
             and self.source_metadata == other.source_metadata
+        )
 
     def __hash__(self):
-        return hash((self.source_name, self.source_type, self.source_metadata[0], self.source_metadata[1]))
+        return hash(
+            (
+                self.source_name,
+                self.source_type,
+                self.source_metadata[0],
+                self.source_metadata[1],
+            )
+        )
 
 
 class Destination:
     def __init__(
-            self,
-            destination_name: str,
-            destination_type: DestinationType,
-            destination_metadata: List[str]
+        self,
+        destination_name: str,
+        destination_type: DestinationType,
+        destination_metadata: List[str],
     ):
         self._destination_name = destination_name
         self._destination_type = destination_type
@@ -154,18 +171,24 @@ class Destination:
         return self._destination_metadata
 
     def __eq__(self, other) -> bool:
-        return bool(self.destination_name == other.destination_name and self.destination_metadata[0] == other.destination_metadata[0])
+        return bool(
+            self.destination_name == other.destination_name
+            and self.destination_metadata[0] == other.destination_metadata[0]
+        )
 
     def __hash__(self) -> int:
-        return hash((self.destination_name, self.destination_type.name, self.destination_metadata[0]))
+        return hash(
+            (
+                self.destination_name,
+                self.destination_type.name,
+                self.destination_metadata[0],
+            )
+        )
 
 
 class Execution:
     def __init__(
-            self,
-            account_config: AccountConfig,
-            source: Source,
-            destination: Destination
+        self, account_config: AccountConfig, source: Source, destination: Destination
     ):
         self._account_config = account_config
         self._source = source
@@ -184,16 +207,16 @@ class Execution:
         return self._account_config
 
     def __str__(self):
-        return 'Origin name: {}. Action: {}. Destination name: {}'.format(self.source.source_name,
-                                                                          self.destination.destination_type,
-                                                                          self.destination.destination_name)
+        return f"Origin name: {self.source.source_name}. Action: {self.destination.destination_type}. Destination name: {self.destination.destination_name}"
 
     def __eq__(self, other):
         if other is None:
             return False
-        return self.source == other.source \
-            and self.destination == other.destination \
+        return (
+            self.source == other.source
+            and self.destination == other.destination
             and self.account_config == other.account_config
+        )
 
     def __hash__(self):
         return hash((self.source, self.destination, self.account_config))
@@ -201,9 +224,9 @@ class Execution:
 
 class Batch:
     def __init__(
-            self,
-            execution: Execution,
-            elements: List[Dict[str, Union[str, Dict[str, str]]]]
+        self,
+        execution: Execution,
+        elements: List[Dict[str, Union[str, Dict[str, str]]]],
     ):
         self._execution = execution
         self._elements = elements
@@ -217,7 +240,7 @@ class Batch:
         return self._elements
 
     def __str__(self):
-        return f'Execution: {self._execution}. Elements: {self._elements}'
+        return f"Execution: {self._execution}. Elements: {self._elements}"
 
     def __eq__(self, other):
         if other is None:
@@ -225,4 +248,4 @@ class Batch:
         return self.execution == other.execution and self.elements == other.elements
 
     def __hash__(self):
-        return hash(('Batch', self.execution))
+        return hash(("Batch", self.execution))
