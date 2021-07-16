@@ -64,7 +64,8 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
         # 3. Run the Job
 
         # 1. Create Job
-        unique_external_id = int(ssd_external_upload_id + str(int(datetime.datetime.now().timestamp()*10e3)))
+        # TODO(caiotomazelli): Remove ssd_external_upload_id parameter
+        unique_external_id = int(datetime.datetime.now().timestamp()*10e3)
         job_creation_payload = {
             'type_': 'STORE_SALES_UPLOAD_FIRST_PARTY',
             'external_id': unique_external_id,
