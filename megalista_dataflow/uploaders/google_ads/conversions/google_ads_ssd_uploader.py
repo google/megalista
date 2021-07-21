@@ -87,7 +87,7 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
                         'hashed_email': conversion['hashedEmail']
                     }],
                     'transaction_attribute': {
-                        'conversion_action': conversion_name,
+                        'conversion_action': self._get_resource_name(customer_id, conversion_name),
                         'currency_code': 'BRL',
                         'transaction_amount_micros': conversion['amount'],
                         'transaction_date_time': utils.format_date(conversion['time'])
@@ -100,3 +100,13 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
 
         # 3. Run the Job
         offline_user_data_job_service.run_offline_user_data_job(resource_name = job_resource_name)
+
+    def _get_resource_name(self, customer_id: str, name: str):
+        resource_name = None
+        service = self._get_ads_service(customer_id)
+        query = f"SELECT conversion_action.resource_name FROM conversion_action WHERE conversion_action.name = '{name}'"
+        response_query = service.search_stream(customer_id=customer_id, query=query)
+        for batch in response_query:
+          for row in batch.results:
+            resource_name = row.conversion_action.resource_name
+        return resource_name
