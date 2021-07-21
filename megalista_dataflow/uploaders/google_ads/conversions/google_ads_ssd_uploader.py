@@ -103,6 +103,12 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
         # 3. Run the Job
         offline_user_data_job_service.run_offline_user_data_job(resource_name = job_resource_name)
 
+    def _get_ads_service(self, customer_id: str):
+      return utils.get_ads_service('GoogleAdsService', ADS_API_VERSION,
+                                       self.oauth_credentials,
+                                       self.developer_token.get(),
+                                       customer_id)
+
     def _get_resource_name(self, customer_id: str, name: str):
         resource_name = None
         service = self._get_ads_service(customer_id)
