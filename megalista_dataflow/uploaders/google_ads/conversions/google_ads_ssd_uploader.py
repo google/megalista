@@ -91,8 +91,7 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
                         'currency_code': 'BRL',
                         'transaction_amount_micros': conversion['amount'],
                         'transaction_date_time': utils.format_date(conversion['time'])
-                    },
-                    'user_attribute': ''
+                    }
                 }
             } for conversion in rows]
         }
