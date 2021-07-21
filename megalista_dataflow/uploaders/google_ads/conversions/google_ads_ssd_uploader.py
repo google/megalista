@@ -51,13 +51,15 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
 
         offline_user_data_job_service = self._get_offline_user_data_job_service(
             customer_id)
+        conversion_action_resource_name = self._get_resource_name(customer_id,
+                                                                  execution.destination.destination_metadata[0])
         self._do_upload(offline_user_data_job_service,
                         customer_id,
-                        execution.destination.destination_metadata[0],
+                        conversion_action_resource_name,
                         execution.destination.destination_metadata[1], batch.elements)
 
     @staticmethod
-    def _do_upload(offline_user_data_job_service, customer_id, conversion_name, ssd_external_upload_id, rows):
+    def _do_upload(offline_user_data_job_service, customer_id, conversion_action_resource_name, ssd_external_upload_id, rows):
         # Upload is divided into 3 parts:
         # 1. Create Job
         # 2. Create operations (data insertion)
@@ -78,7 +80,6 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
         job_resource_name = offline_user_data_job_service.create_offline_user_data_job(customer_id = customer_id, job = job_creation_payload).resource_name
 
         # 2. Crete operations (data insertion)
-        conversion_action_resource_name = self._get_resource_name(customer_id, conversion_name)
         data_insertion_payload = {
             'resource_name': job_resource_name,
             'enable_partial_failure': False,
