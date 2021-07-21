@@ -78,6 +78,7 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
         job_resource_name = offline_user_data_job_service.create_offline_user_data_job(customer_id = customer_id, job = job_creation_payload).resource_name
 
         # 2. Crete operations (data insertion)
+        conversion_action_resource_name = self._get_resource_name(customer_id, conversion_name)
         data_insertion_payload = {
             'resource_name': job_resource_name,
             'enable_partial_failure': False,
@@ -87,7 +88,7 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
                         'hashed_email': conversion['hashedEmail']
                     }],
                     'transaction_attribute': {
-                        'conversion_action': self._get_resource_name(customer_id, conversion_name),
+                        'conversion_action': conversion_action_resource_name,
                         'currency_code': 'BRL',
                         'transaction_amount_micros': conversion['amount'],
                         'transaction_date_time': utils.format_date(conversion['time'])
