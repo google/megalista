@@ -15,21 +15,22 @@
 from typing import Iterable
 from models.execution import Batch
 
-class AdsSSDHashingMapper():
-  def _hash_field(self, s):
-    import hashlib
-    return hashlib.sha256(s.strip().lower().encode('utf-8')).hexdigest()
 
-  def _map_conversion(self, conversion):
-    return {
-      'hashedEmail': self._hash_field(conversion['email']),
-      'time': conversion['time'],
-      'amount': conversion['amount']
-    }
+class AdsSSDHashingMapper:
+    def _hash_field(self, s):
+        import hashlib
 
-  def _map_conversions(self, conversions):
-    return [self._map_conversion(conversion) for conversion in conversions]
+        return hashlib.sha256(s.strip().lower().encode("utf-8")).hexdigest()
 
-  def map_batch(self, batch: Batch):
-    return Batch(batch.execution, self._map_conversions(batch.elements))
+    def _map_conversion(self, conversion):
+        return {
+            "hashedEmail": self._hash_field(conversion["email"]),
+            "time": conversion["time"],
+            "amount": conversion["amount"],
+        }
 
+    def _map_conversions(self, conversions):
+        return [self._map_conversion(conversion) for conversion in conversions]
+
+    def map_batch(self, batch: Batch):
+        return Batch(batch.execution, self._map_conversions(batch.elements))
