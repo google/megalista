@@ -137,7 +137,7 @@ Google Ads Customer Match - Contact
 | Field name  | Description  |
 |---|---|
 | gads_audience_name | Name of the Google Ads audience registered on the platform |
-| gads_operation | ADD/REMOVE. Indicates whether the user list should be added or removed from the audience |
+| gads_operation | ADD/REMOVE/REPLACE. Indicates whether the user list should be added (ADD) or removed (REMOVE) from the audience. If REPLACE is used, the whole list will be replaced |
 | gads_hash | TRUE/FALSE. Enables hashing on data |
 | gads_account | (Optional) Google Ads account ID (Customer ID). Overlaps the default account ID in the account_config document |
 | type | ADS_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD |

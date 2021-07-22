@@ -178,17 +178,22 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
     job_resource_name = offline_user_data_job_service.create_offline_user_data_job(customer_id = customer_id, job = job_creation_payload).resource_name
 
     # 2. Create operations (data insertion)
-    operator = self._get_list_operator(execution.destination.destination_metadata[1])
+    operations = []
+    if self._get_remove_all(execution.destination.destination_metadata[1]):
+      operations.append({
+        'remove_all': True
+      })
+    operations.append({
+        self._get_list_operator(execution.destination.destination_metadata[1]): {
+          'user_identifiers': rows
+        }
+      })
     data_insertion_payload = {
       'resource_name': job_resource_name,
       'enable_partial_failure': False,
-      'operations': [{
-        operator: {
-          'user_identifiers': rows
-        }
-      }]
+      'operations': operations
     }
-
+    
     data_insertion_response = offline_user_data_job_service.add_offline_user_data_job_operations(request = data_insertion_payload)
 
     utils.print_partial_error_messages(_DEFAULT_LOGGER, 'uploading customer match', data_insertion_response)
@@ -199,9 +204,13 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
   def _get_list_operator(self, operator: str) -> str:
     translation = {
       'ADD': 'create',
-      'REMOVE': 'remove'
+      'REMOVE': 'remove',
+      'REPLACE': 'create'
     }
     return translation[operator]
+
+  def _get_remove_all(self, operator: str) -> bool:
+    return operator == 'REPLACE'
 
   def get_filtered_rows(self, rows: List[Any],
                         keys: List[str]) -> List[Dict[str, Any]]:
