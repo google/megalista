@@ -14,6 +14,7 @@
 
 import apache_beam as beam
 import logging
+import datetime
 
 from models.execution import Batch, Execution
 from uploaders import utils
@@ -31,7 +32,7 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
     def _get_offline_user_data_job_service(self, customer_id):
         return utils.get_ads_service('OfflineUserDataJobService', ADS_API_VERSION,
                                          self.oauth_credentials,
-                                         self.developer_token.get(), 
+                                         self.developer_token.get(),
                                          customer_id)
 
     @staticmethod
@@ -50,28 +51,32 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
 
         offline_user_data_job_service = self._get_offline_user_data_job_service(
             customer_id)
+        conversion_action_resource_name = self._get_resource_name(customer_id,
+                                                                  execution.destination.destination_metadata[0])
         self._do_upload(offline_user_data_job_service,
                         customer_id,
-                        execution.destination.destination_metadata[0],
+                        conversion_action_resource_name,
                         execution.destination.destination_metadata[1], batch.elements)
 
     @staticmethod
-    def _do_upload(offline_user_data_job_service, customer_id, conversion_name, ssd_external_upload_id, rows):
+    def _do_upload(offline_user_data_job_service, customer_id, conversion_action_resource_name, ssd_external_upload_id, rows):
         # Upload is divided into 3 parts:
         # 1. Create Job
         # 2. Create operations (data insertion)
         # 3. Run the Job
 
         # 1. Create Job
+        # TODO(caiotomazelli): Remove ssd_external_upload_id parameter
+        unique_external_id = int(datetime.datetime.now().timestamp()*10e3)
         job_creation_payload = {
             'type_': 'STORE_SALES_UPLOAD_FIRST_PARTY',
-            'external_id': int(ssd_external_upload_id),
+            'external_id': unique_external_id,
             'store_sales_metadata': {
                 'loyalty_fraction': 1.0,
                 'transaction_upload_fraction': 1.0
             }
         }
-        
+
         job_resource_name = offline_user_data_job_service.create_offline_user_data_job(customer_id = customer_id, job = job_creation_payload).resource_name
 
         # 2. Crete operations (data insertion)
@@ -84,17 +89,32 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
                         'hashed_email': conversion['hashedEmail']
                     }],
                     'transaction_attribute': {
-                        'conversion_action': conversion_name,
+                        'conversion_action': conversion_action_resource_name,
                         'currency_code': 'BRL',
                         'transaction_amount_micros': conversion['amount'],
                         'transaction_date_time': utils.format_date(conversion['time'])
-                    },
-                    'user_attribute': ''
+                    }
                 }
             } for conversion in rows]
         }
 
         data_insertion_response = offline_user_data_job_service.add_offline_user_data_job_operations(request = data_insertion_payload)
-        
+
         # 3. Run the Job
         offline_user_data_job_service.run_offline_user_data_job(resource_name = job_resource_name)
+
+    def _get_ads_service(self, customer_id: str):
+      return utils.get_ads_service('GoogleAdsService', ADS_API_VERSION,
+                                       self.oauth_credentials,
+                                       self.developer_token.get(),
+                                       customer_id)
+
+    def _get_resource_name(self, customer_id: str, name: str):
+        resource_name = None
+        service = self._get_ads_service(customer_id)
+        query = f"SELECT conversion_action.resource_name FROM conversion_action WHERE conversion_action.name = '{name}'"
+        response_query = service.search_stream(customer_id=customer_id, query=query)
+        for batch in response_query:
+          for row in batch.results:
+            resource_name = row.conversion_action.resource_name
+        return resource_name

@@ -57,8 +57,10 @@ def test_fail_missing_destination_metadata(uploader, mocker):
 
 def test_conversion_upload(mocker, uploader):
     mocker.patch.object(uploader, '_get_offline_user_data_job_service')
+    mocker.patch.object(uploader, '_get_resource_name')
     conversion_name = 'ssd_conversion'
     resource_name = uploader._get_offline_user_data_job_service.return_value.create_offline_user_data_job.return_value.resource_name
+    conversion_name_resource_name = uploader._get_resource_name.return_value
     external_upload_id = '123'
     source = Source('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'))
     destination = Destination('dest1', DestinationType.ADS_SSD_UPLOAD,
@@ -92,12 +94,11 @@ def test_conversion_upload(mocker, uploader):
                     'hashed_email': 'a@a.com'
                 }],
                 'transaction_attribute': {
-                    'conversion_action': conversion_name,
+                    'conversion_action': conversion_name_resource_name,
                     'currency_code': 'BRL',
                     'transaction_amount_micros': '123',
                     'transaction_date_time': time1_result
-                },
-                'user_attribute': ''
+                }
             }
         }, {
             'create': {
@@ -105,12 +106,11 @@ def test_conversion_upload(mocker, uploader):
                     'hashed_email': 'b@b.com'
                 }],
                 'transaction_attribute': {
-                    'conversion_action': conversion_name,
+                    'conversion_action': conversion_name_resource_name,
                     'currency_code': 'BRL',
                     'transaction_amount_micros': '234',
                     'transaction_date_time': time2_result
-                },
-                'user_attribute': ''
+                }
             }
         }]
     }
