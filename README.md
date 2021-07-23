@@ -236,6 +236,7 @@ python3 megalista_dataflow/main.py \
   --access_token ${ACCESS_TOKEN} \
   --client_id ${CLIENT_ID} \
   --client_secret ${CLIENT_SECRET} \
+  --bq_ops_dataset %{BQ_OPS_DATASET} \
   --project ${GCP_PROJECT_ID} \
   --region us-central1 \
   --temp_location gs://{$GCS_BUCKET}/tmp
