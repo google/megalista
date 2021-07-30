@@ -221,7 +221,6 @@ class Execution:
     def __hash__(self):
         return hash((self.source, self.destination, self.account_config))
 
-
 class Batch:
     def __init__(
         self,

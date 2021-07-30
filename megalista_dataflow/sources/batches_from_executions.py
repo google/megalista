@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, List, Iterable
+from typing import Any, List, Dict, Tuple, Iterable, Union
 
 import apache_beam as beam
 import logging
+import pickle
 from google.cloud import bigquery
 from apache_beam.io.gcp.bigquery import ReadFromBigQueryRequest
 
@@ -25,12 +26,13 @@ _BIGQUERY_PAGE_SIZE = 20000
 
 _LOGGER_NAME = 'megalista.BatchesFromExecutions'
 
+DictBatch = Dict[str, Union[Execution, Dict[str, Any]]]
+
 def _convert_row_to_dict(row):
     dict = {}
     for key, value in row.items():
         dict[key] = value
     return dict
-
 
 class BatchesFromExecutions(beam.PTransform):
     """
@@ -39,7 +41,7 @@ class BatchesFromExecutions(beam.PTransform):
     """
 
     class _ExecutionIntoBigQueryRequest(beam.DoFn):
-        def process(self, execution: Execution) -> Iterable[ReadFromBigQueryRequest]:
+        def process(self, execution: Execution) -> Iterable[DictBatch]:
             client = bigquery.Client()
             table_name = execution.source.source_metadata[0] + '.' + execution.source.source_metadata[1]
             query = f"SELECT data.* FROM {table_name} AS data"
@@ -49,7 +51,7 @@ class BatchesFromExecutions(beam.PTransform):
                 yield {'execution': execution, 'row': _convert_row_to_dict(row)}
 
     class _ExecutionIntoBigQueryRequestTransactional(beam.DoFn):
-        def process(self, execution: Execution) -> Iterable[ReadFromBigQueryRequest]:
+        def process(self, execution: Execution) -> Iterable[DictBatch]:
             table_name = execution.source.source_metadata[0] + \
                 '.' + execution.source.source_metadata[1]
             uploaded_table_name = f"{table_name}_uploaded"
@@ -83,7 +85,7 @@ class BatchesFromExecutions(beam.PTransform):
 
         def process(self, grouped_elements):
             # grouped_elements[0] is the grouping key, the execution
-            execution = grouped_elements[0]
+            execution: Execution = pickle.loads(grouped_elements[0])
             batch: List[Any] = []
             # grouped_elements[1] is the list of elements
             for i, element in enumerate(grouped_elements[1]):
@@ -109,11 +111,11 @@ class BatchesFromExecutions(beam.PTransform):
             return self._ExecutionIntoBigQueryRequestTransactional()
         return self._ExecutionIntoBigQueryRequest()
 
-    def expand(self, executions):
+    def expand(self, executions: beam.PCollection[Execution]) -> beam.PCollection[Batch]:
         return (
             executions
             | beam.Filter(lambda execution: execution.destination.destination_type == self._destination_type)
             | beam.ParDo(self._get_bq_request_class())
-            | beam.GroupBy(lambda x: x['execution'])
+            | beam.GroupBy(lambda x: pickle.dumps(x['execution']))
             | beam.ParDo(self._BatchElements(self._batch_size))
         )
