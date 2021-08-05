@@ -65,7 +65,7 @@ class GoogleAdsSSDStep(MegalistaStep):
         return (
             executions
             | "Load Data -  Google Ads SSD"
-            >> BatchesFromExecutions(DestinationType.ADS_SSD_UPLOAD, 50)
+            >> BatchesFromExecutions(DestinationType.ADS_SSD_UPLOAD, 5000)
             | "Hash Users - Google Ads SSD" >> beam.Map(self._hasher.map_batch)
             | "Upload - Google Ads SSD"
             >> beam.ParDo(
