@@ -201,7 +201,7 @@ Appsflyer S2S events
 
 
 ### Creating required access tokens
-To access campaigns and user lists on Google's platforms, this dataflow will need OAuth tokens for a account that can authenticate in those systems.
+To access campaigns and user lists on Google's platforms, this dataflow will need OAuth tokens for an account that can authenticate in those systems.
 
 In order to create it, follow these steps:
  - Access GCP console
