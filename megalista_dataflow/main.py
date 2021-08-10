@@ -27,7 +27,6 @@ from models.options import DataflowOptions
 from models.sheets_config import SheetsConfig
 from sources.batches_from_executions import BatchesFromExecutions
 from sources.primary_execution_source import PrimaryExecutionSource
-from uploaders.appsflyer.appsflyer_s2s_uploader_async import AppsFlyerS2SUploaderDoFn
 from uploaders.big_query.transactional_events_results_writer import TransactionalEventsResultsWriter
 from uploaders.campaign_manager.campaign_manager_conversion_uploader import CampaignManagerConversionUploaderDoFn
 from uploaders.google_ads.conversions.google_ads_offline_conversions_uploader import GoogleAdsOfflineUploaderDoFn
@@ -40,6 +39,7 @@ from uploaders.google_analytics.google_analytics_data_import_eraser import Googl
 from uploaders.google_analytics.google_analytics_data_import_uploader import GoogleAnalyticsDataImportUploaderDoFn
 from uploaders.google_analytics.google_analytics_measurement_protocol import GoogleAnalyticsMeasurementProtocolUploaderDoFn
 from uploaders.google_analytics.google_analytics_user_list_uploader import GoogleAnalyticsUserListUploaderDoFn
+from third_party import THIRD_PARTY_STEPS
 
 warnings.filterwarnings(
     "ignore", "Your application has authenticated using end user credentials"
@@ -245,25 +245,6 @@ class CampaignManagerConversionStep(MegalistaStep):
         )
 
 
-class AppsFlyerEventsStep(MegalistaStep):
-    def expand(self, executions):
-        return (
-            executions
-            | "Load Data - AppsFlyer S2S events"
-            >> BatchesFromExecutions(
-                DestinationType.APPSFLYER_S2S_EVENTS, 1000, transactional=True
-            )
-            | "Upload - AppsFlyer S2S events"
-            >> beam.ParDo(
-                AppsFlyerS2SUploaderDoFn(self.params._dataflow_options.appsflyer_dev_key)
-            )
-            | "Persist results - AppsFlyer S2S events"
-            >> beam.ParDo(
-                TransactionalEventsResultsWriter(self.params._dataflow_options.bq_ops_dataset)
-            )
-        )
-
-
 def run(argv=None):
     pipeline_options = PipelineOptions()
     dataflow_options = pipeline_options.view_as(DataflowOptions)
@@ -297,8 +278,10 @@ def run(argv=None):
         executions | GoogleAnalyticsMeasurementProtocolStep(params)
         executions | GoogleAnalytics4MeasurementProtocolStep(params)
         executions | CampaignManagerConversionStep(params)
-        executions | AppsFlyerEventsStep(params)
 
+        # Add third party steps
+        for step in THIRD_PARTY_STEPS:
+          executions | step(params)
         # todo: update trix at the end
 
 
