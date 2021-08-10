@@ -1,9 +1,12 @@
 import apache_beam as beam
 from apache_beam.options.pipeline_options import PipelineOptions
-from uploaders.appsflyer.appsflyer_s2s_uploader_async import AppsFlyerS2SUploaderDoFn
+from .uploaders.appsflyer.appsflyer_s2s_uploader_async import AppsFlyerS2SUploaderDoFn
 
-from ..models.execution import DestinationType
-from ..uploaders.big_query.transactional_events_results_writer import TransactionalEventsResultsWriter
+import sys
+sys.path.append('..) # Adds higher directory to python modules path.
+from models.execution import DestinationType
+from uploaders.big_query.transactional_events_results_writer import TransactionalEventsResultsWriter
+from sources.batches_from_executions import BatchesFromExecutions
 
 class AppsFlyerEventsStep(beam.PTransform):
     def __init__(self, params):

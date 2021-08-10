@@ -81,7 +81,7 @@ class GoogleAdsSSDStep(MegalistaStep):
             executions
             | "Load Data -  Google Ads SSD"
             >> BatchesFromExecutions(DestinationType.ADS_SSD_UPLOAD, 5000)
-            | "Hash Users - Google Ads SSD" >> beam.Map(AdsSSDHashingMapper())
+            | "Hash Users - Google Ads SSD" >> beam.Map(AdsSSDHashingMapper().map_batch)
             | "Upload - Google Ads SSD"
             >> beam.ParDo(
                 GoogleAdsSSDUploaderDoFn(
@@ -264,6 +264,8 @@ def run(argv=None):
         dataflow_options.setup_json_url,
         dataflow_options.setup_firestore_collection,
     )
+
+    params = MegalistaStepParams(oauth_credentials, dataflow_options)
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
         executions = pipeline | "Load executions" >> beam.io.Read(execution_source)
