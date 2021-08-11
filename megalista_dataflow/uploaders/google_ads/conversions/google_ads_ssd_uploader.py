@@ -38,7 +38,7 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
     @staticmethod
     def _assert_conversion_metadata_is_present(execution: Execution):
         metadata = execution.destination.destination_metadata
-        if len(metadata) != 2:
+        if len(metadata) < 3:
             raise ValueError(
                 f'Missing destination information. Received {len(metadata)} entry(ies)')
 
