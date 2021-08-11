@@ -47,7 +47,10 @@ class AdsUserListPIIHashingMapper:
                          "phone",
                          "mobile_device_id",
                          "user_id")
-        hashed = {{k: v} for k,v in user.items() if k not in hashable_keys}
+        hashed = {}
+        for k,v in user.items():
+          if k not in hashable_keys:
+            hashed[k] = v
 
         try:
             if _is_data_present(user, "email"):
