@@ -39,8 +39,15 @@ class AdsUserListPIIHashingMapper:
         self.logger = logging.getLogger("megalista.AdsUserListPIIHashingMapper")
 
     def _hash_user(self, user, hasher):
-
-        hashed = {}
+        hashable_keys = ("email",
+                         "mailing_address_first_name",
+                         "mailing_address_last_name",
+                         "mailing_address_country",
+                         "mailing_address_zip",
+                         "phone",
+                         "mobile_device_id",
+                         "user_id")
+        hashed = {{k: v} for k,v in user.items() if k not in hashable_keys}
 
         try:
             if _is_data_present(user, "email"):
