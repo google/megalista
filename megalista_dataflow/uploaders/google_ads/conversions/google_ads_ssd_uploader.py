@@ -85,9 +85,7 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
             'enable_partial_failure': False,
             'operations': [{
                 'create': {
-                    'user_identifiers': [{
-                        'hashed_email': conversion['hashedEmail']
-                    }],
+                    'user_identifiers': [{k: v} for (k, v) in conversion.items() if k not in ('amount', 'time')],
                     'transaction_attribute': {
                         'conversion_action': conversion_action_resource_name,
                         'currency_code': 'BRL',
@@ -118,3 +116,5 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
           for row in batch.results:
             resource_name = row.conversion_action.resource_name
         return resource_name
+
+

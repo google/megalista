@@ -74,11 +74,11 @@ def test_conversion_upload(mocker, uploader):
     time2_result = '2020-04-09 13:13:55-03:00'
 
     batch = Batch(execution, [{
-        'hashedEmail': 'a@a.com',
+        'hashed_email': 'a@a.com',
         'time': time1,
         'amount': '123'
     }, {
-        'hashedEmail': 'b@b.com',
+        'hashed_email': 'b@b.com',
         'time': time2,
         'amount': '234'
     }])
