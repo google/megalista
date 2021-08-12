@@ -48,6 +48,7 @@ class AdsUserListPIIHashingMapper:
                          "mobile_device_id",
                          "user_id")
         hashed = {}
+        # include non PII keys
         for k,v in user.items():
           if k not in hashable_keys:
             hashed[k] = v
