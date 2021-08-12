@@ -38,7 +38,7 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
     @staticmethod
     def _assert_conversion_metadata_is_present(execution: Execution):
         metadata = execution.destination.destination_metadata
-        if len(metadata) != 2:
+        if len(metadata) < 3:
             raise ValueError(
                 f'Missing destination information. Received {len(metadata)} entry(ies)')
 
@@ -61,11 +61,11 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
     @staticmethod
     def _do_upload(offline_user_data_job_service, customer_id, conversion_action_resource_name, ssd_external_upload_id, rows):
         # Upload is divided into 3 parts:
-        # 1. Create Job
-        # 2. Create operations (data insertion)
-        # 3. Run the Job
+        # 1. Creates Job
+        # 2. Creates operations (data insertion)
+        # 3. Runs the Job
 
-        # 1. Create Job
+        # 1. Creates Job
         # TODO(caiotomazelli): Remove ssd_external_upload_id parameter
         unique_external_id = int(datetime.datetime.now().timestamp()*10e3)
         job_creation_payload = {
@@ -79,15 +79,13 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
 
         job_resource_name = offline_user_data_job_service.create_offline_user_data_job(customer_id = customer_id, job = job_creation_payload).resource_name
 
-        # 2. Crete operations (data insertion)
+        # 2. Creates operations (data insertion)
         data_insertion_payload = {
             'resource_name': job_resource_name,
             'enable_partial_failure': False,
             'operations': [{
                 'create': {
-                    'user_identifiers': [{
-                        'hashed_email': conversion['hashedEmail']
-                    }],
+                    'user_identifiers': [{k: v} for (k, v) in conversion.items() if k not in ('amount', 'time')],
                     'transaction_attribute': {
                         'conversion_action': conversion_action_resource_name,
                         'currency_code': 'BRL',
@@ -100,7 +98,7 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
 
         data_insertion_response = offline_user_data_job_service.add_offline_user_data_job_operations(request = data_insertion_payload)
 
-        # 3. Run the Job
+        # 3. Runs the Job
         offline_user_data_job_service.run_offline_user_data_job(resource_name = job_resource_name)
 
     def _get_ads_service(self, customer_id: str):
@@ -118,3 +116,5 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
           for row in batch.results:
             resource_name = row.conversion_action.resource_name
         return resource_name
+
+

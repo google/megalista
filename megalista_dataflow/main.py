@@ -17,7 +17,6 @@ import warnings
 
 import apache_beam as beam
 from apache_beam.options.pipeline_options import PipelineOptions
-from mappers.ads_ssd_hashing_mapper import AdsSSDHashingMapper
 from mappers.ads_user_list_pii_hashing_mapper import \
     AdsUserListPIIHashingMapper
 from models.execution import DestinationType, Execution
@@ -81,7 +80,7 @@ class GoogleAdsSSDStep(MegalistaStep):
             executions
             | "Load Data -  Google Ads SSD"
             >> BatchesFromExecutions(DestinationType.ADS_SSD_UPLOAD, 5000)
-            | "Hash Users - Google Ads SSD" >> beam.Map(AdsSSDHashingMapper().map_batch)
+            | "Hash Users - Google Ads SSD" >> beam.Map(ADS_CM_HASHER.hash_users)
             | "Upload - Google Ads SSD"
             >> beam.ParDo(
                 GoogleAdsSSDUploaderDoFn(
