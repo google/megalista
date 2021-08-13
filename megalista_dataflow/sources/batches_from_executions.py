@@ -16,6 +16,8 @@ from typing import Any, List, Iterable
 
 import apache_beam as beam
 import logging
+
+from apache_beam.options.value_provider import ValueProvider
 from google.cloud import bigquery
 from apache_beam.io.gcp.bigquery import ReadFromBigQueryRequest
 
@@ -24,6 +26,7 @@ from models.execution import DestinationType, Execution, Batch
 _BIGQUERY_PAGE_SIZE = 20000
 
 _LOGGER_NAME = 'megalista.BatchesFromExecutions'
+
 
 def _convert_row_to_dict(row):
     dict = {}
@@ -49,10 +52,16 @@ class BatchesFromExecutions(beam.PTransform):
                 yield {'execution': execution, 'row': _convert_row_to_dict(row)}
 
     class _ExecutionIntoBigQueryRequestTransactional(beam.DoFn):
+
+        def __init__(self, bq_ops_dataset):
+            self._bq_ops_dataset = bq_ops_dataset
+
         def process(self, execution: Execution) -> Iterable[ReadFromBigQueryRequest]:
             table_name = execution.source.source_metadata[0] + \
                 '.' + execution.source.source_metadata[1]
-            uploaded_table_name = f"{table_name}_uploaded"
+            uploaded_table_name = self._bq_ops_dataset.get() + \
+                '.' + execution.source.source_metadata[1] + \
+                "_uploaded"
             client = bigquery.Client()
 
             query = f"CREATE TABLE IF NOT EXISTS {uploaded_table_name} ( \
@@ -97,16 +106,21 @@ class BatchesFromExecutions(beam.PTransform):
         self,
         destination_type: DestinationType,
         batch_size: int = 5000,
-        transactional: bool = False
+        transactional: bool = False,
+        bq_ops_dataset: ValueProvider = None
     ):
         super().__init__()
+        if transactional and not bq_ops_dataset:
+            raise Exception('Missing bq_ops_dataset for this uploader')
+
         self._destination_type = destination_type
         self._batch_size = batch_size
         self._transactional = transactional
+        self._bq_ops_dataset = bq_ops_dataset
 
     def _get_bq_request_class(self):
         if self._transactional:
-            return self._ExecutionIntoBigQueryRequestTransactional()
+            return self._ExecutionIntoBigQueryRequestTransactional(self._bq_ops_dataset)
         return self._ExecutionIntoBigQueryRequest()
 
     def expand(self, executions):
