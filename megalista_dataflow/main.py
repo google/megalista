@@ -197,8 +197,10 @@ class GoogleAnalyticsMeasurementProtocolStep(MegalistaStep):
             executions
             | "Load Data - GA measurement protocol"
             >> BatchesFromExecutions(
-                DestinationType.GA_MEASUREMENT_PROTOCOL, 20, transactional=True
-            )
+                DestinationType.GA_MEASUREMENT_PROTOCOL,
+                20,
+                True,
+                self.params.dataflow_options.bq_ops_dataset)
             | "Upload - GA measurement protocol"
             >> beam.ParDo(GoogleAnalyticsMeasurementProtocolUploaderDoFn())
             | "Persist results - GA measurement protocol"
@@ -214,8 +216,10 @@ class GoogleAnalytics4MeasurementProtocolStep(MegalistaStep):
             executions
             | "Load Data - GA 4 measurement protocol"
             >> BatchesFromExecutions(
-                DestinationType.GA_4_MEASUREMENT_PROTOCOL, 20, transactional=True
-            )
+                DestinationType.GA_4_MEASUREMENT_PROTOCOL,
+                20,
+                True,
+                self.params.dataflow_options.bq_ops_dataset)
             | "Upload - GA 4 measurement protocol"
             >> beam.ParDo(GoogleAnalytics4MeasurementProtocolUploaderDoFn())
             | "Persist results - GA 4 measurement protocol"
@@ -231,8 +235,10 @@ class CampaignManagerConversionStep(MegalistaStep):
             executions
             | "Load Data -  CM conversion"
             >> BatchesFromExecutions(
-                DestinationType.CM_OFFLINE_CONVERSION, 1000, transactional=True
-            )
+                DestinationType.CM_OFFLINE_CONVERSION,
+                1000,
+                True,
+                self.params.dataflow_options.bq_ops_dataset)
             | "Upload - CM conversion"
             >> beam.ParDo(
                 CampaignManagerConversionUploaderDoFn(self.params._oauth_credentials)
