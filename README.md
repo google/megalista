@@ -16,7 +16,7 @@ Sample integration code for onboarding offline/CRM data from BigQuery as custom 
   - Measurement Protocol [[details]](https://developers.google.com/analytics/devguides/collection/protocol/v1#:~:text=Measurement%20Protocol%20Overview%20bookmark_border&text=The%20Google%20Analytics%20Measurement%20Protocol,directly%20to%20Google%20Analytics%20servers.)
 
 - **Campaign Manager**
-  - Offline Conversions API **(user id, device id, match id, gclid, dclid)** [[details]](https://developers.google.com/doubleclick-advertisers/guides/conversions_upload)
+  - Offline Conversions API **(user id, device id, match id, gclid, dclid, value, quantity, and customVariables)** [[details]](https://developers.google.com/doubleclick-advertisers/guides/conversions_upload)
 
 - **Google Analytics 4**
   - Measurement protocol (Web + App) [[details]](https://developers.google.com/analytics/devguides/collection/protocol/ga4)
