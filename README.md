@@ -72,9 +72,9 @@ Required APIs will depend on upload endpoints in use.
 Megalista can be configured via Google Sheets, a JSON file or a Google Cloud Firestore collection. Expected data schemas (Sources) and metadata (Destinations) for each use case defined in [the Megalista Wiki](https://github.com/google/megalista/wiki).
 
 Instructions for each configuration method method can be found in the Megalista wiki
-- [Google Sheets] (https://github.com/google/megalista/wiki)
-- [JSON] (https://github.com/google/megalista/wiki)
-- [Firestore] (https://github.com/google/megalista/wiki)
+- [Google Sheets] (https://github.com/google/megalista/wiki/Google-Sheets)
+- [JSON] (https://github.com/google/megalista/wiki/JSON)
+- [Firestore] (https://github.com/google/megalista/wiki/Firestore)
 
 ## Deployment
 
@@ -105,10 +105,9 @@ The script will required some parameters, between them:
 - *Setup Firestore collection*, *URL for JSON configuration* and *Setup Sheet Id*
   - Only one of these three should be filled and the other should be left black accordingly to the chosen configuration method.
 
-
-
 ### Updating the Binary
-
+to update the binary whitouth redoing the whole deployment process, run:
+- ./terraform/scripts/deploy_cloud.sh *gcp_project_id* *bucket_name* *region*
 
 ## Usage
 Every upload method expects as source a BigQuery data with specific fields, in addition to specific configuration metadata. For details on how to setup your upload routines, refer to the [Megalista Wiki](https://github.com/google/megalista/wiki).
