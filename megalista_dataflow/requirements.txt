@@ -21,3 +21,4 @@ six==1.13.0
 mypy==0.790
 google-cloud-storage==1.38.0
 google-cloud-firestore==2.1.1
+google-auth-oauthlib=0.4.6
