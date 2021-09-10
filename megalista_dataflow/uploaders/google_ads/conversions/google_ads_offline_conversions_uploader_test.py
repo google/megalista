@@ -11,9 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from unittest.mock import MagicMock
 
 from apache_beam.options.value_provider import StaticValueProvider
 import pytest
+
 from uploaders.google_ads.conversions.google_ads_offline_conversions_uploader import GoogleAdsOfflineUploaderDoFn
 from models.execution import AccountConfig
 from models.execution import Destination
@@ -24,7 +26,7 @@ from models.execution import SourceType
 from models.execution import Batch
 from models.oauth_credentials import OAuthCredentials
 
-_account_config = AccountConfig('account_id', False, 'ga_account_id', '', '')
+_account_config = AccountConfig('123-45567-890', False, 'ga_account_id', '', '')
 
 
 @pytest.fixture
@@ -45,6 +47,19 @@ def test_get_service(mocker, uploader):
 
 
 def test_conversion_upload(mocker, uploader):
+  # arrange
+  mocker.patch.object(uploader, '_get_ads_service')
+
+  conversion_resource_name = 'user_list_resouce'
+  resource_name_result = MagicMock()
+  resource_name_result.conversion_action.resource_name = conversion_resource_name
+
+  resource_name_batch_response = MagicMock()
+  resource_name_batch_response.results = [resource_name_result]
+
+  uploader._get_ads_service.return_value.search_stream.return_value = [resource_name_batch_response]
+
+  # act
   mocker.patch.object(uploader, '_get_oc_service')
   conversion_name = 'user_list'
   destination = Destination(
@@ -69,17 +84,23 @@ def test_conversion_upload(mocker, uploader):
       }])
   uploader.process(batch)
 
-  uploader._get_oc_service.return_value.upload_click_conversions.assert_any_call(request = {
-    'customer_id': 'account_id',
-    'partial_failure': False,
+  #assert
+  uploader._get_ads_service.return_value.search_stream.assert_called_once_with(
+    customer_id='12345567890',
+    query=f"SELECT conversion_action.resource_name FROM conversion_action WHERE conversion_action.name = '{conversion_name}'"
+  )
+
+  uploader._get_oc_service.return_value.upload_click_conversions.assert_called_once_with(request={
+    'customer_id': '12345567890',
+    'partial_failure': True,
     'validate_only': False,
     'conversions': [{
-      'conversion_action': None,
+      'conversion_action': conversion_resource_name,
       'conversion_date_time': time1_result,
       'conversion_value': 123,
       'gclid': '456'
     }, {
-      'conversion_action': None,
+      'conversion_action': conversion_resource_name,
       'conversion_date_time': time2_result,
       'conversion_value': 234,
       'gclid': '567'
