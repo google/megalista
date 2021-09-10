@@ -93,16 +93,14 @@ class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
       'conversions': conversions
     }
 
-    
     response = oc_service.upload_click_conversions(request=upload_data)
     utils.print_partial_error_messages(_DEFAULT_LOGGER, 'uploading offline conversions', response)
 
   def _get_resource_name(self, customer_id: str, name: str):
-      resource_name = None
       service = self._get_ads_service(customer_id)
       query = f"SELECT conversion_action.resource_name FROM conversion_action WHERE conversion_action.name = '{name}'"
       response_query = service.search_stream(customer_id=customer_id, query=query)
       for batch in response_query:
         for row in batch.results:
-          resource_name = row.conversion_action.resource_name
-      return resource_name
+          return row.conversion_action.resource_name
+      raise Exception(f'Conversion "{name}" could not be found on account {customer_id}')
