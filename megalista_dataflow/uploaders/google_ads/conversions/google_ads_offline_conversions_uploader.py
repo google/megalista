@@ -28,7 +28,6 @@ class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
     super().__init__()
     self.oauth_credentials = oauth_credentials
     self.developer_token = developer_token
-    self.active = self.developer_token is not None
 
   def _get_ads_service(self, customer_id: str):
     return utils.get_ads_service('GoogleAdsService', ADS_API_VERSION,
@@ -59,10 +58,6 @@ class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
   @utils.safe_process(
       logger=logging.getLogger('megalista.GoogleAdsOfflineUploader'))
   def process(self, batch: Batch, **kwargs):
-    if not self.active:
-      logging.getLogger().warning(
-          'Skipping upload, parameters not configured.')
-      return
     execution = batch.execution
     self._assert_conversion_name_is_present(execution)
 

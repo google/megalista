@@ -44,18 +44,6 @@ def test_get_service(mocker, uploader):
   assert uploader._get_oc_service(mocker.ANY) is not None
 
 
-def test_not_active(mocker, caplog):
-  credential_id = StaticValueProvider(str, 'id')
-  secret = StaticValueProvider(str, 'secret')
-  access = StaticValueProvider(str, 'access')
-  refresh = StaticValueProvider(str, 'refresh')
-  credentials = OAuthCredentials(credential_id, secret, access, refresh)
-  uploader_dofn = GoogleAdsOfflineUploaderDoFn(credentials, None)
-  mocker.patch.object(uploader_dofn, '_get_oc_service')
-  uploader_dofn.process(Batch(None, []))
-  uploader_dofn._get_oc_service.assert_not_called()
-  assert 'Skipping upload, parameters not configured.' in caplog.text
-
 def test_conversion_upload(mocker, uploader):
   mocker.patch.object(uploader, '_get_oc_service')
   conversion_name = 'user_list'
