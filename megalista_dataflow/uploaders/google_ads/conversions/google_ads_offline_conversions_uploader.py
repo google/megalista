@@ -15,7 +15,7 @@
 import logging
 
 import apache_beam as beam
-from models.execution import Batch, Execution
+from models.execution import Batch, Execution, AccountConfig, Destination
 from uploaders import utils
 from uploaders.google_ads import ADS_API_VERSION
 
@@ -44,10 +44,19 @@ class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
   def start_bundle(self):
     pass
 
+  def _get_customer_id(self, account_config:AccountConfig, destination:Destination) -> str:
+    """
+      If the customer_id is present on the destination, returns it, otherwise defaults to the account_config info.
+    """
+    if len(destination.destination_metadata) >= 2 and len(destination.destination_metadata[1]) > 0:
+      return destination.destination_metadata[1].replace('-', '')
+    return account_config.google_ads_account_id.replace('-', '')
+
+
   @staticmethod
   def _assert_conversion_name_is_present(execution: Execution):
     destination = execution.destination.destination_metadata
-    if len(destination) != 1:
+    if len(destination) is 0:
       raise ValueError('Missing destination information. Found {}'.format(
           len(destination)))
 
@@ -61,7 +70,7 @@ class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
     execution = batch.execution
     self._assert_conversion_name_is_present(execution)
 
-    customer_id = execution.account_config.google_ads_account_id.replace('-', '')
+    customer_id = self._get_customer_id(execution.account_config, execution.destination)
     oc_service = self._get_oc_service(customer_id)
     
     resource_name = self._get_resource_name(customer_id, execution.destination.destination_metadata[0])

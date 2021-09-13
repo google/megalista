@@ -46,11 +46,9 @@ def test_get_service(mocker, uploader):
   assert uploader._get_oc_service(mocker.ANY) is not None
 
 
-def test_conversion_upload(mocker, uploader):
-  # arrange
+def arrange_conversion_resource_name_api_call(mocker, uploader, conversion_resource_name):
   mocker.patch.object(uploader, '_get_ads_service')
 
-  conversion_resource_name = 'user_list_resouce'
   resource_name_result = MagicMock()
   resource_name_result.conversion_action.resource_name = conversion_resource_name
 
@@ -59,7 +57,11 @@ def test_conversion_upload(mocker, uploader):
 
   uploader._get_ads_service.return_value.search_stream.return_value = [resource_name_batch_response]
 
-  # act
+def test_conversion_upload(mocker, uploader):
+  # arrange
+  conversion_resource_name = 'user_list_resouce'
+  arrange_conversion_resource_name_api_call(mocker, uploader, conversion_resource_name)
+
   mocker.patch.object(uploader, '_get_oc_service')
   conversion_name = 'user_list'
   destination = Destination(
@@ -82,6 +84,8 @@ def test_conversion_upload(mocker, uploader):
           'amount': '234',
           'gclid': '567'
       }])
+
+  # act
   uploader.process(batch)
 
   #assert
@@ -92,6 +96,61 @@ def test_conversion_upload(mocker, uploader):
 
   uploader._get_oc_service.return_value.upload_click_conversions.assert_called_once_with(request={
     'customer_id': '12345567890',
+    'partial_failure': True,
+    'validate_only': False,
+    'conversions': [{
+      'conversion_action': conversion_resource_name,
+      'conversion_date_time': time1_result,
+      'conversion_value': 123,
+      'gclid': '456'
+    }, {
+      'conversion_action': conversion_resource_name,
+      'conversion_date_time': time2_result,
+      'conversion_value': 234,
+      'gclid': '567'
+    }]
+  })
+
+
+def test_upload_with_ads_account_override(mocker, uploader):
+  # arrange
+  conversion_resource_name = 'user_list_resouce'
+  arrange_conversion_resource_name_api_call(mocker, uploader, conversion_resource_name)
+
+  mocker.patch.object(uploader, '_get_oc_service')
+  conversion_name = 'user_list'
+  destination = Destination(
+    'dest1', DestinationType.ADS_OFFLINE_CONVERSION, ['user_list', '987-7654-123'])
+  source = Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers'])
+  execution = Execution(_account_config, source, destination)
+
+  time1 = '2020-04-09T14:13:55.0005'
+  time1_result = '2020-04-09 14:13:55-03:00'
+
+  time2 = '2020-04-09T13:13:55.0005'
+  time2_result = '2020-04-09 13:13:55-03:00'
+
+  batch = Batch(execution, [{
+    'time': time1,
+    'amount': '123',
+    'gclid': '456'
+  }, {
+    'time': time2,
+    'amount': '234',
+    'gclid': '567'
+  }])
+
+  # act
+  uploader.process(batch)
+
+  # assert
+  uploader._get_ads_service.return_value.search_stream.assert_called_once_with(
+    customer_id='9877654123',
+    query=f"SELECT conversion_action.resource_name FROM conversion_action WHERE conversion_action.name = '{conversion_name}'"
+  )
+
+  uploader._get_oc_service.return_value.upload_click_conversions.assert_called_once_with(request={
+    'customer_id': '9877654123',
     'partial_failure': True,
     'validate_only': False,
     'conversions': [{
