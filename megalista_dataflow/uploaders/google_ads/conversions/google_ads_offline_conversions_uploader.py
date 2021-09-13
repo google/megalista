@@ -15,7 +15,7 @@
 import logging
 
 import apache_beam as beam
-from models.execution import Batch, Execution
+from models.execution import Batch, Execution, AccountConfig, Destination
 from uploaders import utils
 from uploaders.google_ads import ADS_API_VERSION
 
@@ -28,7 +28,6 @@ class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
     super().__init__()
     self.oauth_credentials = oauth_credentials
     self.developer_token = developer_token
-    self.active = self.developer_token is not None
 
   def _get_ads_service(self, customer_id: str):
     return utils.get_ads_service('GoogleAdsService', ADS_API_VERSION,
@@ -45,10 +44,19 @@ class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
   def start_bundle(self):
     pass
 
+  def _get_customer_id(self, account_config:AccountConfig, destination:Destination) -> str:
+    """
+      If the customer_id is present on the destination, returns it, otherwise defaults to the account_config info.
+    """
+    if len(destination.destination_metadata) >= 2 and len(destination.destination_metadata[1]) > 0:
+      return destination.destination_metadata[1].replace('-', '')
+    return account_config.google_ads_account_id.replace('-', '')
+
+
   @staticmethod
   def _assert_conversion_name_is_present(execution: Execution):
     destination = execution.destination.destination_metadata
-    if len(destination) != 1:
+    if len(destination) is 0:
       raise ValueError('Missing destination information. Found {}'.format(
           len(destination)))
 
@@ -59,14 +67,10 @@ class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
   @utils.safe_process(
       logger=logging.getLogger('megalista.GoogleAdsOfflineUploader'))
   def process(self, batch: Batch, **kwargs):
-    if not self.active:
-      logging.getLogger().warning(
-          'Skipping upload, parameters not configured.')
-      return
     execution = batch.execution
     self._assert_conversion_name_is_present(execution)
 
-    customer_id = execution.account_config.google_ads_account_id.replace('-', '')
+    customer_id = self._get_customer_id(execution.account_config, execution.destination)
     oc_service = self._get_oc_service(customer_id)
     
     resource_name = self._get_resource_name(customer_id, execution.destination.destination_metadata[0])
@@ -88,21 +92,19 @@ class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
     
     upload_data = {
       'customer_id': customer_id,
-      'partial_failure': False,
+      'partial_failure': True,
       'validate_only': False,
       'conversions': conversions
     }
 
-    
     response = oc_service.upload_click_conversions(request=upload_data)
     utils.print_partial_error_messages(_DEFAULT_LOGGER, 'uploading offline conversions', response)
 
   def _get_resource_name(self, customer_id: str, name: str):
-      resource_name = None
       service = self._get_ads_service(customer_id)
       query = f"SELECT conversion_action.resource_name FROM conversion_action WHERE conversion_action.name = '{name}'"
       response_query = service.search_stream(customer_id=customer_id, query=query)
       for batch in response_query:
         for row in batch.results:
-          resource_name = row.conversion_action.resource_name
-      return resource_name
+          return row.conversion_action.resource_name
+      raise Exception(f'Conversion "{name}" could not be found on account {customer_id}')
