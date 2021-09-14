@@ -44,7 +44,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
 
     def finish_bundle(self):
         for job_definition in self._job_cache.values():
-            print(f"Running job {job_definition['job_resource_name']}")
+            logging.getLogger(_DEFAULT_LOGGER).info(f"Running job {job_definition['job_resource_name']}")
             self._get_offline_user_data_job_service(job_definition['customer_id']).run_offline_user_data_job(
                 resource_name=job_definition['job_resource_name'])
 
@@ -143,9 +143,12 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
             return destination.destination_metadata[4].replace('-', '')
         return account_config.google_ads_account_id.replace('-', '')
 
-    def _get_job_by_list_name(self, offline_user_data_job_service, list_resource_name: str, customer_id: str) -> str:
-        if list_resource_name in self._job_cache:
-            return self._job_cache[list_resource_name]['job_resource_name']
+    def _get_job_by_list_name(self, offline_user_data_job_service, list_resource_name: str, operator: str,
+                              customer_id: str) -> str:
+        cache_key = f"{list_resource_name}:{operator}"
+
+        if cache_key in self._job_cache:
+            return self._job_cache[cache_key]['job_resource_name']
 
         job_creation_payload = {
             'type_': 'CUSTOMER_MATCH_USER_LIST',
@@ -156,7 +159,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
 
         job_resource_name = offline_user_data_job_service.create_offline_user_data_job(customer_id=customer_id,
                                                                                        job=job_creation_payload).resource_name
-        self._job_cache[list_resource_name] = {'job_resource_name': job_resource_name, 'customer_id': customer_id}
+        self._job_cache[cache_key] = {'job_resource_name': job_resource_name, 'customer_id': customer_id}
 
         return job_resource_name
 
@@ -182,20 +185,21 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
                 execution.account_config,
                 execution.destination.destination_metadata))
 
-        job_resource_name = self._get_job_by_list_name(offline_user_data_job_service, list_resource_name, customer_id)
+        operator = self._get_list_operator(execution.destination.destination_metadata[1])
+        job_resource_name = self._get_job_by_list_name(offline_user_data_job_service, list_resource_name, operator,
+                                                       customer_id)
 
         rows = self.get_filtered_rows(
             batch.elements, self.get_row_keys())
 
-        operator = self._get_list_operator(execution.destination.destination_metadata[1])
         data_insertion_payload = {
             'resource_name': job_resource_name,
             'enable_partial_failure': False,
             'operations': [{
                 operator: {
-                    'user_identifiers': rows
+                    'user_identifiers': row
                 }
-            }]
+            } for row in rows]
         }
 
         data_insertion_response = offline_user_data_job_service.add_offline_user_data_job_operations(
