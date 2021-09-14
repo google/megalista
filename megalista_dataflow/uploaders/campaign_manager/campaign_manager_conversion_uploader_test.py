@@ -92,7 +92,7 @@ def test_conversion_upload(mocker, uploader):
 
 
 def test_conversion_upload_match_id(mocker, uploader):
-    mocker.patch.object(uploader, '_get_dcm_service')
+    mocker.patch.object(uploader, '_get_dcm_service', autospec=True)
 
     floodlight_activity_id = 'floodlight_activity_id'
     floodlight_configuration_id = 'floodlight_configuration_id'
@@ -119,6 +119,63 @@ def test_conversion_upload_match_id(mocker, uploader):
             'timestampMicros': math.floor(current_time * 10e5)
         }],
     }
+
+    uploader._get_dcm_service().conversions().batchinsert.assert_any_call(
+        profileId='dcm_profile_id', body=expected_body)
+
+
+def test_conversion_upload_match_id_additional_fields(mocker, uploader):
+    mocker.patch.object(uploader, '_get_dcm_service', autospec=True)
+
+    floodlight_activity_id = 'floodlight_activity_id'
+    floodlight_configuration_id = 'floodlight_configuration_id'
+
+    source = Source('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'))
+    destination = Destination(
+        'dest1',
+        DestinationType.CM_OFFLINE_CONVERSION,
+        (floodlight_activity_id, floodlight_configuration_id))
+    execution = Execution(_account_config, source, destination)
+    current_time = time.time()
+
+    mocker.patch.object(time, 'time')
+    time.time.return_value = current_time
+
+    conversions_input = [{
+        'matchId': 'abc',
+        'value': 1,
+        'quantity': 2,
+        'customVariables': [{
+            'type': 'U1',
+            'value': "5.6",
+        }, {
+            'type': 'U2',
+            'value': "abcd",
+        }]
+    }]
+
+    expected_body = {
+        'conversions': [{
+            'matchId': 'abc',
+            'floodlightActivityId': floodlight_activity_id,
+            'floodlightConfigurationId': floodlight_configuration_id,
+            'ordinal': math.floor(current_time * 10e5),
+            'timestampMicros': math.floor(current_time * 10e5),
+            'value': 1,
+            'quantity': 2,
+            'customVariables': [{
+                'type': 'U1',
+                'value': "5.6",
+                'kind': 'dfareporting#customFloodlightVariable',
+            }, {
+                'type': 'U2',
+                'value': "abcd",
+                'kind': 'dfareporting#customFloodlightVariable',
+            }]
+        }],
+    }
+
+    uploader._do_process(Batch(execution, conversions_input), current_time)
 
     uploader._get_dcm_service().conversions().batchinsert.assert_any_call(
         profileId='dcm_profile_id', body=expected_body)

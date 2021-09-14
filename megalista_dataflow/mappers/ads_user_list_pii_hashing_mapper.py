@@ -39,12 +39,23 @@ class AdsUserListPIIHashingMapper:
         self.logger = logging.getLogger("megalista.AdsUserListPIIHashingMapper")
 
     def _hash_user(self, user, hasher):
-
-        hashed = {}
+        hashable_keys = ("email",
+                         "mailing_address_first_name",
+                         "mailing_address_last_name",
+                         "mailing_address_country",
+                         "mailing_address_zip",
+                         "phone",
+                         "mobile_device_id",
+                         "user_id")
+        processed_user = {}
+        # include non PII keys as is (these should not be hashed)
+        for k, v in user.items():
+          if k not in hashable_keys:
+            processed_user[k] = v
 
         try:
             if _is_data_present(user, "email"):
-                hashed["hashed_email"] = hasher.hash_field(user["email"])
+                processed_user["hashed_email"] = hasher.hash_field(user["email"])
         except:
             self.logger.error(f"Error hashing email for user: {str(user)}")
 
@@ -55,7 +66,7 @@ class AdsUserListPIIHashingMapper:
                 and _is_data_present(user, "mailing_address_country")
                 and _is_data_present(user, "mailing_address_zip")
             ):
-                hashed["address_info"] = {
+                processed_user["address_info"] = {
                     "hashed_first_name": hasher.hash_field(
                         user["mailing_address_first_name"]
                     ),
@@ -70,20 +81,20 @@ class AdsUserListPIIHashingMapper:
 
         try:
             if _is_data_present(user, "phone"):
-                hashed["hashed_phone_number"] = hasher.hash_field(user["phone"])
+                processed_user["hashed_phone_number"] = hasher.hash_field(user["phone"])
         except:
             self.logger.error(f"Error hashing phone for user: {str(user)}")
 
         if _is_data_present(user, "mobile_device_id"):
-            hashed["mobile_id"] = user["mobile_device_id"]
+            processed_user["mobile_id"] = user["mobile_device_id"]
 
         try:
             if _is_data_present(user, "user_id"):
-                hashed["third_party_user_id"] = hasher.hash_field(user["user_id"])
+                processed_user["third_party_user_id"] = hasher.hash_field(user["user_id"])
         except:
             self.logger.error(f"Error hashing user_id for user: {str(user)}")
 
-        return hashed
+        return processed_user
 
     def _get_should_hash_fields(self, metadata_list):
 
