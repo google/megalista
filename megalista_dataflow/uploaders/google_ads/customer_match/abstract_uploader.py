@@ -197,7 +197,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
             'enable_partial_failure': False,
             'operations': [{
                 operator: {
-                    'user_identifiers': row
+                    'user_identifiers': [row]
                 }
             } for row in rows]
         }
