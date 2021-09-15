@@ -187,12 +187,25 @@ class Destination:
 
 
 class Execution:
+    """
+    Attributes:
+        account_config: Accounts ids: Ads, Analytics etc.
+        source: data source parameters.
+        destination: data destination parameters.
+        execution_config_line: line that this execution was read from.
+            May only make sense for Spreadsheet config.
+    """
+
     def __init__(
-        self, account_config: AccountConfig, source: Source, destination: Destination
+        self, account_config: AccountConfig,
+        source: Source,
+        destination: Destination,
+        execution_config_line: int = None
     ):
         self._account_config = account_config
         self._source = source
         self._destination = destination
+        self._execution_config_line = execution_config_line
 
     @property
     def source(self) -> Source:
@@ -206,8 +219,15 @@ class Execution:
     def account_config(self) -> AccountConfig:
         return self._account_config
 
+    @property
+    def execution_config_line(self) -> int:
+        return self._execution_config_line
+
     def __str__(self):
-        return f"Origin name: {self.source.source_name}. Action: {self.destination.destination_type}. Destination name: {self.destination.destination_name}"
+        return f"Origin name: {self.source.source_name}." \
+               f"Action: {self.destination.destination_type}. " \
+               f"Destination name: {self.destination.destination_name}. " \
+               f"Execution config line: {self.execution_config_line}"
 
     def __eq__(self, other):
         if other is None:

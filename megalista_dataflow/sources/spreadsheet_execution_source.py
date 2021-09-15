@@ -28,6 +28,8 @@ class SpreadsheetExecutionSource(BaseBoundedSource):
   Read Execution data from a sheet. The sheet id is set-up in the parameter "setup_sheet_id"
   """
 
+  SCHEDULES_RANGE_FIRST_LINE = 7
+
   def __init__(
       self,
       sheets_config: SheetsConfig,
@@ -57,12 +59,14 @@ class SpreadsheetExecutionSource(BaseBoundedSource):
     destinations = self._read_destination(self._sheets_config, sheet_id)
 
     schedules_range = self._sheets_config.get_range(sheet_id, 'SchedulesRange')
+    current_line = self.SCHEDULES_RANGE_FIRST_LINE
     if 'values' in schedules_range:
       for schedule in schedules_range['values']:
         if schedule[0] == 'YES':
           logging.getLogger("megalista.SpreadsheetExecutionSource").info(
             f"Executing step Source:{sources[schedule[1]].source_name} -> Destination:{destinations[schedule[2]].destination_name}")
-          yield Execution(account_config, sources[schedule[1]], destinations[schedule[2]])
+          yield Execution(account_config, sources[schedule[1]], destinations[schedule[2]], current_line)
+          current_line += 1
     else:
       logging.getLogger("megalista.SpreadsheetExecutionSource").warn("No schedules found!")
 
