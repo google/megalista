@@ -55,13 +55,13 @@ def test_conversion_upload(mocker, uploader):
     floodlight_activity_id = 'floodlight_activity_id'
     floodlight_configuration_id = 'floodlight_configuration_id'
 
-    source = Source('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'))
+    source = Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers'])
     destination = Destination(
         'dest1',
         DestinationType.CM_OFFLINE_CONVERSION,
-        (floodlight_activity_id, floodlight_configuration_id))
+        [floodlight_activity_id, floodlight_configuration_id])
 
-    execution = Execution(_account_config, source, destination)
+    execution = Execution(_account_config, source, destination, Execution.ExecutionConfigurationMedium.JSON)
 
     current_time = time.time()
 
@@ -97,12 +97,12 @@ def test_conversion_upload_match_id(mocker, uploader):
     floodlight_activity_id = 'floodlight_activity_id'
     floodlight_configuration_id = 'floodlight_configuration_id'
 
-    source = Source('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'))
+    source = Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers'])
     destination = Destination(
         'dest1',
         DestinationType.CM_OFFLINE_CONVERSION,
-        (floodlight_activity_id, floodlight_configuration_id))
-    execution = Execution(_account_config, source, destination)
+        [floodlight_activity_id, floodlight_configuration_id])
+    execution = Execution(_account_config, source, destination, Execution.ExecutionConfigurationMedium.JSON)
     current_time = time.time()
 
     mocker.patch.object(time, 'time')
@@ -130,12 +130,12 @@ def test_conversion_upload_match_id_additional_fields(mocker, uploader):
     floodlight_activity_id = 'floodlight_activity_id'
     floodlight_configuration_id = 'floodlight_configuration_id'
 
-    source = Source('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'))
+    source = Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers'])
     destination = Destination(
         'dest1',
         DestinationType.CM_OFFLINE_CONVERSION,
-        (floodlight_activity_id, floodlight_configuration_id))
-    execution = Execution(_account_config, source, destination)
+        [floodlight_activity_id, floodlight_configuration_id])
+    execution = Execution(_account_config, source, destination, Execution.ExecutionConfigurationMedium.JSON)
     current_time = time.time()
 
     mocker.patch.object(time, 'time')
@@ -197,10 +197,10 @@ def test_error_on_api_call(mocker, uploader, caplog):
         }]
     }
 
-    source = Source('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'))
+    source = Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers'])
     destination = Destination(
         'dest1', DestinationType.CM_OFFLINE_CONVERSION, ['a', 'b'])
-    execution = Execution(_account_config, source, destination)
+    execution = Execution(_account_config, source, destination, Execution.ExecutionConfigurationMedium.JSON)
 
     uploader._do_process(Batch(execution, [{'gclid': '123'}]), time.time())
 

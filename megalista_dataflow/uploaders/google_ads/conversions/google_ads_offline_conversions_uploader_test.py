@@ -67,7 +67,7 @@ def test_conversion_upload(mocker, uploader):
   destination = Destination(
       'dest1', DestinationType.ADS_OFFLINE_CONVERSION, ['user_list'])
   source = Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers'])
-  execution = Execution(_account_config, source, destination)
+  execution = Execution(_account_config, source, destination, Execution.ExecutionConfigurationMedium.JSON)
 
   time1 = '2020-04-09T14:13:55.0005'
   time1_result = '2020-04-09 14:13:55-03:00'
@@ -122,7 +122,7 @@ def test_upload_with_ads_account_override(mocker, uploader):
   destination = Destination(
     'dest1', DestinationType.ADS_OFFLINE_CONVERSION, ['user_list', '987-7654-123'])
   source = Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers'])
-  execution = Execution(_account_config, source, destination)
+  execution = Execution(_account_config, source, destination, Execution.ExecutionConfigurationMedium.JSON)
 
   time1 = '2020-04-09T14:13:55.0005'
   time1_result = '2020-04-09 14:13:55-03:00'

@@ -51,7 +51,7 @@ def test_bigquery_write(mocker, uploader):
       DestinationType.GA_MEASUREMENT_PROTOCOL,
       ["web_property", "view", "c", "list", "d", "buyers_custom_dim"])
   source = Source("orig1", SourceType.BIG_QUERY, ["dt1", "buyers"])
-  execution = Execution(account_config, source, destination)
+  execution = Execution(account_config, source, destination, Execution.ExecutionConfigurationMedium.JSON)
 
   uploader._do_process(Batch(execution, [{"uuid": "uuid-1"}, {"uuid": "uuid-2"}]), now)
 
@@ -79,7 +79,7 @@ def test_bigquery_write_failure(mocker, uploader, caplog):
       DestinationType.GA_MEASUREMENT_PROTOCOL,
       ["web_property", "view", "c", "list", "d", "buyers_custom_dim"])
 
-  execution = Execution(account_config, source, destination)
+  execution = Execution(account_config, source, destination, Execution.ExecutionConfigurationMedium.JSON)
 
   uploader.process(Batch(execution, [{"uuid": "uuid-1"}]))
 

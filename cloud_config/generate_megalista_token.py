@@ -34,6 +34,7 @@ SCOPES = ['https://www.googleapis.com/auth/adwords',
           'https://www.googleapis.com/auth/dfatrafficking',
           'https://www.googleapis.com/auth/ddmconversions',
           "https://www.googleapis.com/auth/analytics.edit",
+          # TODO: change to write permission
           'https://www.googleapis.com/auth/spreadsheets.readonly']
 
 # The redirect URI set for the given Client ID. The redirect URI for Client ID

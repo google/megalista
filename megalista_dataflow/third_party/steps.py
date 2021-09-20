@@ -19,6 +19,7 @@ class AppsFlyerEventsStep(beam.PTransform):
             | 'Load Data - AppsFlyer S2S events' >>
             BatchesFromExecutions(
                 DestinationType.APPSFLYER_S2S_EVENTS,
+                self.params.sheets_writer,
                 1000,
                 True,
                 self.params.dataflow_options.bq_ops_dataset)

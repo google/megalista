@@ -59,7 +59,8 @@ def test_elements_uploading(mocker, uploader):
       _account_config,
       Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers']),
       Destination('dest1', DestinationType.GA_DATA_IMPORT,
-                  ['web_property', 'data_import_name']))
+                  ['web_property', 'data_import_name']),
+                  Execution.ExecutionConfigurationMedium.JSON)
 
   # Add mock to side effect of uploadData()
   my_mock = mocker.MagicMock()

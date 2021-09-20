@@ -23,7 +23,7 @@ from models.execution import DestinationType, Execution
 from models.json_config import JsonConfig
 from models.oauth_credentials import OAuthCredentials
 from models.options import DataflowOptions
-from models.sheets_config import SheetsConfig
+from models.sheets import SheetsConfig, SheetsWriter
 from sources.batches_from_executions import BatchesFromExecutions
 from sources.primary_execution_source import PrimaryExecutionSource
 from uploaders.big_query.transactional_events_results_writer import TransactionalEventsResultsWriter
@@ -51,9 +51,10 @@ def filter_by_action(execution: Execution, destination_type: DestinationType):
 
 
 class MegalistaStepParams():
-    def __init__(self, oauth_credentials, dataflow_options):
+    def __init__(self, oauth_credentials, dataflow_options, sheets_writer: SheetsWriter):
         self._oauth_credentials = oauth_credentials
         self._dataflow_options = dataflow_options
+        self._sheets_writer = sheets_writer
 
     @property
     def oauth_credentials(self):
@@ -62,6 +63,10 @@ class MegalistaStepParams():
     @property
     def dataflow_options(self):
         return self._dataflow_options
+
+    @property
+    def sheets_writer(self):
+        return self._sheets_writer
 
 class MegalistaStep(beam.PTransform):
     def __init__(self, params: MegalistaStepParams):
@@ -79,7 +84,7 @@ class GoogleAdsSSDStep(MegalistaStep):
         return (
             executions
             | "Load Data -  Google Ads SSD"
-            >> BatchesFromExecutions(DestinationType.ADS_SSD_UPLOAD, 5000)
+            >> BatchesFromExecutions(DestinationType.ADS_SSD_UPLOAD, self.params.sheets_writer)
             | "Hash Users - Google Ads SSD" >> beam.Map(ADS_CM_HASHER.hash_users)
             | "Upload - Google Ads SSD"
             >> beam.ParDo(
@@ -97,7 +102,7 @@ class GoogleAdsCustomerMatchMobileDeviceIdStep(MegalistaStep):
             executions
             | "Load Data - Google Ads Customer Match Mobile Device Id"
             >> BatchesFromExecutions(
-                DestinationType.ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD
+                DestinationType.ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD, self.params.sheets_writer
             )
             | "Hash Users - Google Ads Customer Match Contact Info"
             >> beam.Map(ADS_CM_HASHER.hash_users)
@@ -117,7 +122,7 @@ class GoogleAdsCustomerMatchContactInfoStep(MegalistaStep):
             executions
             | "Load Data - Google Ads Customer Match Contact Info"
             >> BatchesFromExecutions(
-                DestinationType.ADS_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD
+                DestinationType.ADS_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD, self.params.sheets_writer
             )
             | "Hash Users - Google Ads Customer Match Contact Info"
             >> beam.Map(ADS_CM_HASHER.hash_users)
@@ -136,7 +141,7 @@ class GoogleAdsCustomerMatchUserIdStep(MegalistaStep):
         return (
             executions
             | "Load Data - Google Ads Customer Match User Id"
-            >> BatchesFromExecutions(DestinationType.ADS_CUSTOMER_MATCH_USER_ID_UPLOAD)
+            >> BatchesFromExecutions(DestinationType.ADS_CUSTOMER_MATCH_USER_ID_UPLOAD, self.params.sheets_writer)
             | "Hash Users - Google Ads Customer Match Contact Info"
             >> beam.Map(ADS_CM_HASHER.hash_users)
             | "Upload - Google Ads Customer User Device Id"
@@ -154,7 +159,7 @@ class GoogleAdsOfflineConversionsStep(MegalistaStep):
         return (
             executions
             | "Load Data - GoogleAdsOfflineConversions"
-            >> BatchesFromExecutions(DestinationType.ADS_OFFLINE_CONVERSION, 2000)
+            >> BatchesFromExecutions(DestinationType.ADS_OFFLINE_CONVERSION, self.params.sheets_writer, 2000)
             | "Upload - GoogleAdsOfflineConversions"
             >> beam.ParDo(
                 GoogleAdsOfflineUploaderDoFn(
@@ -170,7 +175,7 @@ class GoogleAnalyticsUserListStep(MegalistaStep):
         return (
             executions
             | "Load Data -  GA user list"
-            >> BatchesFromExecutions(DestinationType.GA_USER_LIST_UPLOAD, 5000000)
+            >> BatchesFromExecutions(DestinationType.GA_USER_LIST_UPLOAD, self.params.sheets_writer, 5000000)
             | "Upload - GA user list"
             >> beam.ParDo(GoogleAnalyticsUserListUploaderDoFn(self.params._oauth_credentials))
         )
@@ -181,7 +186,7 @@ class GoogleAnalyticsDataImportStep(MegalistaStep):
         return (
             executions
             | "Load Data -  GA data import"
-            >> BatchesFromExecutions(DestinationType.GA_DATA_IMPORT, 1000000)
+            >> BatchesFromExecutions(DestinationType.GA_DATA_IMPORT, self.params.sheets_writer, 1000000)
             | "Delete Data -  GA data import"
             >> beam.ParDo(GoogleAnalyticsDataImportEraser(self.params._oauth_credentials))
             | "Upload - GA data import"
@@ -198,6 +203,7 @@ class GoogleAnalyticsMeasurementProtocolStep(MegalistaStep):
             | "Load Data - GA measurement protocol"
             >> BatchesFromExecutions(
                 DestinationType.GA_MEASUREMENT_PROTOCOL,
+                self.params.sheets_writer,
                 20,
                 True,
                 self.params.dataflow_options.bq_ops_dataset)
@@ -217,6 +223,7 @@ class GoogleAnalytics4MeasurementProtocolStep(MegalistaStep):
             | "Load Data - GA 4 measurement protocol"
             >> BatchesFromExecutions(
                 DestinationType.GA_4_MEASUREMENT_PROTOCOL,
+                self.params.sheets_writer,
                 20,
                 True,
                 self.params.dataflow_options.bq_ops_dataset)
@@ -236,6 +243,7 @@ class CampaignManagerConversionStep(MegalistaStep):
             | "Load Data -  CM conversion"
             >> BatchesFromExecutions(
                 DestinationType.CM_OFFLINE_CONVERSION,
+                self.params.sheets_writer,
                 1000,
                 True,
                 self.params.dataflow_options.bq_ops_dataset)
@@ -270,7 +278,10 @@ def run(argv=None):
         dataflow_options.setup_firestore_collection,
     )
 
-    params = MegalistaStepParams(oauth_credentials, dataflow_options)
+    params = MegalistaStepParams(
+        oauth_credentials,
+        dataflow_options,
+        SheetsWriter(oauth_credentials, dataflow_options.setup_sheet_id))
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
         executions = pipeline | "Load executions" >> beam.io.Read(execution_source)

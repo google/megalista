@@ -196,15 +196,24 @@ class Execution:
             May only make sense for Spreadsheet config.
     """
 
+    class ExecutionConfigurationMedium(Enum):
+        (
+            GOOGLE_SHEETS,
+            JSON,
+            FIRESTORE,
+        ) = range(3)
+
     def __init__(
         self, account_config: AccountConfig,
         source: Source,
         destination: Destination,
+        configution_medium: ExecutionConfigurationMedium,
         execution_config_line: int = None
     ):
         self._account_config = account_config
         self._source = source
         self._destination = destination
+        self._configuration_medium = configution_medium
         self._execution_config_line = execution_config_line
 
     @property
@@ -218,6 +227,10 @@ class Execution:
     @property
     def account_config(self) -> AccountConfig:
         return self._account_config
+
+    @property
+    def configuration_medium(self) -> ExecutionConfigurationMedium:
+        return self._configuration_medium
 
     @property
     def execution_config_line(self) -> int:

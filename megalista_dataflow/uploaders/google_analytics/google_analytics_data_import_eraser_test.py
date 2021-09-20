@@ -45,7 +45,8 @@ def test_analytics_has_not_data_sources(mocker, eraser, caplog):
 
     execution = Execution(AccountConfig('', False, '', '', ''),
                           Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers']),
-                          Destination('dest1', DestinationType.GA_DATA_IMPORT, ['web_property', 'data_import_name']))
+                          Destination('dest1', DestinationType.GA_DATA_IMPORT, ['web_property', 'data_import_name']),
+                          Execution.ExecutionConfigurationMedium.JSON)
     # Act
     try:
         next(eraser.process(Batch(execution, [])))
@@ -70,7 +71,8 @@ def test_data_source_not_found(mocker, eraser, caplog):
 
     execution = Execution(AccountConfig('', False, '', '', ''),
                           Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers']),
-                          Destination('dest1', DestinationType.GA_DATA_IMPORT, ['web_property', 'data_import_name']))
+                          Destination('dest1', DestinationType.GA_DATA_IMPORT, ['web_property', 'data_import_name']),
+                          Execution.ExecutionConfigurationMedium.JSON)
     # Act
     try:
         next(eraser.process(Batch(execution, [])))
@@ -96,7 +98,8 @@ def test_no_files_found(mocker, eraser):
 
     execution = Execution(AccountConfig('', False, '', '', ''),
                           Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers']),
-                          Destination('dest1', DestinationType.GA_DATA_IMPORT, ['web_property', 'data_import_name']))
+                          Destination('dest1', DestinationType.GA_DATA_IMPORT, ['web_property', 'data_import_name']),
+                          Execution.ExecutionConfigurationMedium.JSON)
 
     # Add mock to side effect of list uploads
     service.management().uploads().list().execute.return_value = {'items': []}
@@ -128,7 +131,8 @@ def test_files_deleted(mocker, eraser):
 
     execution = Execution(AccountConfig('', False, '', '', ''),
                           Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers']),
-                          Destination('dest1', DestinationType.GA_DATA_IMPORT, ['web_property', 'data_import_name']))
+                          Destination('dest1', DestinationType.GA_DATA_IMPORT, ['web_property', 'data_import_name']),
+                          Execution.ExecutionConfigurationMedium.JSON)
 
     # Add mock to side effect of list uploads
     service.management().uploads().list().execute.return_value = {'items': [{'id': 'ab'}, {'id': 'cd'}]}

@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from datetime import datetime
+
+from apache_beam.options.value_provider import ValueProvider
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
@@ -49,3 +52,35 @@ class SheetsConfig:
     if range.get('values') is None:
       return None
     return range['values'][0][0]
+
+
+class SheetsWriter:
+
+  def __init__(self, oauth_credentials, setup_sheet_id: ValueProvider):
+    self._oauth_credentials = oauth_credentials
+    self._setup_sheet_id = setup_sheet_id
+    self._sheets_service = None
+
+  def _get_sheets_service(self):
+    if not self._sheets_service:
+      credentials = Credentials(
+        token=self._oauth_credentials.get_access_token(),
+        refresh_token=self._oauth_credentials.get_refresh_token(),
+        client_id=self._oauth_credentials.get_client_id(),
+        client_secret=self._oauth_credentials.get_client_secret(),
+        token_uri='https://accounts.google.com/o/oauth2/token',
+        scopes=['https://www.googleapis.com/auth/spreadsheets.readonly'])
+
+      self._sheets_service = build('sheets', 'v4', credentials=credentials)
+    return self._sheets_service
+
+  def _update_started_info(self, execution_config_line: int, datetime: datetime):
+    request = self._get_sheets_service().spreadsheets().values().update(
+      spreadsheetId=self._setup_sheet_id.get(),
+      range=f'I{execution_config_line}',
+      valueInputOption='RAW',
+      body={
+        'values':[datetime.strftime('%d/%m/%Y %H:%M')]
+      }
+    )
+    request.execute()

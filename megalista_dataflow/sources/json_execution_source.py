@@ -61,9 +61,13 @@ class JsonExecutionSource(BaseBoundedSource):
         if schedule["Enabled"]:
           logging.getLogger("megalista.JsonExecutionSource").info(
             f"Executing step Source:{schedule['Source']} -> Destination:{schedule['Destination']}")
-          yield Execution(account_config, sources[schedule["Source"]], destinations[schedule["Destination"]])
+          yield Execution(
+            account_config,
+            sources[schedule["Source"]],
+            destinations[schedule["Destination"]],
+            Execution.ExecutionConfigurationMedium.JSON)
     else:
-      logging.getLogger("megalista.JsonExecutionSource").warn("No schedules found!")
+      logging.getLogger("megalista.JsonExecutionSource").warning("No schedules found!")
 
   @staticmethod
   def _read_sources(json_config, json_data):
@@ -76,7 +80,7 @@ class JsonExecutionSource(BaseBoundedSource):
                         [row["Dataset"], row["Table"]])
         sources[source.source_name] = source
     else:
-      logging.getLogger("megalista.JsonExecutionSource").warn("No sources found!")
+      logging.getLogger("megalista.JsonExecutionSource").warning("No sources found!")
     return sources
 
   @staticmethod
@@ -90,5 +94,5 @@ class JsonExecutionSource(BaseBoundedSource):
                                   row["Metadata"])
         destinations[destination.destination_name] = destination
     else:
-      logging.getLogger("megalista.JsonExecutionSource").warn("No destinations found!")
+      logging.getLogger("megalista.JsonExecutionSource").warning("No destinations found!")
     return destinations

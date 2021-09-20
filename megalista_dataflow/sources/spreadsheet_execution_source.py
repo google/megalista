@@ -20,7 +20,7 @@ from sources.base_bounded_source import BaseBoundedSource
 from models.execution import Destination, DestinationType
 from models.execution import Execution, AccountConfig
 from models.execution import Source, SourceType
-from models.sheets_config import SheetsConfig
+from models.sheets import SheetsConfig
 
 
 class SpreadsheetExecutionSource(BaseBoundedSource):
@@ -65,7 +65,12 @@ class SpreadsheetExecutionSource(BaseBoundedSource):
         if schedule[0] == 'YES':
           logging.getLogger("megalista.SpreadsheetExecutionSource").info(
             f"Executing step Source:{sources[schedule[1]].source_name} -> Destination:{destinations[schedule[2]].destination_name}")
-          yield Execution(account_config, sources[schedule[1]], destinations[schedule[2]], current_line)
+          yield Execution(
+            account_config,
+            sources[schedule[1]],
+            destinations[schedule[2]],
+            Execution.ExecutionConfigurationMedium.GOOGLE_SHEETS,
+            current_line)
           current_line += 1
     else:
       logging.getLogger("megalista.SpreadsheetExecutionSource").warn("No schedules found!")

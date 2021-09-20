@@ -24,7 +24,7 @@ from models.execution import Destination, DestinationType
 from models.execution import Execution, AccountConfig
 from models.execution import Source, SourceType
 from models.json_config import JsonConfig
-from models.sheets_config import SheetsConfig
+from models.sheets import SheetsConfig
 
 
 class PrimaryExecutionSource(BaseBoundedSource):

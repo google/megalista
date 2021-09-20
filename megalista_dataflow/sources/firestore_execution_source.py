@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import distutils.util
 import logging
 
@@ -74,9 +75,13 @@ class FirestoreExecutionSource(BaseBoundedSource):
         if entry['active'].upper() == 'YES':
           logging.getLogger("megalista.FirestoreExecutionSource").info(
             f"Executing step Source:{sources[entry['source_name']].source_name} -> Destination:{destinations[entry['destination_name']].destination_name}")
-          yield Execution(account_config, sources[entry['source_name']], destinations[entry['destination_name']])
+          yield Execution(
+            account_config,
+            sources[entry['source_name']],
+            destinations[entry['destination_name']],
+            Execution.ExecutionConfigurationMedium.FIRESTORE)
     else:
-      logging.getLogger("megalista.FirestoreExecutionSource").warn("No schedules found!")
+      logging.getLogger("megalista.FirestoreExecutionSource").warning("No schedules found!")
 
   def _read_sources(self, entries):
     sources = {}
@@ -86,7 +91,7 @@ class FirestoreExecutionSource(BaseBoundedSource):
         source = Source(entry['source_name'], SourceType[entry['source']], metadata)
         sources[source.source_name] = source
     else:
-      logging.getLogger("megalista.FirestoreExecutionSource").warn("No sources found!")
+      logging.getLogger("megalista.FirestoreExecutionSource").warning("No sources found!")
     return sources
 
   def _read_destination(self, entries):
@@ -133,5 +138,5 @@ class FirestoreExecutionSource(BaseBoundedSource):
         destination = Destination(entry['destination_name'], DestinationType[entry['type']], create_metadata_list(entry))
         destinations[destination.destination_name] = destination
     else:
-      logging.getLogger("megalista.FirestoreExecutionSource").warn("No destinations found!")
+      logging.getLogger("megalista.FirestoreExecutionSource").warning("No destinations found!")
     return destinations

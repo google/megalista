@@ -17,11 +17,13 @@ from typing import Any, List, Iterable
 import apache_beam as beam
 import logging
 
-from apache_beam.options.value_provider import ValueProvider
-from google.cloud import bigquery
 from apache_beam.io.gcp.bigquery import ReadFromBigQueryRequest
+from apache_beam.options.value_provider import ValueProvider
+from datetime import datetime
+from google.cloud import bigquery
 
 from models.execution import DestinationType, Execution, Batch
+from models.sheets import SheetsWriter
 
 _BIGQUERY_PAGE_SIZE = 20000
 
@@ -102,18 +104,44 @@ class BatchesFromExecutions(beam.PTransform):
                 batch.append(element['row'])
             yield Batch(execution, batch)
 
+
+    class _StartTimeExecutionWritter(beam.DoFn):
+        def __init__(self, sheets_writer: SheetsWriter):
+            self._sheets_writer = sheets_writer
+
+        def process(self, execution: Execution, *args, **kwargs):
+            print(f'chegou a execution {execution}')
+            if execution.configuration_medium is Execution.ExecutionConfigurationMedium.GOOGLE_SHEETS:
+                self._update_started_info(execution)
+                self._clean_finished_info(execution)
+                self._update_last_updated_info(execution)
+
+            yield execution
+
+        def _update_started_info(self, execution: Execution):
+            self._sheets_writer._update_started_info(execution.execution_config_line, datetime.today())
+            pass
+
+        def _clean_finished_info(self, execution: Execution):
+            pass
+
+        def _update_last_updated_info(self, execution: Execution):
+            pass
+
     def __init__(
         self,
         destination_type: DestinationType,
+        sheets_writer: SheetsWriter,
         batch_size: int = 5000,
         transactional: bool = False,
-        bq_ops_dataset: ValueProvider = None
+        bq_ops_dataset: ValueProvider = None,
     ):
         super().__init__()
         if transactional and not bq_ops_dataset:
             raise Exception('Missing bq_ops_dataset for this uploader')
 
         self._destination_type = destination_type
+        self._sheets_writer = sheets_writer
         self._batch_size = batch_size
         self._transactional = transactional
         self._bq_ops_dataset = bq_ops_dataset
@@ -127,7 +155,13 @@ class BatchesFromExecutions(beam.PTransform):
         return (
             executions
             | beam.Filter(lambda execution: execution.destination.destination_type == self._destination_type)
+            | beam.ParDo(self._StartTimeExecutionWritter(self._sheets_writer))
+            # TODO: This is the right place for execution start marking
+            # TODO: Right place for parameter input check too
             | beam.ParDo(self._get_bq_request_class())
             | beam.GroupBy(lambda x: x['execution'])
             | beam.ParDo(self._BatchElements(self._batch_size))
         )
+
+
+# print(datetime.today().strftime('%d/%m/%Y %H:%M'))

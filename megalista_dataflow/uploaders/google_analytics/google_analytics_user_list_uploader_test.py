@@ -49,7 +49,7 @@ def test_list_already_exists(mocker, uploader):
         AccountConfig('', False, '', '', ''),
         Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers']),
         Destination('dest1', DestinationType.GA_USER_LIST_UPLOAD,
-                    ['a', 'b', 'c', 'list', 'd', 'e']))
+                    ['a', 'b', 'c', 'list', 'd', 'e']), Execution.ExecutionConfigurationMedium.JSON)
 
     uploader.process(Batch(execution, []))
 
@@ -75,7 +75,8 @@ def test_list_creation_not_mcc(mocker, uploader):
         Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers']),
         Destination(
             'dest1', DestinationType.GA_USER_LIST_UPLOAD,
-            ['web_property', 'view', 'c', 'list', 'd', 'buyers_custom_dim']))
+            ['web_property', 'view', 'c', 'list', 'd', 'buyers_custom_dim']),
+            Execution.ExecutionConfigurationMedium.JSON)
     uploader.process(Batch(execution, []))
 
     service.management().remarketingAudience().insert.assert_any_call(
@@ -122,7 +123,8 @@ def test_list_creation_mcc(mocker, uploader):
         Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers']),
         Destination(
             'dest1', DestinationType.GA_USER_LIST_UPLOAD,
-            ['web_property', 'view', 'c', 'list', 'd', 'buyers_custom_dim']))
+            ['web_property', 'view', 'c', 'list', 'd', 'buyers_custom_dim']),
+            Execution.ExecutionConfigurationMedium.JSON)
     uploader.process(Batch(execution, []))
 
     service.management().remarketingAudience().insert.assert_any_call(
@@ -164,7 +166,8 @@ def test_avoid_list_creation_when_name_blank(mocker, uploader):
         AccountConfig(ads_account_id, True, ga_account_id, '', ''),
         Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers']),
         Destination('dest1', DestinationType.GA_USER_LIST_UPLOAD,
-                    ['web_property', 'view', 'c', '', 'd', 'buyers_custom_dim']))
+                    ['web_property', 'view', 'c', '', 'd', 'buyers_custom_dim']),
+                    Execution.ExecutionConfigurationMedium.JSON)
 
     uploader.process(Batch(execution, []))
 
@@ -190,7 +193,7 @@ def test_elements_uploading(mocker, uploader):
         Destination('dest1', DestinationType.GA_USER_LIST_UPLOAD, [
             'web_property', 'b', 'data_import_name', 'd', 'user_id_custom_dim',
             'buyer_custom_dim'
-        ]))
+        ]), Execution.ExecutionConfigurationMedium.JSON)
 
     # Add mock to side effect of uploadData()
     my_mock = mocker.MagicMock()
@@ -234,7 +237,7 @@ def test_elements_uploading_custom_field(mocker, uploader):
         Destination('dest1', DestinationType.GA_USER_LIST_UPLOAD, [
             'web_property', 'b', 'data_import_name', 'd', 'user_id_custom_dim',
             'buyer_custom_dim', 'my_field'
-        ]))
+        ]), Execution.ExecutionConfigurationMedium.JSON)
 
     # Add mock to side effect of uploadData()
     my_mock = mocker.MagicMock()
