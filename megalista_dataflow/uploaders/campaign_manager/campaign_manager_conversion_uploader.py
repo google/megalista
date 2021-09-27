@@ -107,7 +107,7 @@ class CampaignManagerConversionUploaderDoFn(beam.DoFn):
         to_upload['matchId'] = conversion['matchId']
 
       if 'value' in conversion:
-        to_upload['value'] = conversion['value']
+        to_upload['value'] = float(conversion['value'])
       if 'quantity' in conversion:
         to_upload['quantity'] = conversion['quantity']
       if 'customVariables' in conversion:
