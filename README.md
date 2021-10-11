@@ -89,6 +89,8 @@ In order to create it, follow these steps:
  - On the **OAuth Consent Screen** and configure an *Internal Consent Screen*
  - Then, go to the **Credentials** and create an *OAuth client Id* with Application type set as *Desktop App*
  - This will generate a *Client Id* and a *Client secret*. Save these values as they are required during the deployment
+ - Go to **App Engine**, click "Create Application" and choose a region. (No other steps are required in the App Engine creation flow.)
+   -  *Note: Cloud Scheduler has a legacy dependency on App Engine, no app engine *instances* are created at any point by Megalista.*
  - Run the **generate_megalista_token.sh** script in this folder providing these two values and follow the instructions
    - Sample: `./generate_megalista_token.sh client_id client_secret`
  - This will generate the *Access Token* and the *Refresh token*
