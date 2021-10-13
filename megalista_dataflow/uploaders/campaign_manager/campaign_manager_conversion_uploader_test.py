@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import decimal
 import math
 import time
 import logging
@@ -172,6 +173,45 @@ def test_conversion_upload_match_id_additional_fields(mocker, uploader):
                 'value': "abcd",
                 'kind': 'dfareporting#customFloodlightVariable',
             }]
+        }],
+    }
+
+    uploader._do_process(Batch(execution, conversions_input), current_time)
+
+    uploader._get_dcm_service().conversions().batchinsert.assert_any_call(
+        profileId='dcm_profile_id', body=expected_body)
+
+
+def test_conversion_upload_decimal_value(mocker, uploader):
+    mocker.patch.object(uploader, '_get_dcm_service', autospec=True)
+
+    floodlight_activity_id = 'floodlight_activity_id'
+    floodlight_configuration_id = 'floodlight_configuration_id'
+
+    source = Source('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'))
+    destination = Destination(
+        'dest1',
+        DestinationType.CM_OFFLINE_CONVERSION,
+        (floodlight_activity_id, floodlight_configuration_id))
+    execution = Execution(_account_config, source, destination)
+    current_time = time.time()
+
+    mocker.patch.object(time, 'time')
+    time.time.return_value = current_time
+
+    conversions_input = [{
+        'gclid': 'abc',
+        'value': decimal.Decimal('540.12'),
+    }]
+
+    expected_body = {
+        'conversions': [{
+            'gclid': 'abc',
+            'floodlightActivityId': floodlight_activity_id,
+            'floodlightConfigurationId': floodlight_configuration_id,
+            'ordinal': math.floor(current_time * 10e5),
+            'timestampMicros': math.floor(current_time * 10e5),
+            'value': 540.12,
         }],
     }
 
