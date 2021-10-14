@@ -138,7 +138,7 @@ resource "google_cloud_scheduler_job" "megalista_job" {
   schedule         = "0 0 * * *"
   time_zone        = local.time_zone
   attempt_deadline = "320s"
-  region           = var.region
+  region           = "Etc/UTC"
 
   http_target {
     http_method = "POST"
