@@ -189,17 +189,19 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
         job_resource_name = self._get_job_by_list_name(offline_user_data_job_service, list_resource_name, operator,
                                                        customer_id)
 
-        rows = self.get_filtered_rows(
-            batch.elements, self.get_row_keys())
+        rows = self.get_filtered_rows(batch.elements, self.get_row_keys())
+
+        operations = []
+        for row in rows:
+            operations.extend([
+                {
+                    operator: {'user_identifiers': [{user_identifier: row[user_identifier]}]}
+                } for user_identifier in row])
 
         data_insertion_payload = {
             'resource_name': job_resource_name,
             'enable_partial_failure': False,
-            'operations': [{
-                operator: {
-                    'user_identifiers': [row]
-                }
-            } for row in rows]
+            'operations': operations
         }
 
         data_insertion_response = offline_user_data_job_service.add_offline_user_data_job_operations(
