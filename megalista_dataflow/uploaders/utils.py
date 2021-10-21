@@ -23,7 +23,7 @@ MAX_RETRIES = 3
 timezone = pytz.timezone('America/Sao_Paulo')
 
 
-def get_ads_client(oauth_credentials, developer_token, customer_id):
+def get_ads_client(oauth_credentials, developer_token, login_customer_id):
     from google.ads.googleads.client import GoogleAdsClient
     from google.ads.googleads import oauth2
 
@@ -33,12 +33,12 @@ def get_ads_client(oauth_credentials, developer_token, customer_id):
 
     return GoogleAdsClient(
         oauth2_client, developer_token,
-        login_customer_id=customer_id)
+        login_customer_id=login_customer_id)
 
 
 def get_ads_service(service_name, version, oauth_credentials, developer_token,
-                    customer_id):
-    return get_ads_client(oauth_credentials, developer_token, customer_id).get_service(service_name, version=version)
+                    login_customer_id):
+    return get_ads_client(oauth_credentials, developer_token, login_customer_id).get_service(service_name, version=version)
 
 
 def format_date(date):

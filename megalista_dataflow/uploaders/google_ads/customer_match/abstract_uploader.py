@@ -51,23 +51,26 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
     def _create_list_if_it_does_not_exist(self,
                                           customer_id: str,
                                           list_name: str,
-                                          list_definition: Dict[str, Any]) -> str:
+                                          list_definition: Dict[str, Any],
+                                          login_customer_id: str
+                                          ) -> str:
 
         # TODO (antoniomoreira): include account id on the cache
         if self._user_list_id_cache.get(list_name) is None:
             self._user_list_id_cache[list_name] = \
                 self._do_create_list_if_it_does_not_exist(
-                    customer_id, list_name, list_definition)
+                    customer_id, list_name, list_definition, login_customer_id)
 
         return self._user_list_id_cache[list_name]
 
     def _do_create_list_if_it_does_not_exist(self,
                                              customer_id: str,
                                              list_name: str,
-                                             list_definition: Dict[str, Any]
+                                             list_definition: Dict[str, Any],
+                                             login_customer_id: str
                                              ) -> str:
 
-        resource_name = self._get_user_list_resource_name(customer_id, list_name)
+        resource_name = self._get_user_list_resource_name(customer_id, list_name, login_customer_id)
 
         if resource_name is None:
             # Create list
@@ -93,11 +96,11 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
                                                     list_name, resource_name)
         return str(resource_name)
 
-    def _get_user_list_resource_name(self, customer_id: str, list_name: str) -> Optional[str]:
-        ads_client = utils.get_ads_client(self.oauth_credentials, self.developer_token.get(), customer_id)
+    def _get_user_list_resource_name(self, customer_id: str, list_name: str, login_customer_id: str) -> Optional[str]:
+        ads_client = utils.get_ads_client(self.oauth_credentials, self.developer_token.get(), login_customer_id)
 
         resource_name = None
-        service = self._get_ads_service(customer_id)
+        service = self._get_ads_service(login_customer_id)
 
         # Only search for audiences owned by this account, not MCCs above it.
         query = f"SELECT user_list.resource_name, user_list.access_reason FROM user_list WHERE user_list.name='{list_name}' " \
@@ -109,23 +112,23 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
         return resource_name
 
     # just to facilitate mocking
-    def _get_ads_service(self, customer_id: str):
+    def _get_ads_service(self, login_customer_id: str):
         return utils.get_ads_service('GoogleAdsService', ADS_API_VERSION,
                                      self.oauth_credentials,
                                      self.developer_token.get(),
-                                     customer_id)
+                                     login_customer_id)
 
-    def _get_user_list_service(self, customer_id: str):
+    def _get_user_list_service(self, login_customer_id: str):
         return utils.get_ads_service('UserListService', ADS_API_VERSION,
                                      self.oauth_credentials,
                                      self.developer_token.get(),
-                                     customer_id)
+                                     login_customer_id)
 
-    def _get_offline_user_data_job_service(self, customer_id: str):
+    def _get_offline_user_data_job_service(self, login_customer_id: str):
         return utils.get_ads_service('OfflineUserDataJobService', ADS_API_VERSION,
                                      self.oauth_credentials,
                                      self.developer_token.get(),
-                                     customer_id)
+                                     login_customer_id)
 
     def _assert_execution_is_valid(self, execution) -> None:
         destination = execution.destination.destination_metadata
@@ -141,6 +144,12 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
         """
         if len(destination.destination_metadata) >= 5 and len(destination.destination_metadata[4]) > 0:
             return destination.destination_metadata[4].replace('-', '')
+        return account_config.google_ads_account_id.replace('-', '')
+
+    def _get_login_customer_id(self, account_config: AccountConfig) -> str:
+        """
+          Returns the account_config info Manager Customer Id.
+        """
         return account_config.google_ads_account_id.replace('-', '')
 
     def _get_job_by_list_name(self, offline_user_data_job_service, list_resource_name: str, operator: str,
@@ -175,6 +184,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
         self._assert_execution_is_valid(execution)
 
         customer_id = self._get_customer_id(execution.account_config, execution.destination)
+        login_customer_id = self._get_login_customer_id(execution.account_config)
 
         # get API services
         offline_user_data_job_service = self._get_offline_user_data_job_service(customer_id)
@@ -183,7 +193,9 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
             customer_id, execution.destination.destination_metadata[0],
             self.get_list_definition(
                 execution.account_config,
-                execution.destination.destination_metadata))
+                execution.destination.destination_metadata),
+            login_customer_id
+            )
 
         operator = self._get_list_operator(execution.destination.destination_metadata[1])
         job_resource_name = self._get_job_by_list_name(offline_user_data_job_service, list_resource_name, operator,
