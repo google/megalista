@@ -71,8 +71,7 @@ def test_conversion_upload(mocker, uploader):
         'gclid': '123',
         'timestamp': '2021-11-30T12:00:00.000'
     }, {
-        'gclid': '456',
-        'timestamp': '2021-11-30T12:00:00.000'
+        'gclid': '456'
     }]), current_time)
 
     # convert 2021-11-30T12:00:00.000 to timestampMicros
@@ -90,7 +89,7 @@ def test_conversion_upload(mocker, uploader):
             'floodlightActivityId': floodlight_activity_id,
             'floodlightConfigurationId': floodlight_configuration_id,
             'ordinal': math.floor(current_time * 10e5),
-            'timestampMicros': timestamp_micros
+            'timestampMicros': math.floor(current_time * 10e5)
         }],
     }
 
