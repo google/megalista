@@ -15,7 +15,7 @@
 import datetime
 import logging
 import pytz
-
+import math
 
 
 MAX_RETRIES = 3
@@ -51,6 +51,14 @@ def format_date(date):
     str_timezone = pdate.strftime("%z")
     return f'{datetime.datetime.strftime(pdate, "%Y-%m-%d %H:%M:%S")}{str_timezone[-5:-2]}:{str_timezone[-2:]}'
 
+def get_timestamp_micros(date):
+    if isinstance(date, datetime.datetime):
+        pdate = date
+    else:
+        pdate = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%f')
+
+    return math.floor(pdate.timestamp() * 10e5)
+    
 
 def safe_process(logger):
     def deco(func):

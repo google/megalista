@@ -15,6 +15,7 @@ import decimal
 import math
 import time
 import logging
+from datetime import datetime, timezone
 
 from apache_beam.options.value_provider import StaticValueProvider
 from uploaders.campaign_manager.campaign_manager_conversion_uploader import CampaignManagerConversionUploaderDoFn
@@ -67,10 +68,15 @@ def test_conversion_upload(mocker, uploader):
     current_time = time.time()
 
     uploader._do_process(Batch(execution, [{
-        'gclid': '123'
+        'gclid': '123',
+        'timestamp': '2021-11-30T12:00:00.000'
     }, {
-        'gclid': '456'
+        'gclid': '456',
+        'timestamp': '2021-11-30T12:00:00.000'
     }]), current_time)
+
+    # convert 2021-11-30T12:00:00.000 to timestampMicros
+    timestamp_micros = math.floor(datetime.strptime('2021-11-30T12:00:00.000', '%Y-%m-%dT%H:%M:%S.%f').timestamp() * 10e5)
 
     expected_body = {
         'conversions': [{
@@ -78,13 +84,13 @@ def test_conversion_upload(mocker, uploader):
             'floodlightActivityId': floodlight_activity_id,
             'floodlightConfigurationId': floodlight_configuration_id,
             'ordinal': math.floor(current_time * 10e5),
-            'timestampMicros': math.floor(current_time * 10e5)
+            'timestampMicros': timestamp_micros
         }, {
             'gclid': '456',
             'floodlightActivityId': floodlight_activity_id,
             'floodlightConfigurationId': floodlight_configuration_id,
             'ordinal': math.floor(current_time * 10e5),
-            'timestampMicros': math.floor(current_time * 10e5)
+            'timestampMicros': timestamp_micros
         }],
     }
 
