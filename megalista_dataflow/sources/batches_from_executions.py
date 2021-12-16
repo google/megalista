@@ -45,7 +45,8 @@ class BatchesFromExecutions(beam.PTransform):
         def process(self, execution: Execution) -> Iterable[ReadFromBigQueryRequest]:
             client = bigquery.Client()
             table_name = execution.source.source_metadata[0] + '.' + execution.source.source_metadata[1]
-            query = f"SELECT data.* FROM {table_name} AS data"
+            table_name = table_name.replace('`', '')
+            query = f"SELECT data.* FROM `{table_name}` AS data"
             logging.getLogger(_LOGGER_NAME).info(f'Reading from table {table_name} for Execution {execution}')
             rows_iterator = client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE)
             for row in rows_iterator:
@@ -59,12 +60,14 @@ class BatchesFromExecutions(beam.PTransform):
         def process(self, execution: Execution) -> Iterable[ReadFromBigQueryRequest]:
             table_name = execution.source.source_metadata[0] + \
                 '.' + execution.source.source_metadata[1]
+            table_name = table_name.replace('`', '')
             uploaded_table_name = self._bq_ops_dataset.get() + \
                 '.' + execution.source.source_metadata[1] + \
                 "_uploaded"
+            uploaded_table_name = uploaded_table_name.replace('`', '')
             client = bigquery.Client()
 
-            query = f"CREATE TABLE IF NOT EXISTS {uploaded_table_name} ( \
+            query = f"CREATE TABLE IF NOT EXISTS `{uploaded_table_name}` ( \
               timestamp TIMESTAMP OPTIONS(description= 'Event timestamp'), \
               uuid STRING OPTIONS(description='Event unique identifier')) \
               PARTITION BY _PARTITIONDATE \
@@ -75,7 +78,7 @@ class BatchesFromExecutions(beam.PTransform):
 
             client.query(query).result()
 
-            query = f"SELECT data.* FROM {table_name} AS data \
+            query = f"SELECT data.* FROM `{table_name}` AS data \
                 LEFT JOIN {uploaded_table_name} AS uploaded USING(uuid) \
                 WHERE uploaded.uuid IS NULL;"
 
