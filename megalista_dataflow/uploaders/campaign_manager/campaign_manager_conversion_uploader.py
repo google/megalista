@@ -121,6 +121,9 @@ class CampaignManagerConversionUploaderDoFn(beam.DoFn):
           custom_variables.append(cv)
         to_upload['customVariables'] = custom_variables
 
+      if 'timestamp' in conversion:
+        to_upload['timestampMicros'] = utils.get_timestamp_micros(conversion['timestamp'])
+
       conversions.append(to_upload)
 
     request_body = {
