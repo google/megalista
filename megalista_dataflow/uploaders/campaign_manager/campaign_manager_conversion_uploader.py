@@ -45,7 +45,7 @@ class CampaignManagerConversionUploaderDoFn(beam.DoFn):
             'https://www.googleapis.com/auth/dfatrafficking',
             'https://www.googleapis.com/auth/ddmconversions'])
 
-    return build('dfareporting', 'v3.4', credentials=credentials)
+    return build('dfareporting', 'v3.5', credentials=credentials)
 
   def start_bundle(self):
     pass
