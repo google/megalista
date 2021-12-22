@@ -48,7 +48,7 @@ def test_get_service(mocker, uploader):
 def test_fail_missing_destination_metadata(uploader, mocker):
     mocker.patch.object(uploader, '_get_offline_user_data_job_service')
     source = Source('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'))
-    destination = Destination('dest1', DestinationType.ADS_SSD_UPLOAD, ['1'])
+    destination = Destination('dest1', DestinationType.ADS_SSD_UPLOAD, ['1', '2'])
     execution = Execution(_account_config, source, destination)
     batch = Batch(execution, [])
     uploader.process(batch)
@@ -57,12 +57,15 @@ def test_fail_missing_destination_metadata(uploader, mocker):
 
 def test_conversion_upload(mocker, uploader):
     mocker.patch.object(uploader, '_get_offline_user_data_job_service')
+    mocker.patch.object(uploader, '_get_resource_name')
     conversion_name = 'ssd_conversion'
     resource_name = uploader._get_offline_user_data_job_service.return_value.create_offline_user_data_job.return_value.resource_name
-    external_upload_id = '123'
+    conversion_name_resource_name = uploader._get_resource_name.return_value
+    external_upload_id = '123' #TODO(caiotomazelli): Remove, not being used
+    should_hash = True
     source = Source('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'))
     destination = Destination('dest1', DestinationType.ADS_SSD_UPLOAD,
-                              [conversion_name, external_upload_id])
+                              [conversion_name, external_upload_id, should_hash])
     execution = Execution(_account_config, source, destination)
 
     time1 = '2020-04-09T14:13:55.0005'
@@ -72,11 +75,11 @@ def test_conversion_upload(mocker, uploader):
     time2_result = '2020-04-09 13:13:55-03:00'
 
     batch = Batch(execution, [{
-        'hashedEmail': 'a@a.com',
+        'hashed_email': 'a@a.com',
         'time': time1,
         'amount': '123'
     }, {
-        'hashedEmail': 'b@b.com',
+        'hashed_email': 'b@b.com',
         'time': time2,
         'amount': '234'
     }])
@@ -92,12 +95,11 @@ def test_conversion_upload(mocker, uploader):
                     'hashed_email': 'a@a.com'
                 }],
                 'transaction_attribute': {
-                    'conversion_action': conversion_name,
+                    'conversion_action': conversion_name_resource_name,
                     'currency_code': 'BRL',
                     'transaction_amount_micros': '123',
                     'transaction_date_time': time1_result
-                },
-                'user_attribute': ''
+                }
             }
         }, {
             'create': {
@@ -105,12 +107,11 @@ def test_conversion_upload(mocker, uploader):
                     'hashed_email': 'b@b.com'
                 }],
                 'transaction_attribute': {
-                    'conversion_action': conversion_name,
+                    'conversion_action': conversion_name_resource_name,
                     'currency_code': 'BRL',
                     'transaction_amount_micros': '234',
                     'transaction_date_time': time2_result
-                },
-                'user_attribute': ''
+                }
             }
         }]
     }

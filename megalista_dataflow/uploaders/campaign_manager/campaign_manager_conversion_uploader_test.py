@@ -11,9 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import decimal
 import math
 import time
 import logging
+from datetime import datetime, timezone
 
 from apache_beam.options.value_provider import StaticValueProvider
 from uploaders.campaign_manager.campaign_manager_conversion_uploader import CampaignManagerConversionUploaderDoFn
@@ -66,10 +68,14 @@ def test_conversion_upload(mocker, uploader):
     current_time = time.time()
 
     uploader._do_process(Batch(execution, [{
-        'gclid': '123'
+        'gclid': '123',
+        'timestamp': '2021-11-30T12:00:00.000'
     }, {
         'gclid': '456'
     }]), current_time)
+
+    # convert 2021-11-30T12:00:00.000 to timestampMicros
+    timestamp_micros = math.floor(datetime.strptime('2021-11-30T12:00:00.000', '%Y-%m-%dT%H:%M:%S.%f').timestamp() * 10e5)
 
     expected_body = {
         'conversions': [{
@@ -77,7 +83,7 @@ def test_conversion_upload(mocker, uploader):
             'floodlightActivityId': floodlight_activity_id,
             'floodlightConfigurationId': floodlight_configuration_id,
             'ordinal': math.floor(current_time * 10e5),
-            'timestampMicros': math.floor(current_time * 10e5)
+            'timestampMicros': timestamp_micros
         }, {
             'gclid': '456',
             'floodlightActivityId': floodlight_activity_id,
@@ -92,7 +98,7 @@ def test_conversion_upload(mocker, uploader):
 
 
 def test_conversion_upload_match_id(mocker, uploader):
-    mocker.patch.object(uploader, '_get_dcm_service')
+    mocker.patch.object(uploader, '_get_dcm_service', autospec=True)
 
     floodlight_activity_id = 'floodlight_activity_id'
     floodlight_configuration_id = 'floodlight_configuration_id'
@@ -119,6 +125,102 @@ def test_conversion_upload_match_id(mocker, uploader):
             'timestampMicros': math.floor(current_time * 10e5)
         }],
     }
+
+    uploader._get_dcm_service().conversions().batchinsert.assert_any_call(
+        profileId='dcm_profile_id', body=expected_body)
+
+
+def test_conversion_upload_match_id_additional_fields(mocker, uploader):
+    mocker.patch.object(uploader, '_get_dcm_service', autospec=True)
+
+    floodlight_activity_id = 'floodlight_activity_id'
+    floodlight_configuration_id = 'floodlight_configuration_id'
+
+    source = Source('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'))
+    destination = Destination(
+        'dest1',
+        DestinationType.CM_OFFLINE_CONVERSION,
+        (floodlight_activity_id, floodlight_configuration_id))
+    execution = Execution(_account_config, source, destination)
+    current_time = time.time()
+
+    mocker.patch.object(time, 'time')
+    time.time.return_value = current_time
+
+    conversions_input = [{
+        'matchId': 'abc',
+        'value': 1,
+        'quantity': 2,
+        'customVariables': [{
+            'type': 'U1',
+            'value': "5.6",
+        }, {
+            'type': 'U2',
+            'value': "abcd",
+        }]
+    }]
+
+    expected_body = {
+        'conversions': [{
+            'matchId': 'abc',
+            'floodlightActivityId': floodlight_activity_id,
+            'floodlightConfigurationId': floodlight_configuration_id,
+            'ordinal': math.floor(current_time * 10e5),
+            'timestampMicros': math.floor(current_time * 10e5),
+            'value': 1,
+            'quantity': 2,
+            'customVariables': [{
+                'type': 'U1',
+                'value': "5.6",
+                'kind': 'dfareporting#customFloodlightVariable',
+            }, {
+                'type': 'U2',
+                'value': "abcd",
+                'kind': 'dfareporting#customFloodlightVariable',
+            }]
+        }],
+    }
+
+    uploader._do_process(Batch(execution, conversions_input), current_time)
+
+    uploader._get_dcm_service().conversions().batchinsert.assert_any_call(
+        profileId='dcm_profile_id', body=expected_body)
+
+
+def test_conversion_upload_decimal_value(mocker, uploader):
+    mocker.patch.object(uploader, '_get_dcm_service', autospec=True)
+
+    floodlight_activity_id = 'floodlight_activity_id'
+    floodlight_configuration_id = 'floodlight_configuration_id'
+
+    source = Source('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'))
+    destination = Destination(
+        'dest1',
+        DestinationType.CM_OFFLINE_CONVERSION,
+        (floodlight_activity_id, floodlight_configuration_id))
+    execution = Execution(_account_config, source, destination)
+    current_time = time.time()
+
+    mocker.patch.object(time, 'time')
+    time.time.return_value = current_time
+
+    conversions_input = [{
+        'gclid': 'abc',
+        'value': decimal.Decimal('540.12'),
+    }]
+
+    expected_body = {
+        'conversions': [{
+            'gclid': 'abc',
+            'floodlightActivityId': floodlight_activity_id,
+            'floodlightConfigurationId': floodlight_configuration_id,
+            'ordinal': math.floor(current_time * 10e5),
+            'timestampMicros': math.floor(current_time * 10e5),
+            'value': 540.12,
+        }],
+    }
+
+    uploader._do_process(Batch(execution, conversions_input), current_time)
 
     uploader._get_dcm_service().conversions().batchinsert.assert_any_call(
         profileId='dcm_profile_id', body=expected_body)

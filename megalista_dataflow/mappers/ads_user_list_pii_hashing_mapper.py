@@ -18,7 +18,6 @@ from models.execution import Batch
 
 
 class FieldHasher:
-
     def __init__(self, should_hash_fields):
         self.should_hash_fields = should_hash_fields
 
@@ -26,62 +25,76 @@ class FieldHasher:
         import hashlib
 
         if self.should_hash_fields:
-            return hashlib.sha256(field.strip().lower().encode('utf-8')).hexdigest()
+            return hashlib.sha256(field.strip().lower().encode("utf-8")).hexdigest()
 
         return field
 
 
 def _is_data_present(dict, key):
-    return key in dict\
-        and dict[key] is not None\
-        and dict[key] != ''
+    return key in dict and dict[key] is not None and dict[key] != ""
 
 
 class AdsUserListPIIHashingMapper:
     def __init__(self):
-        self.logger = logging.getLogger(
-            'megalista.AdsUserListPIIHashingMapper')
+        self.logger = logging.getLogger("megalista.AdsUserListPIIHashingMapper")
 
     def _hash_user(self, user, hasher):
-
-        hashed = {}
+        hashable_keys = ("email",
+                         "mailing_address_first_name",
+                         "mailing_address_last_name",
+                         "mailing_address_country",
+                         "mailing_address_zip",
+                         "phone",
+                         "mobile_device_id",
+                         "user_id")
+        processed_user = {}
+        # include non PII keys as is (these should not be hashed)
+        for k, v in user.items():
+          if k not in hashable_keys:
+            processed_user[k] = v
 
         try:
-            if _is_data_present(user, 'email'):
-                hashed['hashed_email'] = hasher.hash_field(user['email'])
+            if _is_data_present(user, "email"):
+                processed_user["hashed_email"] = hasher.hash_field(user["email"])
         except:
-            self.logger.error("Error hashing email for user: %s" % user)
+            self.logger.error(f"Error hashing email for user: {str(user)}")
 
         try:
-            if _is_data_present(user, 'mailing_address_first_name')\
-             and _is_data_present(user, 'mailing_address_last_name')\
-             and _is_data_present(user, 'mailing_address_country')\
-             and _is_data_present(user, 'mailing_address_zip'):
-                hashed['address_info'] = {
-                    'hashed_first_name': hasher.hash_field(user['mailing_address_first_name']),
-                    'hashed_last_name': hasher.hash_field(user['mailing_address_last_name']),
-                    'country_code': user['mailing_address_country'],
-                    'postal_code': user['mailing_address_zip']
+            if (
+                _is_data_present(user, "mailing_address_first_name")
+                and _is_data_present(user, "mailing_address_last_name")
+                and _is_data_present(user, "mailing_address_country")
+                and _is_data_present(user, "mailing_address_zip")
+            ):
+                processed_user["address_info"] = {
+                    "hashed_first_name": hasher.hash_field(
+                        user["mailing_address_first_name"]
+                    ),
+                    "hashed_last_name": hasher.hash_field(
+                        user["mailing_address_last_name"]
+                    ),
+                    "country_code": user["mailing_address_country"],
+                    "postal_code": user["mailing_address_zip"],
                 }
         except:
-            self.logger.error("Error hashing address for user: %s" % user)
+            self.logger.error(f"Error hashing address for user: {str(user)}")
 
         try:
-            if _is_data_present(user, 'phone'):
-                hashed['hashed_phone_number'] = hasher.hash_field(user['phone'])
+            if _is_data_present(user, "phone"):
+                processed_user["hashed_phone_number"] = hasher.hash_field(user["phone"])
         except:
-            self.logger.error("Error hashing phone for user: %s" % user)
+            self.logger.error(f"Error hashing phone for user: {str(user)}")
 
-        if _is_data_present(user, 'mobile_device_id'):
-            hashed['mobile_id'] = user['mobile_device_id']
+        if _is_data_present(user, "mobile_device_id"):
+            processed_user["mobile_id"] = user["mobile_device_id"]
 
         try:
-            if _is_data_present(user, 'user_id'):
-                hashed['third_party_user_id'] = hasher.hash_field(user['user_id'])
+            if _is_data_present(user, "user_id"):
+                processed_user["third_party_user_id"] = hasher.hash_field(user["user_id"])
         except:
-            self.logger.error("Error hashing user_id for user: %s" % user)
+            self.logger.error(f"Error hashing user_id for user: {str(user)}")
 
-        return hashed
+        return processed_user
 
     def _get_should_hash_fields(self, metadata_list):
 
@@ -93,14 +106,20 @@ class AdsUserListPIIHashingMapper:
         if not should_hash_fields:
             return True
 
-        return should_hash_fields.lower() != 'false'
+        return should_hash_fields.lower() != "false"
 
     def hash_users(self, batch: Batch):
 
         should_hash_fields = self._get_should_hash_fields(
-            batch.execution.destination.destination_metadata)
-        self.logger.debug('Should hash fields is %s' % should_hash_fields)
+            batch.execution.destination.destination_metadata
+        )
+        self.logger.debug(f"Should hash fields is {str(should_hash_fields)}")
 
-        hashed_elements = [self._hash_user(element, FieldHasher(should_hash_fields)) for element in batch.elements]
+        hashed_elements = [
+            self._hash_user(element, FieldHasher(should_hash_fields))
+            for element in batch.elements
+        ]
 
-        return Batch(batch.execution, [element for element in hashed_elements if element])
+        return Batch(
+            batch.execution, [element for element in hashed_elements if element]
+        )

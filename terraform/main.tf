@@ -1,3 +1,13 @@
+provider "google" {
+    scopes = [
+        "https://www.googleapis.com/auth/userinfo.email",
+        "https://www.googleapis.com/auth/compute",
+        "https://www.googleapis.com/auth/cloud-platform",
+        "https://www.googleapis.com/auth/ndev.clouddns.readwrite",
+        "https://www.googleapis.com/auth/devstorage.full_control"
+    ]
+}
+
 data "google_client_config" "current" {
 }
 
@@ -126,7 +136,7 @@ resource "google_cloud_scheduler_job" "megalista_job" {
   name             = "megalista_job"
   description      = "Daily Runner for Megalista"
   schedule         = "0 0 * * *"
-  time_zone        = local.time_zone
+  time_zone        = "Etc/UTC"
   attempt_deadline = "320s"
   region           = var.region
 

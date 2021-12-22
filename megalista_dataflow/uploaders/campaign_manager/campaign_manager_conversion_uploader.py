@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import logging
 import math
 import time
@@ -46,7 +45,7 @@ class CampaignManagerConversionUploaderDoFn(beam.DoFn):
             'https://www.googleapis.com/auth/dfatrafficking',
             'https://www.googleapis.com/auth/ddmconversions'])
 
-    return build('dfareporting', 'v3.4', credentials=credentials)
+    return build('dfareporting', 'v3.5', credentials=credentials)
 
   def start_bundle(self):
     pass
@@ -107,6 +106,24 @@ class CampaignManagerConversionUploaderDoFn(beam.DoFn):
       elif 'matchId' in conversion and conversion['matchId']:
         to_upload['matchId'] = conversion['matchId']
 
+      if 'value' in conversion:
+        to_upload['value'] = float(conversion['value'])
+      if 'quantity' in conversion:
+        to_upload['quantity'] = conversion['quantity']
+      if 'customVariables' in conversion:
+        custom_variables = []
+        for r in conversion['customVariables']:
+          cv = {
+              'type': r['type'],
+              'value': r['value'],
+              'kind': 'dfareporting#customFloodlightVariable',
+          }
+          custom_variables.append(cv)
+        to_upload['customVariables'] = custom_variables
+
+      if 'timestamp' in conversion:
+        to_upload['timestampMicros'] = utils.get_timestamp_micros(conversion['timestamp'])
+
       conversions.append(to_upload)
 
     request_body = {
@@ -114,7 +131,7 @@ class CampaignManagerConversionUploaderDoFn(beam.DoFn):
     }
 
     logger.info(f'Conversions: \n{conversions}')
-    
+
     request = service.conversions().batchinsert(
         profileId=campaign_manager_account_id, body=request_body)
     response = request.execute()
