@@ -163,6 +163,20 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
 
         return job_resource_name
 
+    def _get_list_operator(self, operator: str) -> str:
+        translation = {
+            'ADD': 'create',
+            'REMOVE': 'remove',
+            'REPLACE': 'create'
+        }
+        return translation[operator]
+
+    def _get_remove_all(self, operator: str) -> bool:
+        return operator == 'REPLACE'
+
+    def get_filtered_rows(self, rows: List[Any], keys: List[str]) -> List[Dict[str, Any]]:
+        return [{key: row.get(key) for key in keys if key in row} for row in rows]
+
     @utils.safe_process(logger=logging.getLogger(_DEFAULT_LOGGER))
     def process(self, batch: Batch, **kwargs) -> None:
         if not self.active:
@@ -192,6 +206,11 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
         rows = self.get_filtered_rows(batch.elements, self.get_row_keys())
 
         operations = []
+        if self._get_remove_all(execution.destination.destination_metadata[1]):
+            operations.append({
+                'remove_all': True
+            })
+
         for row in rows:
             operations.extend([
                 {
@@ -212,7 +231,8 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
     def _get_list_operator(self, operator: str) -> str:
         translation = {
             'ADD': 'create',
-            'REMOVE': 'remove'
+            'REMOVE': 'remove',
+            'REPLACE': 'create'
         }
         return translation[operator]
 
