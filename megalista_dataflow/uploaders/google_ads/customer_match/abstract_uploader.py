@@ -228,18 +228,6 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
 
         utils.print_partial_error_messages(_DEFAULT_LOGGER, 'uploading customer match', data_insertion_response)
 
-    def _get_list_operator(self, operator: str) -> str:
-        translation = {
-            'ADD': 'create',
-            'REMOVE': 'remove',
-            'REPLACE': 'create'
-        }
-        return translation[operator]
-
-    def get_filtered_rows(self, rows: List[Any],
-                          keys: List[str]) -> List[Dict[str, Any]]:
-        return [{key: row.get(key) for key in keys if key in row} for row in rows]
-
     def get_list_definition(self, account_config: AccountConfig,
                             destination_metadata: List[str]) -> Dict[str, Any]:
         pass
