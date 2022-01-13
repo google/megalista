@@ -18,11 +18,11 @@ class AppsFlyerEventsStep(beam.PTransform):
             executions
             | 'Load Data - AppsFlyer S2S events' >>
             BatchesFromExecutions(
+                self.params.dataflow_options,
                 DestinationType.APPSFLYER_S2S_EVENTS,
                 1000,
-                True,
-                self.params.dataflow_options.bq_ops_dataset)
+                True)
             | 'Upload - AppsFlyer S2S events' >>
             beam.ParDo(AppsFlyerS2SUploaderDoFn(self.params.dataflow_options.appsflyer_dev_key))
-            | 'Persist results - AppsFlyer S2S events' >> beam.ParDo(TransactionalEventsResultsWriter(self.params.dataflow_options.bq_ops_dataset))
+            | 'Persist results - AppsFlyer S2S events' >> beam.ParDo(TransactionalEventsResultsWriter(self.params.dataflow_options))
         )

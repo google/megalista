@@ -22,17 +22,14 @@ from google.cloud import bigquery
 from apache_beam.io.gcp.bigquery import ReadFromBigQueryRequest
 
 from models.execution import DestinationType, Execution, Batch
+from models.options import DataflowOptions
+
+from data_sources.data_source import DataSource
 
 _BIGQUERY_PAGE_SIZE = 20000
 
 _LOGGER_NAME = 'megalista.BatchesFromExecutions'
 
-
-def _convert_row_to_dict(row):
-    dict = {}
-    for key, value in row.items():
-        dict[key] = value
-    return dict
 
 
 class BatchesFromExecutions(beam.PTransform):
@@ -41,53 +38,19 @@ class BatchesFromExecutions(beam.PTransform):
     load the data using the received source and group by that batch size and Execution.
     """
 
-    class _ExecutionIntoBigQueryRequest(beam.DoFn):
-        def process(self, execution: Execution) -> Iterable[ReadFromBigQueryRequest]:
-            client = bigquery.Client()
-            table_name = execution.source.source_metadata[0] + '.' + execution.source.source_metadata[1]
-            table_name = table_name.replace('`', '')
-            query = f"SELECT data.* FROM `{table_name}` AS data"
-            logging.getLogger(_LOGGER_NAME).info(f'Reading from table {table_name} for Execution {execution}')
-            rows_iterator = client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE)
-            for row in rows_iterator:
-                yield {'execution': execution, 'row': _convert_row_to_dict(row)}
 
-    class _ExecutionIntoBigQueryRequestTransactional(beam.DoFn):
+    class _ReadDataSource(beam.DoFn):
+        def __init__(self, transactional: bool, dataflow_options: DataflowOptions, args: dict):
+            super().__init__()
+            self._transactional = transactional
+            self._dataflow_options = dataflow_options
+            self._args = args
 
-        def __init__(self, bq_ops_dataset):
-            self._bq_ops_dataset = bq_ops_dataset
-
-        def process(self, execution: Execution) -> Iterable[ReadFromBigQueryRequest]:
-            table_name = execution.source.source_metadata[0] + \
-                '.' + execution.source.source_metadata[1]
-            table_name = table_name.replace('`', '')
-            uploaded_table_name = self._bq_ops_dataset.get() + \
-                '.' + execution.source.source_metadata[1] + \
-                "_uploaded"
-            uploaded_table_name = uploaded_table_name.replace('`', '')
-            client = bigquery.Client()
-
-            query = f"CREATE TABLE IF NOT EXISTS `{uploaded_table_name}` ( \
-              timestamp TIMESTAMP OPTIONS(description= 'Event timestamp'), \
-              uuid STRING OPTIONS(description='Event unique identifier')) \
-              PARTITION BY _PARTITIONDATE \
-              OPTIONS(partition_expiration_days=15)"
-
-            logging.getLogger(_LOGGER_NAME).info(
-                f"Creating table {uploaded_table_name} if it doesn't exist")
-
-            client.query(query).result()
-
-            query = f"SELECT data.* FROM `{table_name}` AS data \
-                LEFT JOIN {uploaded_table_name} AS uploaded USING(uuid) \
-                WHERE uploaded.uuid IS NULL;"
-
-            logging.getLogger(_LOGGER_NAME).info(
-                f'Reading from table {table_name} for Execution {execution}')
-            rows_iterator = client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE)
-            for row in rows_iterator:
-                yield {'execution': execution, 'row': _convert_row_to_dict(row)}
-
+        def process(self, execution: Execution) -> Iterable[Any]:
+            dataSource = DataSource.get_data_source(
+                execution.source.source_type, execution.destination.destination_type, 
+                self._transactional, self._dataflow_options, self._args)
+            return dataSource.retrieve_data(execution)
 
     class _BatchElements(beam.DoFn):
         def __init__(self, batch_size: int):
@@ -107,30 +70,26 @@ class BatchesFromExecutions(beam.PTransform):
 
     def __init__(
         self,
+        dataflow_options: DataflowOptions,
         destination_type: DestinationType,
         batch_size: int = 5000,
-        transactional: bool = False,
-        bq_ops_dataset: ValueProvider = None
+        transactional: bool = False
     ):
         super().__init__()
-        if transactional and not bq_ops_dataset:
-            raise Exception('Missing bq_ops_dataset for this uploader')
-
+        
+        self._dataflow_options = dataflow_options
         self._destination_type = destination_type
         self._batch_size = batch_size
         self._transactional = transactional
-        self._bq_ops_dataset = bq_ops_dataset
-
-    def _get_bq_request_class(self):
-        if self._transactional:
-            return self._ExecutionIntoBigQueryRequestTransactional(self._bq_ops_dataset)
-        return self._ExecutionIntoBigQueryRequest()
-
+        self._args = {}
+        if self._dataflow_options.bq_ops_dataset:
+            self._args['bq_ops_dataset'] = self._dataflow_options.bq_ops_dataset
+        
     def expand(self, executions):
         return (
             executions
             | beam.Filter(lambda execution: execution.destination.destination_type == self._destination_type)
-            | beam.ParDo(self._get_bq_request_class())
+            | beam.ParDo(self._ReadDataSource(self._transactional, self._dataflow_options, self._args))
             | beam.GroupBy(lambda x: x['execution'])
             | beam.ParDo(self._BatchElements(self._batch_size))
         )
