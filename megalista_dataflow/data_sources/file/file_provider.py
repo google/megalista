@@ -89,14 +89,14 @@ class FileProvider:
       
       self._s3_client = None
 
-      # if dataflow_options.aws_access_key_id.get() != None:
-      #   self._s3_client = boto3.client(
-      #     's3',
-      #     aws_access_key_id = dataflow_options.aws_access_key_id.get(),
-      #     aws_secret_access_key = dataflow_options.aws_secret_access_key.get()
-      #   )
-      # else:
-      self._s3_client = boto3.client('s3')
+      if dataflow_options.aws_access_key_id.get() != None:
+        self._s3_client = boto3.client(
+          's3',
+          aws_access_key_id = dataflow_options.aws_access_key_id.get(),
+          aws_secret_access_key = dataflow_options.aws_secret_access_key.get()
+        )
+      else:
+        self._s3_client = boto3.client('s3')
 
       logging.getLogger(_LOGGER_NAME).info(f'S3 File Provider initiated. Bucket: "{bucket_name}". Key="{key}"')
         

@@ -26,6 +26,7 @@ from models.options import DataflowOptions
 
 from data_sources.base_data_source import BaseDataSource
 from data_sources.file.file_provider import FileProvider
+from data_soruces.file.data_schemas import DataSchemas
 
 _LOGGER_NAME = 'megalista.data_sources.File'
 
@@ -140,6 +141,11 @@ class FileDataSource(BaseDataSource):
         for key, value in row.items():
             dict[key] = value
         return dict
+    
+    def _update_dtypes(self, destination_type: DestinationType, col_names: list) -> dict:
+        types_dict = DataSchemas[destination_type.name]
+        types_dict.update({col: "string" for col in col_names if col not in types_dict})
+        return types_dict
 
     def _get_data_frame_from_file(self, file: io.BytesIO) -> pd.DataFrame:
         logging.getLogger(_LOGGER_NAME).error(f'Data source not defined. Please call FileDataSource._get_data_source for defining the correct data source.')
@@ -159,7 +165,7 @@ class ParquetDataSource(FileDataSource):
 
 class CSVDataSource(FileDataSource):
     def _get_data_frame_from_file(self, file: io.BytesIO) -> pd.DataFrame:
-        return pd.read_csv(file, dtype=DataSchemas[self._destination_type.name])
+        return pd.read_csv(file, dtype='string')
 
     def _get_file_from_data_frame(self, df: pd.DataFrame) -> io.BytesIO:
         to_write = io.BytesIO()
