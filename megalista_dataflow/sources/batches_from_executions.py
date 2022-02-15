@@ -64,7 +64,6 @@ class BatchesFromExecutions(beam.PTransform):
             logging.getLogger(_LOGGER_NAME).info(f'Reading from table {table_name} for Execution {execution}')
             rows_iterator = client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE)
             for row in rows_iterator:
-                print('RETURNING A LINE')
                 yield execution, _convert_row_to_dict(row)
 
     class _ExecutionIntoBigQueryRequestTransactional(beam.DoFn):
