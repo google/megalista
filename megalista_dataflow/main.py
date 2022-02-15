@@ -16,6 +16,7 @@ import logging
 import warnings
 
 import apache_beam as beam
+from apache_beam import coders
 from apache_beam.options.pipeline_options import PipelineOptions
 from mappers.ads_user_list_pii_hashing_mapper import \
     AdsUserListPIIHashingMapper
@@ -24,7 +25,7 @@ from models.json_config import JsonConfig
 from models.oauth_credentials import OAuthCredentials
 from models.options import DataflowOptions
 from models.sheets_config import SheetsConfig
-from sources.batches_from_executions import BatchesFromExecutions
+from sources.batches_from_executions import BatchesFromExecutions, ExecutionCoder
 from sources.primary_execution_source import PrimaryExecutionSource
 from uploaders.big_query.transactional_events_results_writer import TransactionalEventsResultsWriter
 from uploaders.campaign_manager.campaign_manager_conversion_uploader import CampaignManagerConversionUploaderDoFn
@@ -271,6 +272,8 @@ def run(argv=None):
     )
 
     params = MegalistaStepParams(oauth_credentials, dataflow_options)
+
+    coders.registry.register_coder(Execution, ExecutionCoder)
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
         executions = pipeline | "Load executions" >> beam.io.Read(execution_source)

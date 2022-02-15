@@ -12,16 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, List, Iterable
-
 import apache_beam as beam
 import logging
+import json
 
+from apache_beam.coders import coders
 from apache_beam.options.value_provider import ValueProvider
 from google.cloud import bigquery
-from apache_beam.io.gcp.bigquery import ReadFromBigQueryRequest
-
 from models.execution import DestinationType, Execution, Batch
+from typing import Any, List, Iterable, Tuple, Dict
+
 
 _BIGQUERY_PAGE_SIZE = 20000
 
@@ -35,6 +35,19 @@ def _convert_row_to_dict(row):
     return dict
 
 
+class ExecutionCoder(coders.Coder):
+    """A custom coder for the Execution class."""
+
+    def encode(self, o):
+        return json.dumps(o.to_dict()).encode('utf-8')
+
+    def decode(self, s):
+        return Execution.from_dict(json.loads(s.decode('utf-8')))
+
+    def is_deterministic(self):
+        return True
+
+
 class BatchesFromExecutions(beam.PTransform):
     """
     Filter the received executions by the received action,
@@ -42,7 +55,8 @@ class BatchesFromExecutions(beam.PTransform):
     """
 
     class _ExecutionIntoBigQueryRequest(beam.DoFn):
-        def process(self, execution: Execution) -> Iterable[ReadFromBigQueryRequest]:
+
+        def process(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
             client = bigquery.Client()
             table_name = execution.source.source_metadata[0] + '.' + execution.source.source_metadata[1]
             table_name = table_name.replace('`', '')
@@ -50,14 +64,15 @@ class BatchesFromExecutions(beam.PTransform):
             logging.getLogger(_LOGGER_NAME).info(f'Reading from table {table_name} for Execution {execution}')
             rows_iterator = client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE)
             for row in rows_iterator:
-                yield {'execution': execution, 'row': _convert_row_to_dict(row)}
+                print('RETURNING A LINE')
+                yield execution, _convert_row_to_dict(row)
 
     class _ExecutionIntoBigQueryRequestTransactional(beam.DoFn):
 
         def __init__(self, bq_ops_dataset):
             self._bq_ops_dataset = bq_ops_dataset
 
-        def process(self, execution: Execution) -> Iterable[ReadFromBigQueryRequest]:
+        def process(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
             table_name = execution.source.source_metadata[0] + \
                 '.' + execution.source.source_metadata[1]
             table_name = table_name.replace('`', '')
@@ -86,7 +101,7 @@ class BatchesFromExecutions(beam.PTransform):
                 f'Reading from table {table_name} for Execution {execution}')
             rows_iterator = client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE)
             for row in rows_iterator:
-                yield {'execution': execution, 'row': _convert_row_to_dict(row)}
+                yield execution, _convert_row_to_dict(row)
 
 
     class _BatchElements(beam.DoFn):
@@ -102,7 +117,7 @@ class BatchesFromExecutions(beam.PTransform):
                 if i != 0 and i % self._batch_size == 0:
                     yield Batch(execution, batch)
                     batch = []
-                batch.append(element['row'])
+                batch.append(element)
             yield Batch(execution, batch)
 
     def __init__(
@@ -131,6 +146,6 @@ class BatchesFromExecutions(beam.PTransform):
             executions
             | beam.Filter(lambda execution: execution.destination.destination_type == self._destination_type)
             | beam.ParDo(self._get_bq_request_class())
-            | beam.GroupBy(lambda x: x['execution'])
+            | beam.GroupByKey()
             | beam.ParDo(self._BatchElements(self._batch_size))
         )
