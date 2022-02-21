@@ -80,6 +80,25 @@ class AccountConfig:
     def app_id(self) -> str:
         return self._app_id
 
+    def to_dict(self):
+        return {
+            'google_ads_account_id' : self.google_ads_account_id,
+            'mcc': self.mcc,
+            'google_analytics_account_id': self.google_analytics_account_id,
+            'campaign_manager_account_id': self.campaign_manager_account_id,
+            'app_id': self.app_id,
+        }
+
+    @staticmethod
+    def from_dict(dict_account_config):
+        return AccountConfig(
+            dict_account_config['google_ads_account_id'],
+            dict_account_config['mcc'],
+            dict_account_config['google_analytics_account_id'],
+            dict_account_config['campaign_manager_account_id'],
+            dict_account_config['app_id'],
+        )
+
     def __str__(self) -> str:
         return (
             f"\n[Account Config]\n\t"
@@ -129,6 +148,21 @@ class Source:
     def source_metadata(self) -> List[str]:
         return self._source_metadata
 
+    def to_dict(self):
+        return {
+            'source_name': self.source_name,
+            'source_type' : self.source_type.name,
+            'source_metadata': self.source_metadata,
+        }
+
+    @staticmethod
+    def from_dict(dict_source):
+        return Source(
+            dict_source['source_name'],
+            SourceType[dict_source['source_type']],
+            dict_source['source_metadata']
+        )
+
     def __eq__(self, other):
         return (
             self.source_name == other.source_name
@@ -170,6 +204,21 @@ class Destination:
     def destination_metadata(self) -> List[str]:
         return self._destination_metadata
 
+    def to_dict(self):
+        return {
+            'destination_name': self.destination_name,
+            'destination_type': self.destination_type.name,
+            'destination_metadata': self.destination_metadata,
+        }
+
+    @staticmethod
+    def from_dict(dict_destination):
+        return Destination(
+            dict_destination['destination_name'],
+            DestinationType[dict_destination['destination_type']],
+            dict_destination['destination_metadata'],
+        )
+
     def __eq__(self, other) -> bool:
         return bool(
             self.destination_name == other.destination_name
@@ -205,6 +254,21 @@ class Execution:
     @property
     def account_config(self) -> AccountConfig:
         return self._account_config
+
+    def to_dict(self):
+        return {
+            'account_config': self.account_config.to_dict(),
+            'source': self.source.to_dict(),
+            'destination': self.destination.to_dict()
+        }
+
+    @staticmethod
+    def from_dict(dict_execution):
+        return Execution(
+            AccountConfig.from_dict(dict_execution['account_config']),
+            Source.from_dict(dict_execution['source']),
+            Destination.from_dict(dict_execution['destination']),
+        )
 
     def __str__(self):
         return f"Origin name: {self.source.source_name}. Action: {self.destination.destination_type}. Destination name: {self.destination.destination_name}"
