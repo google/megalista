@@ -12,24 +12,37 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, List, Iterable
-
 import apache_beam as beam
 import logging
+import json
 
+from apache_beam.coders import coders
 from apache_beam.options.value_provider import ValueProvider
 from google.cloud import bigquery
-from apache_beam.io.gcp.bigquery import ReadFromBigQueryRequest
-
 from models.execution import DestinationType, Execution, Batch
 from models.options import DataflowOptions
 
 from data_sources.data_source import DataSource
+from typing import Any, List, Iterable, Tuple, Dict
+
 
 _BIGQUERY_PAGE_SIZE = 20000
 
 _LOGGER_NAME = 'megalista.BatchesFromExecutions'
 
+
+
+class ExecutionCoder(coders.Coder):
+    """A custom coder for the Execution class."""
+
+    def encode(self, o):
+        return json.dumps(o.to_dict()).encode('utf-8')
+
+    def decode(self, s):
+        return Execution.from_dict(json.loads(s.decode('utf-8')))
+
+    def is_deterministic(self):
+        return True
 
 
 class BatchesFromExecutions(beam.PTransform):
@@ -46,7 +59,7 @@ class BatchesFromExecutions(beam.PTransform):
             self._dataflow_options = dataflow_options
             self._args = args
 
-        def process(self, execution: Execution) -> Iterable[Any]:
+        def process(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
             dataSource = DataSource.get_data_source(
                 execution.source.source_type, execution.destination.destination_type, 
                 self._transactional, self._dataflow_options, self._args)
@@ -65,7 +78,7 @@ class BatchesFromExecutions(beam.PTransform):
                 if i != 0 and i % self._batch_size == 0:
                     yield Batch(execution, batch)
                     batch = []
-                batch.append(element['row'])
+                batch.append(element)
             yield Batch(execution, batch)
 
     def __init__(
@@ -90,6 +103,6 @@ class BatchesFromExecutions(beam.PTransform):
             executions
             | beam.Filter(lambda execution: execution.destination.destination_type == self._destination_type)
             | beam.ParDo(self._ReadDataSource(self._transactional, self._dataflow_options, self._args))
-            | beam.GroupBy(lambda x: x['execution'])
+            | beam.GroupByKey()
             | beam.ParDo(self._BatchElements(self._batch_size))
         )

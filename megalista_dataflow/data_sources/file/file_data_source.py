@@ -37,13 +37,13 @@ class FileDataSource(BaseDataSource):
         self._dataflow_options = dataflow_options
         self._destination_type = destination_type
   
-    def retrieve_data(self, execution: Execution) -> Iterable[Any]:
+    def retrieve_data(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
         if self._is_transactional:
             return self._retrieve_data_transactional(execution)
         else:
             return self._retrieve_data_non_transactional(execution)
   
-    def _retrieve_data_non_transactional(self, execution: Execution) -> Iterable[Any]:
+    def _retrieve_data_non_transactional(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
         # Get Data Source
         data_source = self._get_data_source(execution.source.source_metadata[0])
         # Get Data Frame
@@ -51,9 +51,9 @@ class FileDataSource(BaseDataSource):
         if df is not None:
             # Process Data Frame
             for index, row in df.iterrows():
-                yield {'execution': execution, 'row': FileDataSource._convert_row_to_dict(row)} 
+                yield execution, FileDataSource._convert_row_to_dict(row)
   
-    def _retrieve_data_transactional(self, execution: Execution) -> Iterable[Any]:
+    def _retrieve_data_transactional(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
         # Get Data Source
         data_source = self._get_data_source(execution.source.source_metadata[0])
         # Get Data Frame
@@ -67,7 +67,7 @@ class FileDataSource(BaseDataSource):
             df_distinct = df_merged.drop(df_merged[df_merged.timestamp.notnull()].index)
             # Process Data Frame
             for index, row in df_distinct.iterrows():
-                yield {'execution': execution, 'row': FileDataSource._convert_row_to_dict(row)}
+                yield execution, FileDataSource._convert_row_to_dict(row)
 
     def write_transactional_info(self, rows, execution: Execution):
         # Get Data Source

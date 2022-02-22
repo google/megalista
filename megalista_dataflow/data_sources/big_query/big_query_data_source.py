@@ -33,22 +33,22 @@ class BigQueryDataSource(BaseDataSource):
         self._is_transactional = is_transactional
         self._bq_ops_dataset = bq_ops_dataset
     
-    def retrieve_data(self, execution: Execution) -> Iterable[Any]:
+    def retrieve_data(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
         if self._is_transactional:
             return self._retrieve_data_transactional(execution)
         else:
             return self._retrieve_data_non_transactional(execution)
     
-    def _retrieve_data_non_transactional(self, execution: Execution) -> Iterable[Any]:
+    def _retrieve_data_non_transactional(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
         client = bigquery.Client()
         table_name = self._get_table_name(execution.source.source_metadata, False)
         query = f"SELECT data.* FROM {table_name} AS data"
         logging.getLogger(_LOGGER_NAME).info(f'Reading from table {table_name} for Execution {execution}')
         rows_iterator = client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE)
         for row in rows_iterator:
-            yield {'execution': execution, 'row': _convert_row_to_dict(row)}
+            yield execution, _convert_row_to_dict(row)
     
-    def _retrieve_data_transactional(self, execution: Execution) -> Iterable[Any]:
+    def _retrieve_data_transactional(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
         table_name = self._get_table_name(execution.source.source_metadata, False)
         uploaded_table_name = self._get_table_name(execution.source.source_metadata, True)
         client = bigquery.Client()
@@ -72,7 +72,7 @@ class BigQueryDataSource(BaseDataSource):
             f'Reading from table `{table_name}` for Execution {execution}')
         rows_iterator = client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE)
         for row in rows_iterator:
-            yield {'execution': execution, 'row': _convert_row_to_dict(row)}
+            yield execution, _convert_row_to_dict(row)
   
     def write_transactional_info(self, rows, execution: Execution):
         table_name = self._get_table_name(execution.source.source_metadata, True)
