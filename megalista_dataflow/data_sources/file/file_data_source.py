@@ -15,7 +15,7 @@ import pandas as pd
 import io
 import os
 from datetime import datetime, timedelta
-from typing import Any, List, Iterable
+from typing import Any, List, Iterable, Tuple, Dict
 
 import apache_beam as beam
 import logging
@@ -26,7 +26,7 @@ from models.options import DataflowOptions
 
 from data_sources.base_data_source import BaseDataSource
 from data_sources.file.file_provider import FileProvider
-from data_soruces.file.data_schemas import DataSchemas
+from data_sources.file.data_schemas import DataSchemas
 
 _LOGGER_NAME = 'megalista.data_sources.File'
 
