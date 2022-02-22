@@ -35,15 +35,8 @@ class DataSchemas:
         'GA_4_MEASUREMENT_PROTOCOL': {},
     }
 
-    # Sanitizes data
-    # 1. parse columns that aren't string
-    # 2. destination_type-specific data treatment
-    def sanitize_data(df: pd.DataFrame, destination_type: DestinationType):
-        DataSchemas._update_data_types(df, destination_type)
-        DataSchemas._process_by_destination_type(df, destination_type)
-
     # Parse columns that aren't string
-    def _update_data_types(df: pd.DataFrame, destination_type: DestinationType):
+    def update_data_types(df: pd.DataFrame, destination_type: DestinationType):
         temp_dtypes_to_change = DataSchemas._dtypes['CM_OFFLINE_CONVERSION']
         dtypes_to_change = {}
         for key in temp_dtypes_to_change:
@@ -53,7 +46,7 @@ class DataSchemas:
         df = df.astype(dtypes_to_change)
 
     # Destination_type-specific data treatment
-    def _process_by_destination_type(df: pd.DataFrame, destination_type: DestinationType):
+    def process_by_destination_type(df: pd.DataFrame, destination_type: DestinationType):
         if destination_type == DestinationType.CM_OFFLINE_CONVERSION:
             DataSchemas._join_custom_variables(df)
 

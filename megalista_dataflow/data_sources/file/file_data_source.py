@@ -156,7 +156,9 @@ class FileDataSource(BaseDataSource):
 
 class ParquetDataSource(FileDataSource):
     def _get_data_frame_from_file(self, file: io.BytesIO) -> pd.DataFrame:
-        return pd.read_parquet(file)
+        df = pd.read_parquet(file)
+        DataSchemas.process_by_destination_type(df, self._destination_type)
+        return df
 
     def _get_file_from_data_frame(self, df: pd.DataFrame) -> io.BytesIO:
         to_write = io.BytesIO()
@@ -165,7 +167,10 @@ class ParquetDataSource(FileDataSource):
 
 class CSVDataSource(FileDataSource):
     def _get_data_frame_from_file(self, file: io.BytesIO) -> pd.DataFrame:
-        return pd.read_csv(file, dtype='string')
+        df = pd.read_csv(file, dtype='string')
+        DataSchemas.update_data_types(df, self._destination_type)
+        DataSchemas.process_by_destination_type(df, self._destination_type)
+        return df
 
     def _get_file_from_data_frame(self, df: pd.DataFrame) -> io.BytesIO:
         to_write = io.BytesIO()
