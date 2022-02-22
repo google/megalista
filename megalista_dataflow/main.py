@@ -25,7 +25,7 @@ from models.json_config import JsonConfig
 from models.oauth_credentials import OAuthCredentials
 from models.options import DataflowOptions
 from models.sheets_config import SheetsConfig
-from sources.batches_from_executions import BatchesFromExecutions, ExecutionCoder
+from sources.batches_from_executions import BatchesFromExecutions, ExecutionCoder, TransactionalType
 from sources.primary_execution_source import PrimaryExecutionSource
 from uploaders.big_query.transactional_events_results_writer import TransactionalEventsResultsWriter
 from uploaders.campaign_manager.campaign_manager_conversion_uploader import CampaignManagerConversionUploaderDoFn
@@ -200,7 +200,7 @@ class GoogleAnalyticsMeasurementProtocolStep(MegalistaStep):
             >> BatchesFromExecutions(
                 DestinationType.GA_MEASUREMENT_PROTOCOL,
                 20,
-                True,
+                TransactionalType.UUID,
                 self.params.dataflow_options.bq_ops_dataset)
             | "Upload - GA measurement protocol"
             >> beam.ParDo(GoogleAnalyticsMeasurementProtocolUploaderDoFn())
@@ -219,7 +219,7 @@ class GoogleAnalytics4MeasurementProtocolStep(MegalistaStep):
             >> BatchesFromExecutions(
                 DestinationType.GA_4_MEASUREMENT_PROTOCOL,
                 20,
-                True,
+                TransactionalType.UUID,
                 self.params.dataflow_options.bq_ops_dataset)
             | "Upload - GA 4 measurement protocol"
             >> beam.ParDo(GoogleAnalytics4MeasurementProtocolUploaderDoFn())
@@ -238,7 +238,7 @@ class CampaignManagerConversionStep(MegalistaStep):
             >> BatchesFromExecutions(
                 DestinationType.CM_OFFLINE_CONVERSION,
                 1000,
-                True,
+                TransactionalType.UUID,
                 self.params.dataflow_options.bq_ops_dataset)
             | "Upload - CM conversion"
             >> beam.ParDo(

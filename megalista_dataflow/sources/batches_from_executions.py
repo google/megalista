@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from enum import Enum
 
 import apache_beam as beam
 import logging
@@ -47,6 +48,20 @@ class ExecutionCoder(coders.Coder):
 
     def is_deterministic(self):
         return True
+
+
+class TransactionalType(Enum):
+    """
+        Distinct types to handle data uploading deduplication.
+        NOT_TRANSACTION: don't handle.
+        UUID: Expect a 'uuid' field in the source table as a unique identifier to each row.
+        GCLID_DATE_TIME: Expect 'gclid' and 'time' fields in the source table as unique identifiers to each row.
+    """
+    (
+        NOT_TRANSACTIONAL,
+        UUID,
+        GCLID_TIME,
+    ) = range(3)
 
 
 class BatchesFromExecutions(beam.PTransform):
@@ -120,20 +135,20 @@ class BatchesFromExecutions(beam.PTransform):
         self,
         destination_type: DestinationType,
         batch_size: int = 5000,
-        transactional: bool = False,
+        transactional_type: TransactionalType = TransactionalType.NOT_TRANSACTIONAL,
         bq_ops_dataset: ValueProvider = None
     ):
         super().__init__()
-        if transactional and not bq_ops_dataset:
+        if transactional_type is not TransactionalType.NOT_TRANSACTIONAL and not bq_ops_dataset:
             raise Exception('Missing bq_ops_dataset for this uploader')
 
         self._destination_type = destination_type
         self._batch_size = batch_size
-        self._transactional = transactional
+        self._transactional_type = transactional_type
         self._bq_ops_dataset = bq_ops_dataset
 
     def _get_bq_request_class(self):
-        if self._transactional:
+        if self._transactional_type is TransactionalType.UUID:
             return self._ExecutionIntoBigQueryRequestTransactional(
                 self._bq_ops_dataset,
                 "CREATE TABLE IF NOT EXISTS `$uploaded_table_name` ( \
