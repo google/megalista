@@ -20,6 +20,7 @@ from apache_beam.coders import coders
 from apache_beam.options.value_provider import ValueProvider
 from google.cloud import bigquery
 from models.execution import DestinationType, Execution, Batch
+from string import Template
 from typing import Any, List, Iterable, Tuple, Dict
 
 
@@ -62,14 +63,15 @@ class BatchesFromExecutions(beam.PTransform):
             table_name = table_name.replace('`', '')
             query = f"SELECT data.* FROM `{table_name}` AS data"
             logging.getLogger(_LOGGER_NAME).info(f'Reading from table {table_name} for Execution {execution}')
-            rows_iterator = client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE)
-            for row in rows_iterator:
+            for row in client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE):
                 yield execution, _convert_row_to_dict(row)
 
     class _ExecutionIntoBigQueryRequestTransactional(beam.DoFn):
 
-        def __init__(self, bq_ops_dataset):
+        def __init__(self, bq_ops_dataset, create_table_query, join_query):
             self._bq_ops_dataset = bq_ops_dataset
+            self._create_table_query = create_table_query
+            self._join_query = join_query
 
         def process(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
             table_name = execution.source.source_metadata[0] + \
@@ -81,25 +83,20 @@ class BatchesFromExecutions(beam.PTransform):
             uploaded_table_name = uploaded_table_name.replace('`', '')
             client = bigquery.Client()
 
-            query = f"CREATE TABLE IF NOT EXISTS `{uploaded_table_name}` ( \
-              timestamp TIMESTAMP OPTIONS(description= 'Event timestamp'), \
-              uuid STRING OPTIONS(description='Event unique identifier')) \
-              PARTITION BY _PARTITIONDATE \
-              OPTIONS(partition_expiration_days=15)"
+            create_table_query_read = \
+                Template(self._create_table_query).substitute(uploaded_table_name=uploaded_table_name)
 
             logging.getLogger(_LOGGER_NAME).info(
                 f"Creating table {uploaded_table_name} if it doesn't exist")
 
-            client.query(query).result()
+            client.query(create_table_query_read).result()
 
-            query = f"SELECT data.* FROM `{table_name}` AS data \
-                LEFT JOIN {uploaded_table_name} AS uploaded USING(uuid) \
-                WHERE uploaded.uuid IS NULL;"
+            join_query_read = \
+                Template(self._join_query).substitute(table_name=table_name, uploaded_table_name=uploaded_table_name)
 
             logging.getLogger(_LOGGER_NAME).info(
                 f'Reading from table {table_name} for Execution {execution}')
-            rows_iterator = client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE)
-            for row in rows_iterator:
+            for row in client.query(join_query_read).result(page_size=_BIGQUERY_PAGE_SIZE):
                 yield execution, _convert_row_to_dict(row)
 
 
@@ -137,7 +134,17 @@ class BatchesFromExecutions(beam.PTransform):
 
     def _get_bq_request_class(self):
         if self._transactional:
-            return self._ExecutionIntoBigQueryRequestTransactional(self._bq_ops_dataset)
+            return self._ExecutionIntoBigQueryRequestTransactional(
+                self._bq_ops_dataset,
+                "CREATE TABLE IF NOT EXISTS `$uploaded_table_name` ( \
+                             timestamp TIMESTAMP OPTIONS(description= 'Event timestamp'), \
+                             uuid STRING OPTIONS(description='Event unique identifier')) \
+                             PARTITION BY _PARTITIONDATE \
+                             OPTIONS(partition_expiration_days=15)",
+                "SELECT data.* FROM `$table_name` AS data \
+                               LEFT JOIN $uploaded_table_name AS uploaded USING(uuid) \
+                               WHERE uploaded.uuid IS NULL;"
+                )
         return self._ExecutionIntoBigQueryRequest()
 
     def expand(self, executions):
