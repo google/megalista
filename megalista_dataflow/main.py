@@ -283,7 +283,7 @@ def run(argv=None):
     )
 
     sheets_config = SheetsConfig(oauth_credentials)
-    json_config = JsonConfig()
+    json_config = JsonConfig(dataflow_options)
     execution_source = PrimaryExecutionSource(
         sheets_config,
         json_config,

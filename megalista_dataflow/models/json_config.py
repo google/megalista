@@ -13,18 +13,16 @@
 # limitations under the License.
 
 import json
-from google.cloud import storage
-
+from data_sources.file.file_provider import FileProvider
+from models.options import DataflowOptions
 
 class JsonConfig:
+  def __init__(self, dataflow_options: DataflowOptions):
+    self._dataflow_options = dataflow_options
 
   def parse_json_from_url(self, url):
-    url = url.replace("https://", "")
-    url_components = url.split("/", 2)
-    bucket_name, file_path = url_components[1], url_components[2]
-    bucket = storage.Client().get_bucket(bucket_name)
-    blob = bucket.blob(file_path)
-    data = json.loads(blob.download_as_string())
+    fileProvider = FileProvider(url, self._dataflow_options)
+    data = json.loads(fileProvider.read().decode('utf-8'))
     return data
 
   def get_value(self, config_json, key):
