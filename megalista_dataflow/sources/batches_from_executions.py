@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from enum import Enum
 
 import apache_beam as beam
 import logging
@@ -20,6 +21,7 @@ from apache_beam.coders import coders
 from apache_beam.options.value_provider import ValueProvider
 from google.cloud import bigquery
 from models.execution import DestinationType, Execution, Batch
+from string import Template
 from typing import Any, List, Iterable, Tuple, Dict
 
 
@@ -48,6 +50,20 @@ class ExecutionCoder(coders.Coder):
         return True
 
 
+class TransactionalType(Enum):
+    """
+        Distinct types to handle data uploading deduplication.
+        NOT_TRANSACTION: don't handle.
+        UUID: Expect a 'uuid' field in the source table as a unique identifier to each row.
+        GCLID_DATE_TIME: Expect 'gclid' and 'time' fields in the source table as unique identifiers to each row.
+    """
+    (
+        NOT_TRANSACTIONAL,
+        UUID,
+        GCLID_TIME,
+    ) = range(3)
+
+
 class BatchesFromExecutions(beam.PTransform):
     """
     Filter the received executions by the received action,
@@ -62,14 +78,15 @@ class BatchesFromExecutions(beam.PTransform):
             table_name = table_name.replace('`', '')
             query = f"SELECT data.* FROM `{table_name}` AS data"
             logging.getLogger(_LOGGER_NAME).info(f'Reading from table {table_name} for Execution {execution}')
-            rows_iterator = client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE)
-            for row in rows_iterator:
+            for row in client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE):
                 yield execution, _convert_row_to_dict(row)
 
     class _ExecutionIntoBigQueryRequestTransactional(beam.DoFn):
 
-        def __init__(self, bq_ops_dataset):
+        def __init__(self, bq_ops_dataset, create_table_query, join_query):
             self._bq_ops_dataset = bq_ops_dataset
+            self._create_table_query = create_table_query
+            self._join_query = join_query
 
         def process(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
             table_name = execution.source.source_metadata[0] + \
@@ -81,25 +98,20 @@ class BatchesFromExecutions(beam.PTransform):
             uploaded_table_name = uploaded_table_name.replace('`', '')
             client = bigquery.Client()
 
-            query = f"CREATE TABLE IF NOT EXISTS `{uploaded_table_name}` ( \
-              timestamp TIMESTAMP OPTIONS(description= 'Event timestamp'), \
-              uuid STRING OPTIONS(description='Event unique identifier')) \
-              PARTITION BY _PARTITIONDATE \
-              OPTIONS(partition_expiration_days=15)"
+            create_table_query_ready = \
+                Template(self._create_table_query).substitute(uploaded_table_name=uploaded_table_name)
 
             logging.getLogger(_LOGGER_NAME).info(
                 f"Creating table {uploaded_table_name} if it doesn't exist")
 
-            client.query(query).result()
+            client.query(create_table_query_ready).result()
 
-            query = f"SELECT data.* FROM `{table_name}` AS data \
-                LEFT JOIN {uploaded_table_name} AS uploaded USING(uuid) \
-                WHERE uploaded.uuid IS NULL;"
+            join_query_ready = \
+                Template(self._join_query).substitute(table_name=table_name, uploaded_table_name=uploaded_table_name)
 
             logging.getLogger(_LOGGER_NAME).info(
                 f'Reading from table {table_name} for Execution {execution}')
-            rows_iterator = client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE)
-            for row in rows_iterator:
+            for row in client.query(join_query_ready).result(page_size=_BIGQUERY_PAGE_SIZE):
                 yield execution, _convert_row_to_dict(row)
 
 
@@ -123,21 +135,44 @@ class BatchesFromExecutions(beam.PTransform):
         self,
         destination_type: DestinationType,
         batch_size: int = 5000,
-        transactional: bool = False,
+        transactional_type: TransactionalType = TransactionalType.NOT_TRANSACTIONAL,
         bq_ops_dataset: ValueProvider = None
     ):
         super().__init__()
-        if transactional and not bq_ops_dataset:
+        if transactional_type is not TransactionalType.NOT_TRANSACTIONAL and not bq_ops_dataset:
             raise Exception('Missing bq_ops_dataset for this uploader')
 
         self._destination_type = destination_type
         self._batch_size = batch_size
-        self._transactional = transactional
+        self._transactional_type = transactional_type
         self._bq_ops_dataset = bq_ops_dataset
 
     def _get_bq_request_class(self):
-        if self._transactional:
-            return self._ExecutionIntoBigQueryRequestTransactional(self._bq_ops_dataset)
+        if self._transactional_type == TransactionalType.UUID:
+            return self._ExecutionIntoBigQueryRequestTransactional(
+                self._bq_ops_dataset,
+                "CREATE TABLE IF NOT EXISTS `$uploaded_table_name` ( \
+                             timestamp TIMESTAMP OPTIONS(description= 'Event timestamp'), \
+                             uuid STRING OPTIONS(description='Event unique identifier')) \
+                             PARTITION BY _PARTITIONDATE \
+                             OPTIONS(partition_expiration_days=15)",
+                "SELECT data.* FROM `$table_name` AS data \
+                               LEFT JOIN $uploaded_table_name AS uploaded USING(uuid) \
+                               WHERE uploaded.uuid IS NULL;"
+                )
+        if self._transactional_type == TransactionalType.GCLID_TIME:
+            return self._ExecutionIntoBigQueryRequestTransactional(
+                self._bq_ops_dataset,
+                "CREATE TABLE IF NOT EXISTS `$uploaded_table_name` ( \
+                             timestamp TIMESTAMP OPTIONS(description= 'Event timestamp'), \
+                             gclid STRING OPTIONS(description= 'Original gclid'), \
+                             time STRING OPTIONS(description= 'Original time')) \
+                             PARTITION BY _PARTITIONDATE \
+                             OPTIONS(partition_expiration_days=15)",
+                "SELECT data.* FROM `$table_name` AS data \
+                               LEFT JOIN $uploaded_table_name AS uploaded USING(gclid, time) \
+                               WHERE uploaded.gclid IS NULL;"
+            )
         return self._ExecutionIntoBigQueryRequest()
 
     def expand(self, executions):

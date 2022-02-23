@@ -25,7 +25,7 @@ from models.json_config import JsonConfig
 from models.oauth_credentials import OAuthCredentials
 from models.options import DataflowOptions
 from models.sheets_config import SheetsConfig
-from sources.batches_from_executions import BatchesFromExecutions, ExecutionCoder
+from sources.batches_from_executions import BatchesFromExecutions, ExecutionCoder, TransactionalType
 from sources.primary_execution_source import PrimaryExecutionSource
 from uploaders.big_query.transactional_events_results_writer import TransactionalEventsResultsWriter
 from uploaders.campaign_manager.campaign_manager_conversion_uploader import CampaignManagerConversionUploaderDoFn
@@ -155,13 +155,23 @@ class GoogleAdsOfflineConversionsStep(MegalistaStep):
         return (
             executions
             | "Load Data - GoogleAdsOfflineConversions"
-            >> BatchesFromExecutions(DestinationType.ADS_OFFLINE_CONVERSION, 2000)
+            >> BatchesFromExecutions(
+                DestinationType.ADS_OFFLINE_CONVERSION,
+                2000,
+                TransactionalType.GCLID_TIME,
+                self.params.dataflow_options.bq_ops_dataset)
             | "Upload - GoogleAdsOfflineConversions"
             >> beam.ParDo(
                 GoogleAdsOfflineUploaderDoFn(
                     self.params._oauth_credentials,
                     self.params._dataflow_options.developer_token
                 )
+            )
+            | "Persist results - GoogleAdsOfflineConversions"
+            >> beam.ParDo(
+              TransactionalEventsResultsWriter(
+                self.params._dataflow_options.bq_ops_dataset,
+                TransactionalType.GCLID_TIME)
             )
         )
 
@@ -200,13 +210,15 @@ class GoogleAnalyticsMeasurementProtocolStep(MegalistaStep):
             >> BatchesFromExecutions(
                 DestinationType.GA_MEASUREMENT_PROTOCOL,
                 20,
-                True,
+                TransactionalType.UUID,
                 self.params.dataflow_options.bq_ops_dataset)
             | "Upload - GA measurement protocol"
             >> beam.ParDo(GoogleAnalyticsMeasurementProtocolUploaderDoFn())
             | "Persist results - GA measurement protocol"
             >> beam.ParDo(
-                TransactionalEventsResultsWriter(self.params._dataflow_options.bq_ops_dataset)
+                TransactionalEventsResultsWriter(
+                  self.params._dataflow_options.bq_ops_dataset,
+                  TransactionalType.UUID)
             )
         )
 
@@ -219,13 +231,15 @@ class GoogleAnalytics4MeasurementProtocolStep(MegalistaStep):
             >> BatchesFromExecutions(
                 DestinationType.GA_4_MEASUREMENT_PROTOCOL,
                 20,
-                True,
+                TransactionalType.UUID,
                 self.params.dataflow_options.bq_ops_dataset)
             | "Upload - GA 4 measurement protocol"
             >> beam.ParDo(GoogleAnalytics4MeasurementProtocolUploaderDoFn())
             | "Persist results - GA 4 measurement protocol"
             >> beam.ParDo(
-                TransactionalEventsResultsWriter(self.params._dataflow_options.bq_ops_dataset)
+                TransactionalEventsResultsWriter(
+                  self.params._dataflow_options.bq_ops_dataset,
+                  TransactionalType.UUID)
             )
         )
 
@@ -238,7 +252,7 @@ class CampaignManagerConversionStep(MegalistaStep):
             >> BatchesFromExecutions(
                 DestinationType.CM_OFFLINE_CONVERSION,
                 1000,
-                True,
+                TransactionalType.UUID,
                 self.params.dataflow_options.bq_ops_dataset)
             | "Upload - CM conversion"
             >> beam.ParDo(
@@ -246,7 +260,9 @@ class CampaignManagerConversionStep(MegalistaStep):
             )
             | "Persist results - CM conversion"
             >> beam.ParDo(
-                TransactionalEventsResultsWriter(self.params._dataflow_options.bq_ops_dataset)
+                TransactionalEventsResultsWriter(
+                  self.params._dataflow_options.bq_ops_dataset,
+                  TransactionalType.UUID)
             )
         )
 

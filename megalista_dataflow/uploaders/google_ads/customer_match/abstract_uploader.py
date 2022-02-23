@@ -101,7 +101,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
 
         # Only search for audiences owned by this account, not MCCs above it.
         query = f"SELECT user_list.resource_name, user_list.access_reason FROM user_list WHERE user_list.name='{list_name}' " \
-                f"AND user_list.access_reason={ads_client.enums.AccessReasonEnum.OWNED.name}"
+                f"AND user_list.access_reason='OWNED'"
         response_query = service.search_stream(customer_id=customer_id, query=query)
         for batch in response_query:
             for row in batch.results:
