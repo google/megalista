@@ -98,20 +98,20 @@ class BatchesFromExecutions(beam.PTransform):
             uploaded_table_name = uploaded_table_name.replace('`', '')
             client = bigquery.Client()
 
-            create_table_query_read = \
+            create_table_query_ready = \
                 Template(self._create_table_query).substitute(uploaded_table_name=uploaded_table_name)
 
             logging.getLogger(_LOGGER_NAME).info(
                 f"Creating table {uploaded_table_name} if it doesn't exist")
 
-            client.query(create_table_query_read).result()
+            client.query(create_table_query_ready).result()
 
-            join_query_read = \
+            join_query_ready = \
                 Template(self._join_query).substitute(table_name=table_name, uploaded_table_name=uploaded_table_name)
 
             logging.getLogger(_LOGGER_NAME).info(
                 f'Reading from table {table_name} for Execution {execution}')
-            for row in client.query(join_query_read).result(page_size=_BIGQUERY_PAGE_SIZE):
+            for row in client.query(join_query_ready).result(page_size=_BIGQUERY_PAGE_SIZE):
                 yield execution, _convert_row_to_dict(row)
 
 
@@ -148,7 +148,7 @@ class BatchesFromExecutions(beam.PTransform):
         self._bq_ops_dataset = bq_ops_dataset
 
     def _get_bq_request_class(self):
-        if self._transactional_type is TransactionalType.UUID:
+        if self._transactional_type == TransactionalType.UUID:
             return self._ExecutionIntoBigQueryRequestTransactional(
                 self._bq_ops_dataset,
                 "CREATE TABLE IF NOT EXISTS `$uploaded_table_name` ( \
@@ -160,6 +160,19 @@ class BatchesFromExecutions(beam.PTransform):
                                LEFT JOIN $uploaded_table_name AS uploaded USING(uuid) \
                                WHERE uploaded.uuid IS NULL;"
                 )
+        if self._transactional_type == TransactionalType.GCLID_TIME:
+            return self._ExecutionIntoBigQueryRequestTransactional(
+                self._bq_ops_dataset,
+                "CREATE TABLE IF NOT EXISTS `$uploaded_table_name` ( \
+                             timestamp TIMESTAMP OPTIONS(description= 'Event timestamp'), \
+                             gclid STRING OPTIONS(description= 'Original gclid'), \
+                             time STRING OPTIONS(description= 'Original time')) \
+                             PARTITION BY _PARTITIONDATE \
+                             OPTIONS(partition_expiration_days=15)",
+                "SELECT data.* FROM `$table_name` AS data \
+                               LEFT JOIN $uploaded_table_name AS uploaded USING(gclid, time) \
+                               WHERE uploaded.gclid IS NULL;"
+            )
         return self._ExecutionIntoBigQueryRequest()
 
     def expand(self, executions):

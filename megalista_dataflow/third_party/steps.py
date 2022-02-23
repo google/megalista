@@ -25,5 +25,8 @@ class AppsFlyerEventsStep(beam.PTransform):
                 self.params.dataflow_options.bq_ops_dataset)
             | 'Upload - AppsFlyer S2S events' >>
             beam.ParDo(AppsFlyerS2SUploaderDoFn(self.params.dataflow_options.appsflyer_dev_key))
-            | 'Persist results - AppsFlyer S2S events' >> beam.ParDo(TransactionalEventsResultsWriter(self.params.dataflow_options.bq_ops_dataset))
+            | 'Persist results - AppsFlyer S2S events' >> beam.ParDo(
+                            TransactionalEventsResultsWriter(
+                              self.params.dataflow_options.bq_ops_dataset,
+                              TransactionalType.UUID))
         )

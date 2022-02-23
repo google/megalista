@@ -155,13 +155,23 @@ class GoogleAdsOfflineConversionsStep(MegalistaStep):
         return (
             executions
             | "Load Data - GoogleAdsOfflineConversions"
-            >> BatchesFromExecutions(DestinationType.ADS_OFFLINE_CONVERSION, 2000)
+            >> BatchesFromExecutions(
+                DestinationType.ADS_OFFLINE_CONVERSION,
+                2000,
+                TransactionalType.GCLID_TIME,
+                self.params.dataflow_options.bq_ops_dataset)
             | "Upload - GoogleAdsOfflineConversions"
             >> beam.ParDo(
                 GoogleAdsOfflineUploaderDoFn(
                     self.params._oauth_credentials,
                     self.params._dataflow_options.developer_token
                 )
+            )
+            | "Persist results - GoogleAdsOfflineConversions"
+            >> beam.ParDo(
+              TransactionalEventsResultsWriter(
+                self.params._dataflow_options.bq_ops_dataset,
+                TransactionalType.GCLID_TIME)
             )
         )
 
@@ -206,7 +216,9 @@ class GoogleAnalyticsMeasurementProtocolStep(MegalistaStep):
             >> beam.ParDo(GoogleAnalyticsMeasurementProtocolUploaderDoFn())
             | "Persist results - GA measurement protocol"
             >> beam.ParDo(
-                TransactionalEventsResultsWriter(self.params._dataflow_options.bq_ops_dataset)
+                TransactionalEventsResultsWriter(
+                  self.params._dataflow_options.bq_ops_dataset,
+                  TransactionalType.UUID)
             )
         )
 
@@ -225,7 +237,9 @@ class GoogleAnalytics4MeasurementProtocolStep(MegalistaStep):
             >> beam.ParDo(GoogleAnalytics4MeasurementProtocolUploaderDoFn())
             | "Persist results - GA 4 measurement protocol"
             >> beam.ParDo(
-                TransactionalEventsResultsWriter(self.params._dataflow_options.bq_ops_dataset)
+                TransactionalEventsResultsWriter(
+                  self.params._dataflow_options.bq_ops_dataset,
+                  TransactionalType.UUID)
             )
         )
 
@@ -246,7 +260,9 @@ class CampaignManagerConversionStep(MegalistaStep):
             )
             | "Persist results - CM conversion"
             >> beam.ParDo(
-                TransactionalEventsResultsWriter(self.params._dataflow_options.bq_ops_dataset)
+                TransactionalEventsResultsWriter(
+                  self.params._dataflow_options.bq_ops_dataset,
+                  TransactionalType.UUID)
             )
         )
 

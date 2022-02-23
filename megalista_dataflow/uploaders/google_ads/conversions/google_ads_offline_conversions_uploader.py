@@ -32,13 +32,13 @@ class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
   def _get_ads_service(self, customer_id: str):
     return utils.get_ads_service('GoogleAdsService', ADS_API_VERSION,
                                      self.oauth_credentials,
-                                     self.developer_token.get(), 
+                                     self.developer_token.get(),
                                      customer_id)
-  
+
   def _get_oc_service(self, customer_id):
     return utils.get_ads_service('ConversionUploadService', ADS_API_VERSION,
                                      self.oauth_credentials,
-                                     self.developer_token.get(), 
+                                     self.developer_token.get(),
                                      customer_id)
 
   def start_bundle(self):
@@ -72,13 +72,15 @@ class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
 
     customer_id = self._get_customer_id(execution.account_config, execution.destination)
     oc_service = self._get_oc_service(customer_id)
-    
+
     resource_name = self._get_resource_name(customer_id, execution.destination.destination_metadata[0])
 
-    self._do_upload(oc_service,
+    response = self._do_upload(oc_service,
                     resource_name,
                     customer_id,
                     batch.elements)
+
+    yield self._get_new_batch_with_successfully_uploaded_gclids(batch, response)
 
   @staticmethod
   def _do_upload(oc_service, conversion_resource_name, customer_id, rows):
@@ -89,7 +91,7 @@ class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
           'conversion_value': int(conversion['amount']),
           'gclid': conversion['gclid']
     } for conversion in rows]
-    
+
     upload_data = {
       'customer_id': customer_id,
       'partial_failure': True,
@@ -99,6 +101,7 @@ class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
 
     response = oc_service.upload_click_conversions(request=upload_data)
     utils.print_partial_error_messages(_DEFAULT_LOGGER, 'uploading offline conversions', response)
+    return response
 
   def _get_resource_name(self, customer_id: str, name: str):
       service = self._get_ads_service(customer_id)
@@ -108,3 +111,12 @@ class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
         for row in batch.results:
           return row.conversion_action.resource_name
       raise Exception(f'Conversion "{name}" could not be found on account {customer_id}')
+
+  @staticmethod
+  def _get_new_batch_with_successfully_uploaded_gclids(batch: Batch, response):
+    def gclid_lambda(result): return result.gclid
+
+    successful_gclids = list(map(gclid_lambda, filter(gclid_lambda, response.results)))
+    successful_elements = list(filter(lambda element: element['gclid'] in successful_gclids, batch.elements))
+
+    return Batch(batch.execution, successful_elements)
