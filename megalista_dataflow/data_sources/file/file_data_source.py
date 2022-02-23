@@ -26,7 +26,7 @@ from models.options import DataflowOptions
 
 from data_sources.base_data_source import BaseDataSource
 from data_sources.file.file_provider import FileProvider
-from data_sources.file.data_schemas import DataSchemas
+from data_sources.data_schemas import DataSchemas
 
 _LOGGER_NAME = 'megalista.data_sources.File'
 
@@ -168,7 +168,7 @@ class ParquetDataSource(FileDataSource):
 class CSVDataSource(FileDataSource):
     def _get_data_frame_from_file(self, file: io.BytesIO) -> pd.DataFrame:
         df = pd.read_csv(file, dtype='string')
-        DataSchemas.update_data_types(df, self._destination_type)
+        df = DataSchemas.update_data_types_not_string(df, self._destination_type)
         DataSchemas.process_by_destination_type(df, self._destination_type)
         return df
 

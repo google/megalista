@@ -23,15 +23,15 @@ import importlib
 _LOGGER_NAME = 'megalista.data_sources.DataSource'
 
 class DataSource:
-    def get_data_source(source_type: SourceType, destination_type: DestinationType, isTransactional: bool, dataflow_options: DataflowOptions, args: dict) -> BaseDataSource:
+    def get_data_source(source_type: SourceType, destination_type: DestinationType, is_transactional: bool, dataflow_options: DataflowOptions, args: dict) -> BaseDataSource:
         data_source = None
         if source_type == SourceType.BIG_QUERY:
             bq_ops_dataset = None
             if 'bq_ops_dataset' in args:
                 bq_ops_dataset = args['bq_ops_dataset'].get()
-            data_source = BigQueryDataSource(isTransactional, bq_ops_dataset)
+            data_source = BigQueryDataSource(is_transactional, bq_ops_dataset)
         elif source_type == SourceType.FILE:
-            data_source = FileDataSource(isTransactional, dataflow_options, destination_type)
+            data_source = FileDataSource(is_transactional, dataflow_options, destination_type)
         else:
             pass
         if data_source is None:
