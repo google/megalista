@@ -89,12 +89,15 @@ class FileProvider:
       
       self._s3_client = None
 
-      if dataflow_options.aws_access_key_id.get() != None:
-        self._s3_client = boto3.client(
-          's3',
-          aws_access_key_id = dataflow_options.aws_access_key_id.get(),
-          aws_secret_access_key = dataflow_options.aws_secret_access_key.get()
-        )
+      if 'aws_access_key_id' in dataflow_options.get_all_options():
+        if dataflow_options.aws_access_key_id.get() != None:
+          self._s3_client = boto3.client(
+            's3',
+            aws_access_key_id = dataflow_options.aws_access_key_id.get(),
+            aws_secret_access_key = dataflow_options.aws_secret_access_key.get()
+          )
+        else:
+          self._s3_client = boto3.client('s3')
       else:
         self._s3_client = boto3.client('s3')
 
