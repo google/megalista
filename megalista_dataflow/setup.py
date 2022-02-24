@@ -20,10 +20,9 @@ setuptools.setup(
     author='Google',
     author_email='megalista-admin@google.com',
     url='https://github.com/google/megalista/',
-    install_requires=['google-ads==12.0.0', 'google-api-python-client==1.12.8',
-                      'google-cloud-core==1.4.1', 'google-cloud-bigquery==1.27.2',
-                      'google-cloud-datastore==1.13.1', 'aiohttp==3.6.2',
-                      'google-cloud-storage==1.38.0', 'google-cloud-firestore==2.1.1',
+    install_requires=['google-ads==15.0.0', 'google-api-python-client==2.37.0',
+                      'google-cloud-bigquery==2.34.0','aiohttp==3.6.2',
+                      'google-cloud-storage==2.1.0', 'google-cloud-firestore==2.3.4',
                       'pandas==1.3.5', 'boto3==1.21.4'],
     packages=setuptools.find_packages(),
 )

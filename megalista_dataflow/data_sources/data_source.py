@@ -17,21 +17,22 @@ from models.options import DataflowOptions
 from data_sources.base_data_source import BaseDataSource
 from data_sources.file.file_data_source import FileDataSource
 from data_sources.big_query.big_query_data_source import BigQueryDataSource
+from models.execution import TransactionalType
 
 import importlib
 
 _LOGGER_NAME = 'megalista.data_sources.DataSource'
 
 class DataSource:
-    def get_data_source(source_type: SourceType, destination_type: DestinationType, is_transactional: bool, dataflow_options: DataflowOptions, args: dict) -> BaseDataSource:
+    def get_data_source(source_type: SourceType, destination_type: DestinationType, transactional_type: TransactionalType, dataflow_options: DataflowOptions, args: dict) -> BaseDataSource:
         data_source = None
         if source_type == SourceType.BIG_QUERY:
             bq_ops_dataset = None
             if 'bq_ops_dataset' in args:
                 bq_ops_dataset = args['bq_ops_dataset'].get()
-            data_source = BigQueryDataSource(is_transactional, bq_ops_dataset)
+            data_source = BigQueryDataSource(transactional_type, bq_ops_dataset)
         elif source_type == SourceType.FILE:
-            data_source = FileDataSource(is_transactional, dataflow_options, destination_type)
+            data_source = FileDataSource(transactional_type, dataflow_options, destination_type)
         else:
             pass
         if data_source is None:

@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from enum import Enum
 
 import apache_beam as beam
 import logging
@@ -19,7 +20,7 @@ import json
 from apache_beam.coders import coders
 from apache_beam.options.value_provider import ValueProvider
 from google.cloud import bigquery
-from models.execution import DestinationType, Execution, Batch
+from models.execution import DestinationType, Execution, Batch, TransactionalType
 from models.options import DataflowOptions
 
 from data_sources.data_source import DataSource
@@ -53,16 +54,16 @@ class BatchesFromExecutions(beam.PTransform):
 
 
     class _ReadDataSource(beam.DoFn):
-        def __init__(self, transactional: bool, dataflow_options: DataflowOptions, args: dict):
+        def __init__(self, transactional_type: TransactionalType, dataflow_options: DataflowOptions, args: dict):
             super().__init__()
-            self._transactional = transactional
+            self._transactional_type = transactional_type
             self._dataflow_options = dataflow_options
             self._args = args
 
         def process(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
             dataSource = DataSource.get_data_source(
                 execution.source.source_type, execution.destination.destination_type, 
-                self._transactional, self._dataflow_options, self._args)
+                self._transactional_type, self._dataflow_options, self._args)
             return dataSource.retrieve_data(execution)
 
     class _BatchElements(beam.DoFn):
@@ -86,14 +87,14 @@ class BatchesFromExecutions(beam.PTransform):
         dataflow_options: DataflowOptions,
         destination_type: DestinationType,
         batch_size: int = 5000,
-        transactional: bool = False
+        transactional_type: TransactionalType = TransactionalType.NOT_TRANSACTIONAL
     ):
         super().__init__()
         
         self._dataflow_options = dataflow_options
         self._destination_type = destination_type
         self._batch_size = batch_size
-        self._transactional = transactional
+        self._transactional_type = transactional_type
         self._args = {}
         if self._dataflow_options.bq_ops_dataset:
             self._args['bq_ops_dataset'] = self._dataflow_options.bq_ops_dataset

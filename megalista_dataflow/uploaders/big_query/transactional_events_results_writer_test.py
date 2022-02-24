@@ -22,6 +22,8 @@ from models.execution import Source
 from models.execution import SourceType
 from models.execution import Batch
 import pytest
+
+from models.execution import TransactionalType
 from uploaders.big_query.transactional_events_results_writer import TransactionalEventsResultsWriter
 
 from google.cloud.bigquery import SchemaField
@@ -30,15 +32,20 @@ from apache_beam.options.value_provider import StaticValueProvider
 
 
 @pytest.fixture
-def uploader():
-  return TransactionalEventsResultsWriter(StaticValueProvider(str, 'bq_ops_dataset'))
+def uploader_uuid():
+  return TransactionalEventsResultsWriter(StaticValueProvider(str, 'bq_ops_dataset'), TransactionalType.UUID)
 
 
-def test_bigquery_write(mocker, uploader):
+@pytest.fixture
+def uploader_gclid_time():
+  return TransactionalEventsResultsWriter(StaticValueProvider(str, 'bq_ops_dataset'), TransactionalType.GCLID_TIME)
+
+
+def test_bigquery_write_transactional_uuid(mocker, uploader_uuid):
   bq_client = mocker.MagicMock()
 
-  mocker.patch.object(uploader, "_get_bq_client")
-  uploader._get_bq_client.return_value = bq_client
+  mocker.patch.object(uploader_uuid, "_get_bq_client")
+  uploader_uuid._get_bq_client.return_value = bq_client
 
   table = mocker.MagicMock()
   bq_client.get_table.return_value = table
@@ -53,7 +60,7 @@ def test_bigquery_write(mocker, uploader):
   source = Source("orig1", SourceType.BIG_QUERY, ["dt1", "buyers"])
   execution = Execution(account_config, source, destination)
 
-  uploader._do_process(Batch(execution, [{"uuid": "uuid-1"}, {"uuid": "uuid-2"}]), now)
+  uploader_uuid._do_process(Batch(execution, [{"uuid": "uuid-1"}, {"uuid": "uuid-2"}]), now)
 
   bq_client.insert_rows.assert_called_once_with(
       table,
@@ -63,11 +70,43 @@ def test_bigquery_write(mocker, uploader):
        SchemaField("timestamp", "timestamp")))
 
 
-def test_bigquery_write_failure(mocker, uploader, caplog):
+def test_bigquery_write_transactional_gclid_time(mocker, uploader_gclid_time):
   bq_client = mocker.MagicMock()
 
-  mocker.patch.object(uploader, "_get_bq_client")
-  uploader._get_bq_client.return_value = bq_client
+  mocker.patch.object(uploader_gclid_time, "_get_bq_client")
+  uploader_gclid_time._get_bq_client.return_value = bq_client
+
+  table = mocker.MagicMock()
+  bq_client.get_table.return_value = table
+
+  now = datetime.datetime.now().timestamp()
+
+  account_config = AccountConfig("account_id", False, "ga_account_id", "", "")
+  destination = Destination(
+    "dest1",
+    DestinationType.ADS_OFFLINE_CONVERSION,
+    ["conversion"])
+  source = Source("orig1", SourceType.BIG_QUERY, ["dt1", "buyers"])
+  execution = Execution(account_config, source, destination)
+
+  uploader_gclid_time._do_process(Batch(execution,
+                                  [{"gclid": "gclid1", "time": "ahorita"},
+                                   {"gclid": "gclid2", "time": "ahorita_mas_uno"}]), now)
+
+  bq_client.insert_rows.assert_called_once_with(
+    table,
+    [{"gclid": "gclid1", "time": "ahorita", "timestamp": now},
+     {"gclid": "gclid2", "time": "ahorita_mas_uno", "timestamp": now}],
+    (SchemaField("gclid", "string"),
+     SchemaField("time", "string"),
+     SchemaField("timestamp", "timestamp")))
+
+
+def test_bigquery_write_failure(mocker, uploader_uuid, caplog):
+  bq_client = mocker.MagicMock()
+
+  mocker.patch.object(uploader_uuid, "_get_bq_client")
+  uploader_uuid._get_bq_client.return_value = bq_client
 
   error_message = "This is an error message"
   bq_client.insert_rows.return_value = [{"errors": error_message}]
@@ -81,6 +120,6 @@ def test_bigquery_write_failure(mocker, uploader, caplog):
 
   execution = Execution(account_config, source, destination)
 
-  uploader.process(Batch(execution, [{"uuid": "uuid-1"}]))
+  uploader_uuid.process(Batch(execution, [{"uuid": "uuid-1"}]))
 
   assert error_message in caplog.text

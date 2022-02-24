@@ -23,6 +23,7 @@ from uploaders import utils
 from models.execution import Batch
 from models.options import DataflowOptions
 from data_sources.data_source import DataSource
+from models.execution import TransactionalType
 
 class TransactionalEventsResultsWriter(beam.DoFn):
   """
@@ -30,9 +31,10 @@ class TransactionalEventsResultsWriter(beam.DoFn):
   It uploads the rows to a table with the same name of the source table plus the suffix '_uploaded'.
   """
 
-  def __init__(self, dataflow_options: DataflowOptions):
+  def __init__(self, dataflow_options: DataflowOptions, transactional_type: TransactionalType):
     super().__init__()
     self._dataflow_options = dataflow_options
+    self._transactional_type = transactional_type
     self._args = {}
     if self._dataflow_options.bq_ops_dataset:
       self._args['bq_ops_dataset'] = self._dataflow_options.bq_ops_dataset
@@ -48,6 +50,6 @@ class TransactionalEventsResultsWriter(beam.DoFn):
 
     dataSource = DataSource.get_data_source(
       execution.source.source_type, execution.destination.destination_type, 
-      True, self._dataflow_options, self._args)
+      self._transactional_type, self._dataflow_options, self._args)
     return dataSource.write_transactional_info(batch.elements, execution)
     

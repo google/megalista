@@ -24,6 +24,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r megalista_dataflow/requirements.txt
+        pip install --no-deps -r megalista_dataflow/requirements-no-deps.txt
     - name: Run tests
       run: |
         ./run_tests.sh

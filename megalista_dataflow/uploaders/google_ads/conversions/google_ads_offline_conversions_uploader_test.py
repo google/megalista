@@ -75,20 +75,35 @@ def test_conversion_upload(mocker, uploader):
   time2 = '2020-04-09T13:13:55.0005'
   time2_result = '2020-04-09 13:13:55-03:00'
 
-  batch = Batch(execution, [{
+  element1 = {
           'time': time1,
           'amount': '123',
           'gclid': '456'
-      },{
+      }
+  element2 = {
           'time': time2,
           'amount': '234',
           'gclid': '567'
-      }])
+      }
+  batch = Batch(execution, [element1,element2])
+
+  gclid_result_mock1 = MagicMock()
+  gclid_result_mock1.gclid = None
+
+  gclid_result_mock2 = MagicMock()
+  gclid_result_mock2.gclid = '567'
+
+  upload_return_mock = MagicMock()
+  upload_return_mock.results = [gclid_result_mock1, gclid_result_mock2]
+  uploader._get_oc_service.return_value.upload_click_conversions.return_value = upload_return_mock
 
   # act
-  uploader.process(batch)
+  successful_uploaded_gclids_batch = next(uploader.process(batch))
 
   #assert
+  assert len(successful_uploaded_gclids_batch.elements) == 1
+  assert successful_uploaded_gclids_batch.elements[0] == element2
+
   uploader._get_ads_service.return_value.search_stream.assert_called_once_with(
     customer_id='12345567890',
     query=f"SELECT conversion_action.resource_name FROM conversion_action WHERE conversion_action.name = '{conversion_name}'"
@@ -141,7 +156,7 @@ def test_upload_with_ads_account_override(mocker, uploader):
   }])
 
   # act
-  uploader.process(batch)
+  next(uploader.process(batch))
 
   # assert
   uploader._get_ads_service.return_value.search_stream.assert_called_once_with(

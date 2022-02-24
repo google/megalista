@@ -20,7 +20,7 @@ from typing import Any, List, Iterable, Tuple, Dict
 import apache_beam as beam
 import logging
 
-from models.execution import DestinationType, Execution, Batch
+from models.execution import DestinationType, Execution, Batch, TransactionalType
 from models.options import DataflowOptions
 
 
@@ -32,16 +32,16 @@ _LOGGER_NAME = 'megalista.data_sources.File'
 
 
 class FileDataSource(BaseDataSource):
-    def __init__(self, is_transactional: bool, dataflow_options: DataflowOptions, destination_type: DestinationType):
-        self._is_transactional = is_transactional
+    def __init__(self, transactional_type: TransactionalType, dataflow_options: DataflowOptions, destination_type: DestinationType):
+        self._transactional_type = transactional_type
         self._dataflow_options = dataflow_options
         self._destination_type = destination_type
   
     def retrieve_data(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
-        if self._is_transactional:
-            return self._retrieve_data_transactional(execution)
-        else:
+        if self._transactional_type == TransactionalType.NOT_TRANSACTIONAL:
             return self._retrieve_data_non_transactional(execution)
+        else:
+            return self._retrieve_data_transactional(execution)
   
     def _retrieve_data_non_transactional(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
         # Get Data Source
@@ -59,7 +59,7 @@ class FileDataSource(BaseDataSource):
         # Get Data Frame
         df = data_source.get_data_frame(execution.source.source_metadata[1])
         # Get Uploaded Data Frame
-        df_uploaded = data_source.get_data_frame(execution.source.source_metadata[1], isUploaded=True)
+        df_uploaded = data_source.get_data_frame(execution.source.source_metadata[1], is_uploaded=True)
         
         if df is not None:
             # Get items that haven't been processed yet
@@ -73,7 +73,7 @@ class FileDataSource(BaseDataSource):
         # Get Data Source
         data_source = self._get_data_source(execution.source.source_metadata[0])
         # Get Data Frame
-        df = data_source.get_data_frame(execution.source.source_metadata[1], isUploaded=True)
+        df = data_source.get_data_frame(execution.source.source_metadata[1], is_uploaded=True)
         
         now = datetime.now()
 
@@ -81,7 +81,11 @@ class FileDataSource(BaseDataSource):
             pass
         else:
             # Insert data
-            new_df = pd.DataFrame([{'uuid': row['uuid'], 'timestamp': now} for row in rows])
+            new_df = None
+            if self._transactional_type == TransactionalType.UUID:
+                new_df = pd.DataFrame([{'uuid': row['uuid'], 'timestamp': now} for row in rows])
+            elif self._transactional_type == TransactionalType.GCLID_TIME:
+                new_df = pd.DataFrame({'gclid': row['gclid'], 'time': row['time'], 'timestamp': now} for row in rows)
             df = df.append(new_df, ignore_index=True)
             # Upload file
             # Add _uploaded into path
@@ -89,9 +93,9 @@ class FileDataSource(BaseDataSource):
             bytes = data_source._get_file_from_data_frame(df).getbuffer().tobytes()
             FileProvider(path, self._dataflow_options).write(bytes)
 
-    def get_data_frame(self, path: str, isUploaded: bool = False) -> pd.DataFrame:
+    def get_data_frame(self, path: str, is_uploaded: bool = False) -> pd.DataFrame:
         # Change filename if uploaded
-        if isUploaded:
+        if is_uploaded:
             # Add _uploaded into path
             path = FileDataSource._append_filename_uploaded(path)
         
@@ -101,7 +105,7 @@ class FileDataSource(BaseDataSource):
         # Convert file into Data Frame
         df = None
         if file.getbuffer().nbytes == 0:
-            if isUploaded:
+            if is_uploaded:
                 df = pd.DataFrame({'uuid': [], 'timestamp': []})
                 pass
             else:
@@ -109,7 +113,7 @@ class FileDataSource(BaseDataSource):
         else:
             df = self._get_data_frame_from_file(file)
             # if uploaded, drop items older than 15 days
-            if isUploaded:
+            if is_uploaded:
                 now = datetime.now()
                 cut_timestamp = now - timedelta(days=15)
                 df['timestamp'] = pd.to_datetime(df['timestamp'])

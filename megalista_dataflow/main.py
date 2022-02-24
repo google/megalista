@@ -20,7 +20,7 @@ from apache_beam import coders
 from apache_beam.options.pipeline_options import PipelineOptions
 from mappers.ads_user_list_pii_hashing_mapper import \
     AdsUserListPIIHashingMapper
-from models.execution import DestinationType, Execution
+from models.execution import DestinationType, Execution, TransactionalType
 from models.json_config import JsonConfig
 from models.oauth_credentials import OAuthCredentials
 from models.options import DataflowOptions
@@ -167,7 +167,8 @@ class GoogleAdsOfflineConversionsStep(MegalistaStep):
             >> BatchesFromExecutions(
                 self.params.dataflow_options,
                 DestinationType.ADS_OFFLINE_CONVERSION, 
-                2000
+                2000,
+                TransactionalType.GCLID_TIME
             )
             | "Upload - GoogleAdsOfflineConversions"
             >> beam.ParDo(
@@ -175,6 +176,12 @@ class GoogleAdsOfflineConversionsStep(MegalistaStep):
                     self.params._oauth_credentials,
                     self.params.dataflow_options.developer_token
                 )
+            )
+            | "Persist results - GoogleAdsOfflineConversions"
+            >> beam.ParDo(
+              TransactionalEventsResultsWriter(
+                self.params._dataflow_options,
+                TransactionalType.GCLID_TIME)
             )
         )
 
@@ -222,12 +229,16 @@ class GoogleAnalyticsMeasurementProtocolStep(MegalistaStep):
                 self.params.dataflow_options,
                 DestinationType.GA_MEASUREMENT_PROTOCOL,
                 20,
-                True)
+                TransactionalType.UUID
+            )
             | "Upload - GA measurement protocol"
             >> beam.ParDo(GoogleAnalyticsMeasurementProtocolUploaderDoFn())
             | "Persist results - GA measurement protocol"
             >> beam.ParDo(
-                TransactionalEventsResultsWriter(self.params.dataflow_options)
+                TransactionalEventsResultsWriter(
+                    self.params.dataflow_options,
+                    TransactionalType.UUID
+                )
             )
         )
 
@@ -241,12 +252,15 @@ class GoogleAnalytics4MeasurementProtocolStep(MegalistaStep):
                 self.params.dataflow_options,
                 DestinationType.GA_4_MEASUREMENT_PROTOCOL,
                 20,
-                True)
+                TransactionalType.UUID)
             | "Upload - GA 4 measurement protocol"
             >> beam.ParDo(GoogleAnalytics4MeasurementProtocolUploaderDoFn())
             | "Persist results - GA 4 measurement protocol"
             >> beam.ParDo(
-                TransactionalEventsResultsWriter(self.params.dataflow_options)
+                TransactionalEventsResultsWriter(
+                    self.params.dataflow_options,
+                    TransactionalType.UUID
+                )
             )
         )
 
@@ -260,14 +274,17 @@ class CampaignManagerConversionStep(MegalistaStep):
                 self.params.dataflow_options,
                 DestinationType.CM_OFFLINE_CONVERSION,
                 1000,
-                True)
+                TransactionalType.UUID)
             | "Upload - CM conversion"
             >> beam.ParDo(
                 CampaignManagerConversionUploaderDoFn(self.params._oauth_credentials)
             )
             | "Persist results - CM conversion"
             >> beam.ParDo(
-                TransactionalEventsResultsWriter(self.params.dataflow_options)
+                TransactionalEventsResultsWriter(
+                    self.params.dataflow_options,
+                    TransactionalType.UUID
+                )
             )
         )
 
