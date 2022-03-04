@@ -81,7 +81,7 @@ class BigQueryDataSource(BaseDataSource):
                 WHERE uploaded.uuid IS NULL;"
         elif self._transactional_type == TransactionalType.GCLID_TIME:
             query =  f"SELECT data.* FROM `{table_name}` AS data \
-                LEFT JOIN $uploaded_table_name AS uploaded USING(gclid, time) \
+                LEFT JOIN `{uploaded_table_name}` AS uploaded USING(gclid, time) \
                 WHERE uploaded.gclid IS NULL;"
 
         logging.getLogger(_LOGGER_NAME).info(
