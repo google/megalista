@@ -26,7 +26,7 @@ gcloud config set project "$1"
 echo "Build Dataflow metadata"
 python3 -m pip install --user -q -r requirements.txt
 python3 -m pip install --no-deps --user -q -r requirements-no-deps.txt
-python3 -m main --runner DataflowRunner --project "$1" --gcp_project_id "$1" --temp_location "gs://$2/tmp/" --region "$3" --setup_file ./setup.py --template_location "gs://$2/templates/megalista" --num_workers 1 --autoscaling_algorithm=NONE
+python3 -m main --runner DataflowRunner --project "$1" --gcp_project_id "$1" --temp_location "gs://$2/tmp/" --region "$3" --setup_file ./setup.py --template_location "gs://$2/templates/megalista" --num_workers 1 --autoscaling_algorithm=NONE --prebuild_sdk_container_engine=cloud_build --experiments=use_runner_v2
 echo "Copy megalista_medata to bucket $2"
 gsutil cp megalista_metadata "gs://$2/templates/megalista_metadata"
 cd ..
