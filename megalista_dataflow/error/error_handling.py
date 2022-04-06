@@ -91,8 +91,8 @@ class GmailNotifier(ErrorNotifier):
     return should_notify.lower() == 'true'
 
   def notify(self, destination_type: DestinationType, errors: Iterable[Error]):
+    logger = logging.getLogger('megalista.GmailNotifier')
     if not self._should_notify():
-      logger = logging.getLogger('megalista.GmailNotifier')
       logger.info(f'Skipping sending emails notifying of errors: {", ".join(map(str, errors))}')
       return
 
@@ -105,6 +105,9 @@ class GmailNotifier(ErrorNotifier):
     message['from'] = 'me'
     message['subject'] = f'[Action Required] Megalista error detected - {destination_type.name}'
     raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
+
+    logger.info(
+      f'Sending error email to {", ".join(self.email_destinations)} regarding the conector {destination_type.name}')
 
     gmail_service.users().messages().send(userId='me', body={'raw': raw}).execute()
 
