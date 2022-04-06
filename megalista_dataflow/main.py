@@ -276,7 +276,9 @@ class CampaignManagerConversionStep(MegalistaStep):
                 self.params.dataflow_options.bq_ops_dataset)
             | "Upload - CM conversion"
             >> beam.ParDo(
-                CampaignManagerConversionUploaderDoFn(self.params._oauth_credentials)
+                CampaignManagerConversionUploaderDoFn(self.params._oauth_credentials,
+                                                      ErrorHandler(DestinationType.CM_OFFLINE_CONVERSION,
+                                                                   self.params.error_notifier))
             )
             | "Persist results - CM conversion"
             >> beam.ParDo(
