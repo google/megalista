@@ -13,23 +13,21 @@
 # limitations under the License.
 
 import pytest
-from apache_beam.options.value_provider import StaticValueProvider
-
-from uploaders.google_analytics.google_analytics_4_measurement_protocol import GoogleAnalytics4MeasurementProtocolUploaderDoFn
-from models.execution import Execution, SourceType, DestinationType, Source, AccountConfig, Destination, Batch
-
-import requests
 import requests_mock
 
-from unittest import mock
-
+from error.error_handling import ErrorHandler
+from error.error_handling_test import MockErrorNotifier
+from models.execution import Execution, SourceType, DestinationType, Source, AccountConfig, Destination, Batch
+from uploaders.google_analytics.google_analytics_4_measurement_protocol import \
+    GoogleAnalytics4MeasurementProtocolUploaderDoFn
 
 _account_config = AccountConfig('account_id', False, 'ga_account_id', '', '')
 
 
 @pytest.fixture
 def uploader():
-    return GoogleAnalytics4MeasurementProtocolUploaderDoFn()
+    return GoogleAnalytics4MeasurementProtocolUploaderDoFn(
+        ErrorHandler(DestinationType.GA_4_MEASUREMENT_PROTOCOL, MockErrorNotifier()))
 
 
 def test_exception_event_and_user_property(uploader, caplog):
