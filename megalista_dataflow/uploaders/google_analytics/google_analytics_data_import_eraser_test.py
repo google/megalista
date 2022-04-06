@@ -24,17 +24,21 @@ from uploaders.google_analytics.google_analytics_data_import_eraser import Googl
 
 
 @pytest.fixture
-def eraser(mocker):
+def error_notifier():
+    return MockErrorNotifier()
+
+@pytest.fixture
+def eraser(error_notifier):
     client_id = StaticValueProvider(str, "id")
     secret = StaticValueProvider(str, "secret")
     access = StaticValueProvider(str, "access")
     refresh = StaticValueProvider(str, "refresh")
     credentials = OAuthCredentials(client_id, secret, access, refresh)
     return GoogleAnalyticsDataImportEraser(credentials,
-                                           ErrorHandler(DestinationType.GA_DATA_IMPORT, MockErrorNotifier()))
+                                           ErrorHandler(DestinationType.GA_DATA_IMPORT, error_notifier))
 
 
-def test_analytics_has_not_data_sources(mocker, eraser, caplog):
+def test_analytics_has_not_data_sources(mocker, eraser, caplog, error_notifier):
     service = mocker.MagicMock()
 
     mocker.patch.object(eraser, '_get_analytics_service')
@@ -53,10 +57,14 @@ def test_analytics_has_not_data_sources(mocker, eraser, caplog):
     except StopIteration:
         pass
 
+    eraser.teardown()
+
     assert 'data_import_name - data import not found, please configure it in Google Analytics' in caplog.text
 
+    assert error_notifier.were_errors_sent
 
-def test_data_source_not_found(mocker, eraser, caplog):
+
+def test_data_source_not_found(mocker, eraser, caplog, error_notifier):
     service = mocker.MagicMock()
 
     mocker.patch.object(eraser, '_get_analytics_service')
@@ -75,8 +83,11 @@ def test_data_source_not_found(mocker, eraser, caplog):
     except StopIteration:
         pass
 
+    eraser.teardown()
+
     assert 'data_import_name - data import not found, please configure it in Google Analytics' in caplog.text
 
+    assert error_notifier.were_errors_sent
 
 def test_no_files_found(mocker, eraser):
     service = mocker.MagicMock()
@@ -107,7 +118,7 @@ def test_no_files_found(mocker, eraser):
     delete_call_mock.assert_not_called()
 
 
-def test_files_deleted(mocker, eraser):
+def test_files_deleted_with_success(mocker, eraser):
     service = mocker.MagicMock()
 
     mocker.patch.object(eraser, '_get_analytics_service')
