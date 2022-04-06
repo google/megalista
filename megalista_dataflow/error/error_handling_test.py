@@ -25,10 +25,12 @@ class MockErrorNotifier(ErrorNotifier):
   def __init__(self):
     self.were_errors_sent = False
     self.errors_sent = {}
+    self.destination_type = None
 
-  def notify(self, errors: dict[Error]):
+  def notify(self, destination_type: DestinationType, errors: Iterable[Error]):
     self.were_errors_sent = True
-    self.errors_sent = errors
+    self.errors_sent = {error.execution: error.error_message for error in errors}
+    self.destination_type = destination_type
 
 
 # ErrorHandler tests
@@ -46,9 +48,9 @@ def test_single_error_per_execution():
   first_execution = create_execution('source1', 'destination1')
   second_execution = create_execution('source1', 'destination2')
 
-  error_handler.add_error(Error(first_execution, 'Error for first execution, fist input'))
-  error_handler.add_error(Error(first_execution, 'Error for first execution, second input'))
-  error_handler.add_error(Error(second_execution, 'Error for second execution, fist input'))
+  error_handler.add_error(first_execution, 'Error for first execution, fist input')
+  error_handler.add_error(first_execution, 'Error for first execution, second input')
+  error_handler.add_error(second_execution, 'Error for second execution, fist input')
 
   returned_errors = error_handler.errors
   assert len(returned_errors) is 2
@@ -60,7 +62,7 @@ def test_destination_type_consistency():
   wrong_destination_type_execution = create_execution('source', 'destination')
 
   with pytest.raises(ValueError):
-    error_handler.add_error(Error(wrong_destination_type_execution, 'error message'))
+    error_handler.add_error(wrong_destination_type_execution, 'error message')
 
 
 def test_errors_sent_to_error_notifier():
@@ -70,15 +72,24 @@ def test_errors_sent_to_error_notifier():
   first_execution = create_execution('source1', 'destination1')
   second_execution = create_execution('source1', 'destination2')
 
-  first_error = Error(first_execution, 'Error for first execution, fist input')
-  second_error = Error(second_execution, 'Error for second execution, fist input')
-  error_handler.add_error(first_error)
-  error_handler.add_error(second_error)
+  error_handler.add_error(first_execution, 'Error for first execution, fist input')
+  error_handler.add_error(second_execution, 'Error for second execution, fist input')
 
   error_handler.notify_errors()
 
   assert mock_notifier.were_errors_sent is True
-  assert set(mock_notifier.errors_sent) == {first_error, second_error}
+  assert mock_notifier.errors_sent == {first_execution: 'Error for first execution, fist input',
+                                       second_execution: 'Error for second execution, fist input'}
+  assert mock_notifier.destination_type == DestinationType.ADS_OFFLINE_CONVERSION
+
+
+def test_should_not_notify_when_empty_errors():
+  mock_notifier = MockErrorNotifier()
+  error_handler = ErrorHandler(DestinationType.ADS_OFFLINE_CONVERSION, mock_notifier)
+
+  error_handler.notify_errors()
+
+  assert mock_notifier.were_errors_sent is False
 
 
 # GmailNotifier tests
@@ -89,8 +100,21 @@ def test_multiple_destinations_separated_by_comma():
   third_email = 'c@c.com'
 
   credentials = OAuthCredentials('', '', '', '')
-  gmail_notifier = GmailNotifier(credentials, StaticValueProvider(str, f'{first_email}, {second_email} ,{third_email}'))
+  gmail_notifier = GmailNotifier(StaticValueProvider(bool, True), credentials,
+                                 StaticValueProvider(str, f'{first_email}, {second_email} ,{third_email}'))
 
   emails = set(gmail_notifier.email_destinations)
   assert len(emails) == 3
   assert set(emails) == {first_email, third_email, second_email}
+
+
+def test_should_not_notify_when_not_setup():
+  first_email = 'a@a.com'
+  second_email = 'b@b.com'
+  third_email = 'c@c.com'
+
+  credentials = OAuthCredentials('', '', '', '')
+  gmail_notifier = GmailNotifier(StaticValueProvider(bool, False), credentials,
+                                 StaticValueProvider(str, f'{first_email}, {second_email} ,{third_email}'))
+
+  gmail_notifier.notify(DestinationType.ADS_OFFLINE_CONVERSION, [Error(create_execution('s', 'd'), 'error message')])
