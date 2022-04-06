@@ -84,3 +84,8 @@ class DataflowOptions(PipelineOptions):
     # APPSFLYER
     parser.add_value_provider_argument(
         '--appsflyer_dev_key', help='Developer key for AppsFlyer S2S API')
+    # ERRORS EMAIL NOTIFICATION
+    parser.add_value_provider_argument(
+      '--notify_errors_by_email', help='Should send errors by email. True or False')
+    parser.add_value_provider_argument(
+      '--errors_destination_emails', help='Emails for sending errors separated by comma')
