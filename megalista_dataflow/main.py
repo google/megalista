@@ -225,7 +225,8 @@ class GoogleAnalyticsMeasurementProtocolStep(MegalistaStep):
                 TransactionalType.UUID,
                 self.params.dataflow_options.bq_ops_dataset)
             | "Upload - GA measurement protocol"
-            >> beam.ParDo(GoogleAnalyticsMeasurementProtocolUploaderDoFn())
+            >> beam.ParDo(GoogleAnalyticsMeasurementProtocolUploaderDoFn(
+                ErrorHandler(DestinationType.GA_MEASUREMENT_PROTOCOL, self.params.error_notifier)))
             | "Persist results - GA measurement protocol"
             >> beam.ParDo(
                 TransactionalEventsResultsWriter(

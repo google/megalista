@@ -14,20 +14,21 @@
 
 
 import logging
+import re
 from typing import Dict, Any
 from urllib.parse import quote
 
-import apache_beam as beam
 import requests
-import re
 
+from error.error_handling import ErrorHandler
+from models.execution import Batch
 from uploaders import utils
-from models.execution import DestinationType, Batch
+from uploaders.uploaders import MegalistaUploader
 
 
-class GoogleAnalyticsMeasurementProtocolUploaderDoFn(beam.DoFn):
-  def __init__(self):
-    super().__init__()
+class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
+  def __init__(self, error_handler: ErrorHandler):
+    super().__init__(error_handler)
     self.API_URL = "https://www.google-analytics.com/batch"
     self.UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36"
 
@@ -54,7 +55,7 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(beam.DoFn):
       "ev": row.get('event_value'),
       "el": row.get('event_label'),
       "ua": self.UA,
-      **{key: row[key] for key in row.keys() if re.match('c[dm]\d+',key)}
+      **{key: row[key] for key in row.keys() if re.match('c[dm]\d+', key)}
     } for row in rows]
 
     encoded = [self._format_hit(payload) for payload in payloads]
@@ -62,7 +63,8 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(beam.DoFn):
     payload = '\n'.join(encoded)
     response = requests.post(url=self.API_URL, data=payload)
     if response.status_code != 200:
-      raise Exception(
-        f"Error uploading to Analytics HTTP {response.status_code}: {response.raw}")
+      error_message = f"Error uploading to Analytics HTTP {response.status_code}: {response.raw}"
+      logging.getLogger("megalista.GoogleAnalyticsMeasurementProtocolUploader").error(error_message)
+      self._add_error(execution, error_message)
     else:
       yield batch
