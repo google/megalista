@@ -13,24 +13,31 @@
 # limitations under the License.
 from unittest.mock import MagicMock
 
-from apache_beam.options.value_provider import StaticValueProvider
 import pytest
+from apache_beam.options.value_provider import StaticValueProvider
 
-from uploaders.google_ads.conversions.google_ads_offline_conversions_uploader import GoogleAdsOfflineUploaderDoFn
+from error.error_handling import ErrorHandler
+from error.error_handling_test import MockErrorNotifier
 from models.execution import AccountConfig
+from models.execution import Batch
 from models.execution import Destination
 from models.execution import DestinationType
 from models.execution import Execution
 from models.execution import Source
 from models.execution import SourceType
-from models.execution import Batch
 from models.oauth_credentials import OAuthCredentials
+from uploaders.google_ads.conversions.google_ads_offline_conversions_uploader import GoogleAdsOfflineUploaderDoFn
 
 _account_config = AccountConfig('123-45567-890', False, 'ga_account_id', '', '')
 
 
+@pytest.fixture()
+def error_notifier():
+  return MockErrorNotifier()
+
+
 @pytest.fixture
-def uploader(mocker):
+def uploader(mocker, error_notifier):
   mocker.patch('google.ads.googleads.client.GoogleAdsClient')
   mocker.patch('google.ads.googleads.oauth2')
   credential_id = StaticValueProvider(str, 'id')
@@ -39,7 +46,8 @@ def uploader(mocker):
   refresh = StaticValueProvider(str, 'refresh')
   credentials = OAuthCredentials(credential_id, secret, access, refresh)
   return GoogleAdsOfflineUploaderDoFn(credentials,
-                                      StaticValueProvider(str, 'devtoken'))
+                                      StaticValueProvider(str, 'devtoken'),
+                                      ErrorHandler(DestinationType.ADS_OFFLINE_CONVERSION, error_notifier))
 
 
 def test_get_service(mocker, uploader):
@@ -57,6 +65,7 @@ def arrange_conversion_resource_name_api_call(mocker, uploader, conversion_resou
 
   uploader._get_ads_service.return_value.search_stream.return_value = [resource_name_batch_response]
 
+
 def test_conversion_upload(mocker, uploader):
   # arrange
   conversion_resource_name = 'user_list_resouce'
@@ -65,7 +74,7 @@ def test_conversion_upload(mocker, uploader):
   mocker.patch.object(uploader, '_get_oc_service')
   conversion_name = 'user_list'
   destination = Destination(
-      'dest1', DestinationType.ADS_OFFLINE_CONVERSION, ['user_list'])
+    'dest1', DestinationType.ADS_OFFLINE_CONVERSION, ['user_list'])
   source = Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers'])
   execution = Execution(_account_config, source, destination)
 
@@ -76,16 +85,16 @@ def test_conversion_upload(mocker, uploader):
   time2_result = '2020-04-09 13:13:55-03:00'
 
   element1 = {
-          'time': time1,
-          'amount': '123',
-          'gclid': '456'
-      }
+    'time': time1,
+    'amount': '123',
+    'gclid': '456'
+  }
   element2 = {
-          'time': time2,
-          'amount': '234',
-          'gclid': '567'
-      }
-  batch = Batch(execution, [element1,element2])
+    'time': time2,
+    'amount': '234',
+    'gclid': '567'
+  }
+  batch = Batch(execution, [element1, element2])
 
   gclid_result_mock1 = MagicMock()
   gclid_result_mock1.gclid = None
@@ -100,7 +109,7 @@ def test_conversion_upload(mocker, uploader):
   # act
   successful_uploaded_gclids_batch = next(uploader.process(batch))
 
-  #assert
+  # assert
   assert len(successful_uploaded_gclids_batch.elements) == 1
   assert successful_uploaded_gclids_batch.elements[0] == element2
 
@@ -155,6 +164,15 @@ def test_upload_with_ads_account_override(mocker, uploader):
     'gclid': '567'
   }])
 
+  gclid_result_mock1 = MagicMock()
+  gclid_result_mock1.gclid = '456'
+
+  upload_return_mock = MagicMock()
+  upload_return_mock.results = [gclid_result_mock1]
+  upload_return_mock.partial_failure_error = None
+
+  uploader._get_oc_service.return_value.upload_click_conversions.return_value = upload_return_mock
+
   # act
   next(uploader.process(batch))
 
@@ -180,3 +198,165 @@ def test_upload_with_ads_account_override(mocker, uploader):
       'gclid': '567'
     }]
   })
+
+
+def test_should_not_notify_errors_when_api_call_is_successful(mocker, uploader, error_notifier):
+  # arrange
+  conversion_resource_name = 'user_list_resouce'
+  arrange_conversion_resource_name_api_call(mocker, uploader, conversion_resource_name)
+
+  mocker.patch.object(uploader, '_get_oc_service')
+  conversion_name = 'user_list'
+  destination = Destination(
+    'dest1', DestinationType.ADS_OFFLINE_CONVERSION, ['user_list'])
+  source = Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers'])
+  execution = Execution(_account_config, source, destination)
+
+  time1 = '2020-04-09T14:13:55.0005'
+
+  element1 = {
+    'time': time1,
+    'amount': '123',
+    'gclid': '456'
+  }
+  batch = Batch(execution, [element1])
+
+  gclid_result_mock1 = MagicMock()
+  gclid_result_mock1.gclid = '456'
+
+  upload_return_mock = MagicMock()
+  upload_return_mock.results = [gclid_result_mock1]
+  upload_return_mock.partial_failure_error = None
+  uploader._get_oc_service.return_value.upload_click_conversions.return_value = upload_return_mock
+
+  # act
+  next(uploader.process(batch))
+  uploader.teardown()
+
+  uploader._get_ads_service.return_value.search_stream.assert_called_once_with(
+    customer_id='12345567890',
+    query=f"SELECT conversion_action.resource_name FROM conversion_action WHERE conversion_action.name = '{conversion_name}'"
+  )
+
+  assert error_notifier.were_errors_sent is False
+
+
+def test_error_notification(mocker, uploader, error_notifier):
+  # arrange
+  conversion_resource_name = 'user_list_resouce'
+  arrange_conversion_resource_name_api_call(mocker, uploader, conversion_resource_name)
+
+  mocker.patch.object(uploader, '_get_oc_service')
+  destination = Destination(
+    'dest1', DestinationType.ADS_OFFLINE_CONVERSION, ['user_list'])
+  source = Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers'])
+  execution = Execution(_account_config, source, destination)
+
+  time1 = '2020-04-09T14:13:55.0005'
+
+  element1 = {
+    'time': time1,
+    'amount': '123',
+    'gclid': '456'
+  }
+  batch = Batch(execution, [element1])
+
+  error_message = 'Offline Conversion uploading failures'
+  upload_return_mock = MagicMock()
+  upload_return_mock.partial_failure_error.message = error_message
+  uploader._get_oc_service.return_value.upload_click_conversions.return_value = upload_return_mock
+
+  # act
+  try:
+    next(uploader.process(batch))
+  except StopIteration:
+    pass
+  uploader.teardown()
+
+  # assert
+  assert error_notifier.were_errors_sent is True
+  assert error_notifier.destination_type is DestinationType.ADS_OFFLINE_CONVERSION
+  assert error_notifier.errors_sent == {execution: f'Error on uploading offline conversions: {error_message}.'}
+
+
+def test_conversion_upload_and_error_notification(mocker, uploader, error_notifier):
+  """
+  Scenario where some gclids are uploaded but some give errors
+  """
+
+  # arrange
+  conversion_resource_name = 'user_list_resouce'
+  arrange_conversion_resource_name_api_call(mocker, uploader, conversion_resource_name)
+
+  mocker.patch.object(uploader, '_get_oc_service')
+  conversion_name = 'user_list'
+  destination = Destination(
+    'dest1', DestinationType.ADS_OFFLINE_CONVERSION, ['user_list'])
+  source = Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers'])
+  execution = Execution(_account_config, source, destination)
+
+  time1 = '2020-04-09T14:13:55.0005'
+  time1_result = '2020-04-09 14:13:55-03:00'
+
+  time2 = '2020-04-09T13:13:55.0005'
+  time2_result = '2020-04-09 13:13:55-03:00'
+
+  element1 = {
+    'time': time1,
+    'amount': '123',
+    'gclid': '456'
+  }
+  element2 = {
+    'time': time2,
+    'amount': '234',
+    'gclid': '567'
+  }
+  batch = Batch(execution, [element1, element2])
+
+  # gclid '456' returns as successful by the API, while gclid '567' does not.
+  # in this scenario, it's expected that both are present in the API call,
+  # but since gclid '567' is not returned as successful by the API, an error is sent through error_notifier
+
+  error_message = 'Offline Conversion uploading failures'
+
+  gclid_result_mock1 = MagicMock()
+  gclid_result_mock1.gclid = '456'
+
+  upload_return_mock = MagicMock()
+  upload_return_mock.results = [gclid_result_mock1]
+  upload_return_mock.partial_failure_error.message = error_message
+  uploader._get_oc_service.return_value.upload_click_conversions.return_value = upload_return_mock
+
+  # act
+  successful_uploaded_gclids_batch = next(uploader.process(batch))
+  uploader.teardown()
+
+  # assert
+  assert len(successful_uploaded_gclids_batch.elements) == 1
+  assert successful_uploaded_gclids_batch.elements[0] == element1
+
+  uploader._get_ads_service.return_value.search_stream.assert_called_once_with(
+    customer_id='12345567890',
+    query=f"SELECT conversion_action.resource_name FROM conversion_action WHERE conversion_action.name = '{conversion_name}'"
+  )
+
+  uploader._get_oc_service.return_value.upload_click_conversions.assert_called_once_with(request={
+    'customer_id': '12345567890',
+    'partial_failure': True,
+    'validate_only': False,
+    'conversions': [{
+      'conversion_action': conversion_resource_name,
+      'conversion_date_time': time1_result,
+      'conversion_value': 123,
+      'gclid': '456'
+    }, {
+      'conversion_action': conversion_resource_name,
+      'conversion_date_time': time2_result,
+      'conversion_value': 234,
+      'gclid': '567'
+    }]
+  })
+
+  assert error_notifier.were_errors_sent is True
+  assert error_notifier.destination_type is DestinationType.ADS_OFFLINE_CONVERSION
+  assert error_notifier.errors_sent == {execution: f'Error on uploading offline conversions: {error_message}.'}

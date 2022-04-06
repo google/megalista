@@ -18,8 +18,10 @@ import warnings
 import apache_beam as beam
 from apache_beam import coders
 from apache_beam.options.pipeline_options import PipelineOptions
+
+from error.error_handling import ErrorHandler, ErrorNotifier, GmailNotifier
 from mappers.ads_user_list_pii_hashing_mapper import \
-    AdsUserListPIIHashingMapper
+  AdsUserListPIIHashingMapper
 from models.execution import DestinationType, Execution
 from models.json_config import JsonConfig
 from models.oauth_credentials import OAuthCredentials
@@ -27,6 +29,7 @@ from models.options import DataflowOptions
 from models.sheets_config import SheetsConfig
 from sources.batches_from_executions import BatchesFromExecutions, ExecutionCoder, TransactionalType
 from sources.primary_execution_source import PrimaryExecutionSource
+from third_party import THIRD_PARTY_STEPS
 from uploaders.big_query.transactional_events_results_writer import TransactionalEventsResultsWriter
 from uploaders.campaign_manager.campaign_manager_conversion_uploader import CampaignManagerConversionUploaderDoFn
 from uploaders.google_ads.conversions.google_ads_offline_conversions_uploader import GoogleAdsOfflineUploaderDoFn
@@ -34,12 +37,13 @@ from uploaders.google_ads.conversions.google_ads_ssd_uploader import GoogleAdsSS
 from uploaders.google_ads.customer_match.contact_info_uploader import GoogleAdsCustomerMatchContactInfoUploaderDoFn
 from uploaders.google_ads.customer_match.mobile_uploader import GoogleAdsCustomerMatchMobileUploaderDoFn
 from uploaders.google_ads.customer_match.user_id_uploader import GoogleAdsCustomerMatchUserIdUploaderDoFn
-from uploaders.google_analytics.google_analytics_4_measurement_protocol import GoogleAnalytics4MeasurementProtocolUploaderDoFn
+from uploaders.google_analytics.google_analytics_4_measurement_protocol import \
+  GoogleAnalytics4MeasurementProtocolUploaderDoFn
 from uploaders.google_analytics.google_analytics_data_import_eraser import GoogleAnalyticsDataImportEraser
 from uploaders.google_analytics.google_analytics_data_import_uploader import GoogleAnalyticsDataImportUploaderDoFn
-from uploaders.google_analytics.google_analytics_measurement_protocol import GoogleAnalyticsMeasurementProtocolUploaderDoFn
+from uploaders.google_analytics.google_analytics_measurement_protocol import \
+  GoogleAnalyticsMeasurementProtocolUploaderDoFn
 from uploaders.google_analytics.google_analytics_user_list_uploader import GoogleAnalyticsUserListUploaderDoFn
-from third_party import THIRD_PARTY_STEPS
 
 warnings.filterwarnings(
     "ignore", "Your application has authenticated using end user credentials"
@@ -52,9 +56,10 @@ def filter_by_action(execution: Execution, destination_type: DestinationType):
 
 
 class MegalistaStepParams():
-    def __init__(self, oauth_credentials, dataflow_options):
+    def __init__(self, oauth_credentials, dataflow_options, error_notifier: ErrorNotifier):
         self._oauth_credentials = oauth_credentials
         self._dataflow_options = dataflow_options
+        self._error_notifier = error_notifier
 
     @property
     def oauth_credentials(self):
@@ -63,6 +68,11 @@ class MegalistaStepParams():
     @property
     def dataflow_options(self):
         return self._dataflow_options
+
+    @property
+    def error_notifier(self):
+        return self._error_notifier
+
 
 class MegalistaStep(beam.PTransform):
     def __init__(self, params: MegalistaStepParams):
@@ -74,6 +84,7 @@ class MegalistaStep(beam.PTransform):
 
     def expand(self, executions):
         pass
+
 
 class GoogleAdsSSDStep(MegalistaStep):
     def expand(self, executions):
@@ -164,7 +175,8 @@ class GoogleAdsOfflineConversionsStep(MegalistaStep):
             >> beam.ParDo(
                 GoogleAdsOfflineUploaderDoFn(
                     self.params._oauth_credentials,
-                    self.params._dataflow_options.developer_token
+                    self.params._dataflow_options.developer_token,
+                    ErrorHandler(DestinationType.ADS_OFFLINE_CONVERSION, self.params.error_notifier)
                 )
             )
             | "Persist results - GoogleAdsOfflineConversions"
@@ -287,7 +299,9 @@ def run(argv=None):
         dataflow_options.setup_firestore_collection,
     )
 
-    params = MegalistaStepParams(oauth_credentials, dataflow_options)
+    error_notifier = GmailNotifier(dataflow_options.notify_errors_by_email, oauth_credentials,
+                                   dataflow_options.errors_destination_emails)
+    params = MegalistaStepParams(oauth_credentials, dataflow_options, error_notifier)
 
     coders.registry.register_coder(Execution, ExecutionCoder)
 

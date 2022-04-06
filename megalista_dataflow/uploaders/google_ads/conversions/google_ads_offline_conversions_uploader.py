@@ -14,18 +14,22 @@
 
 import logging
 
-import apache_beam as beam
+from apache_beam.options.value_provider import ValueProvider
+
+from error.error_handling import ErrorHandler
 from models.execution import Batch, Execution, AccountConfig, Destination
+from models.oauth_credentials import OAuthCredentials
 from uploaders import utils
 from uploaders.google_ads import ADS_API_VERSION
+from uploaders.uploaders import MegalistaUploader
 
 _DEFAULT_LOGGER: str = 'megalista.GoogleAdsOfflineConversionsUploader'
 
 
-class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
+class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
 
-  def __init__(self, oauth_credentials, developer_token):
-    super().__init__()
+  def __init__(self, oauth_credentials : OAuthCredentials, developer_token: ValueProvider, error_handler: ErrorHandler):
+    super().__init__(error_handler)
     self.oauth_credentials = oauth_credentials
     self.developer_token = developer_token
 
@@ -56,7 +60,7 @@ class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
   @staticmethod
   def _assert_conversion_name_is_present(execution: Execution):
     destination = execution.destination.destination_metadata
-    if len(destination) is 0:
+    if len(destination) == 0:
       raise ValueError('Missing destination information. Found {}'.format(
           len(destination)))
 
@@ -76,14 +80,16 @@ class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
     resource_name = self._get_resource_name(customer_id, execution.destination.destination_metadata[0])
 
     response = self._do_upload(oc_service,
+                    execution,
                     resource_name,
                     customer_id,
                     batch.elements)
 
-    yield self._get_new_batch_with_successfully_uploaded_gclids(batch, response)
+    batch_with_successful_gclids = self._get_new_batch_with_successfully_uploaded_gclids(batch, response)
+    if len(batch_with_successful_gclids.elements) > 0:
+      yield batch_with_successful_gclids
 
-  @staticmethod
-  def _do_upload(oc_service, conversion_resource_name, customer_id, rows):
+  def _do_upload(self, oc_service, execution, conversion_resource_name, customer_id, rows):
     logging.getLogger(_DEFAULT_LOGGER).info(f'Uploading {len(rows)} offline conversions on {conversion_resource_name} to Google Ads.')
     conversions = [{
           'conversion_action': conversion_resource_name,
@@ -100,7 +106,11 @@ class GoogleAdsOfflineUploaderDoFn(beam.DoFn):
     }
 
     response = oc_service.upload_click_conversions(request=upload_data)
-    utils.print_partial_error_messages(_DEFAULT_LOGGER, 'uploading offline conversions', response)
+
+    error_message = utils.print_partial_error_messages(_DEFAULT_LOGGER, 'uploading offline conversions', response)
+    if error_message:
+      self._add_error(execution, error_message)
+
     return response
 
   def _get_resource_name(self, customer_id: str, name: str):
