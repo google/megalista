@@ -101,12 +101,23 @@ def convert_datetime_tz(dt, origin_tz, destination_tz):
     return datetime_obj.astimezone(pytz.timezone(destination_tz))
 
 
-def print_partial_error_messages(logger_name, action, response):
+def print_partial_error_messages(logger_name, action, response) -> str:
+    """
+    Print partials errors received in the response.
+    @param logger_name: logger name to be used
+    @param action: action to be part of the message
+    @param response: response body of the API call
+    @return: the error_message returned, if there was one, None otherwise.
+    """
+    error_message = None
+
     partial_failure = getattr(response, 'partial_failure_error', None)
     if partial_failure is not None and partial_failure.message != '':
-        message = f'Error on {action}: {partial_failure.message}.'
-        logging.getLogger(logger_name).error(message)
+        error_message = f'Error on {action}: {partial_failure.message}.'
+        logging.getLogger(logger_name).error(error_message)
     results = getattr(response, 'results', [])
     for result in results:
         message = f'gclid {result.gclid} uploaded.'
         logging.getLogger(logger_name).debug(message)
+
+    return error_message
