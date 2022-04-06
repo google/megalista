@@ -15,19 +15,20 @@
 
 import logging
 
-import apache_beam as beam
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaInMemoryUpload
 
+from error.error_handling import ErrorHandler
+from models.execution import Batch
 from uploaders import utils
-from models.execution import Batch, DestinationType
+from uploaders.uploaders import MegalistaUploader
 
 
-class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
-    def __init__(self,
-                 oauth_credentials):
-        super().__init__()
+class GoogleAnalyticsUserListUploaderDoFn(MegalistaUploader):
+
+    def __init__(self,oauth_credentials, error_handler: ErrorHandler):
+        super().__init__(error_handler)
         self.oauth_credentials = oauth_credentials
 
     def _get_analytics_service(self):
@@ -125,11 +126,11 @@ class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
         # Optional parameter
         custom_dim_field = metadata[6] if len(metadata) > 6 else None
 
-        self._do_upload_data(web_property_id, view_id, data_import_name, user_id_list_name, user_id_custom_dim,
+        self._do_upload_data(execution, web_property_id, view_id, data_import_name, user_id_list_name, user_id_custom_dim,
                              buyer_custom_dim, custom_dim_field, ga_account_id, ads_customer_id, mcc,
                              batch.elements)
 
-    def _do_upload_data(self, web_property_id, view_id, data_import_name, user_id_list_name, user_id_custom_dim,
+    def _do_upload_data(self, execution, web_property_id, view_id, data_import_name, user_id_list_name, user_id_custom_dim,
                         buyer_custom_dim, custom_dim_field, ga_account_id, ads_customer_id, mcc, rows):
 
         if user_id_list_name:
@@ -162,7 +163,10 @@ class GoogleAnalyticsUserListUploaderDoFn(beam.DoFn):
                     customDataSourceId=id,
                     media_body=media).execute()
             except Exception as e:
-                logging.getLogger().error('Error while uploading GA Data: %s' % e)
+                error_message = f'Error while uploading GA Data: {e}'
+                logging.getLogger().error(error_message)
+                self._add_error(execution, error_message)
         else:
-            logging.getLogger().error(
-                "%s - data import not found, please configure it in Google Analytics" % data_import_name)
+            error_message = f"{data_import_name} - data import not found, please configure it in Google Analytics"
+            logging.getLogger().error(error_message)
+            self._add_error(execution, error_message)

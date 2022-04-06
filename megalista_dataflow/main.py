@@ -195,7 +195,9 @@ class GoogleAnalyticsUserListStep(MegalistaStep):
             | "Load Data -  GA user list"
             >> BatchesFromExecutions(DestinationType.GA_USER_LIST_UPLOAD, 5000000)
             | "Upload - GA user list"
-            >> beam.ParDo(GoogleAnalyticsUserListUploaderDoFn(self.params._oauth_credentials))
+            >> beam.ParDo(GoogleAnalyticsUserListUploaderDoFn(self.params._oauth_credentials,
+                                                              ErrorHandler(DestinationType.GA_USER_LIST_UPLOAD,
+                                                                           self.params.error_notifier)))
         )
 
 
