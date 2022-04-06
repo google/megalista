@@ -28,13 +28,11 @@ class DataSource:
         data_source = None
         if source_type == SourceType.BIG_QUERY:
             bq_ops_dataset = None
-            if 'bq_ops_dataset' in args:
-                bq_ops_dataset = args['bq_ops_dataset'].get()
-            data_source = BigQueryDataSource(transactional_type, bq_ops_dataset)
+            if dataflow_options.bq_ops_dataset:
+                bq_ops_dataset = dataflow_options.bq_ops_dataset
+            return BigQueryDataSource(transactional_type, bq_ops_dataset)
         elif source_type == SourceType.FILE:
-            data_source = FileDataSource(transactional_type, dataflow_options, destination_type)
+            return FileDataSource(transactional_type, dataflow_options, destination_type)
         else:
-            pass
-        if data_source is None:
-            logging.getLogger(_LOGGER_NAME).error(f'Source type "{source_type}" not found.')
+            raise NotImplementedError("Source Type not implemented. Please check your configuration (sheet / json / firestore).")
         return data_source

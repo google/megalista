@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from data_sources.data_schemas import DataSchemas
+import data_sources.data_schemas as DataSchemas
 from models.execution import DestinationType
 from io import StringIO
 import pandas as pd

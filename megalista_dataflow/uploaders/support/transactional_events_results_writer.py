@@ -16,8 +16,6 @@ import logging
 from datetime import datetime
 
 import apache_beam as beam
-from google.cloud import bigquery
-from google.cloud.bigquery import SchemaField
 
 from uploaders import utils
 from models.execution import Batch
@@ -35,21 +33,16 @@ class TransactionalEventsResultsWriter(beam.DoFn):
     super().__init__()
     self._dataflow_options = dataflow_options
     self._transactional_type = transactional_type
-    self._args = {}
-    if self._dataflow_options.bq_ops_dataset:
-      self._args['bq_ops_dataset'] = self._dataflow_options.bq_ops_dataset
-
+    
   @utils.safe_process(logger=logging.getLogger("megalista.TransactionalEventsResultsWriter"))
   def process(self, batch: Batch, *args, **kwargs):
-    self._do_process(batch, datetime.now().timestamp())
+    self._do_process(batch)
 
-  def _do_process(self, batch: Batch, now):
+  def _do_process(self, batch: Batch):
     execution = batch.execution
 
-    print(execution)
-
-    dataSource = DataSource.get_data_source(
+    data_source = DataSource.get_data_source(
       execution.source.source_type, execution.destination.destination_type, 
-      self._transactional_type, self._dataflow_options, self._args)
-    return dataSource.write_transactional_info(batch.elements, execution)
+      self._transactional_type, self._dataflow_options)
+    return data_source.write_transactional_info(batch.elements, execution)
     

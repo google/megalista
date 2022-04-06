@@ -54,17 +54,16 @@ class BatchesFromExecutions(beam.PTransform):
 
 
     class _ReadDataSource(beam.DoFn):
-        def __init__(self, transactional_type: TransactionalType, dataflow_options: DataflowOptions, args: dict):
+        def __init__(self, transactional_type: TransactionalType, dataflow_options: DataflowOptions):
             super().__init__()
             self._transactional_type = transactional_type
             self._dataflow_options = dataflow_options
-            self._args = args
 
         def process(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
-            dataSource = DataSource.get_data_source(
+            data_source = DataSource.get_data_source(
                 execution.source.source_type, execution.destination.destination_type, 
-                self._transactional_type, self._dataflow_options, self._args)
-            return dataSource.retrieve_data(execution)
+                self._transactional_type, self._dataflow_options)
+            return data_source.retrieve_data(execution)
 
     class _BatchElements(beam.DoFn):
         def __init__(self, batch_size: int):
@@ -95,15 +94,12 @@ class BatchesFromExecutions(beam.PTransform):
         self._destination_type = destination_type
         self._batch_size = batch_size
         self._transactional_type = transactional_type
-        self._args = {}
-        if self._dataflow_options.bq_ops_dataset:
-            self._args['bq_ops_dataset'] = self._dataflow_options.bq_ops_dataset
         
     def expand(self, executions):
         return (
             executions
             | beam.Filter(lambda execution: execution.destination.destination_type == self._destination_type)
-            | beam.ParDo(self._ReadDataSource(self._transactional, self._dataflow_options, self._args))
+            | beam.ParDo(self._ReadDataSource(self._transactional, self._dataflow_options))
             | beam.GroupByKey()
             | beam.ParDo(self._BatchElements(self._batch_size))
         )

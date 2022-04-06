@@ -12,6 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+This module is responsible for handling file operatios. As of now, it handles the following scenarios:
+- Files located in the same location as the code (filesystem)
+- Google Cloud Storage
+- Amazon S3
+"""
+
 import io
 import logging
 
@@ -39,45 +46,34 @@ class FileProvider:
     file_provider = None
     if self._path.startswith('s3://'):
       #S3
-      file_provider = self._S3FileProvider(self._path, self._dataflow_options)
-      pass
+      return self._S3FileProvider(self._path, self._dataflow_options)
     elif self._path.startswith('gs://') or self._path.startswith('https://'):
       #GCP Storage
       #- https is for keeping consistency with previous implementation of JSON Config.
-      file_provider = self._GCSFileProvider(self._path, self._dataflow_options)
-      pass
+      return self._GCSFileProvider(self._path, self._dataflow_options)
     elif self._path.startswith('file://') or not '://' in self._path:
       #Local File
-      file_provider = self._LocalFileProvider(self._path)
-    if file_provider is None:
-      logging.getLogger(_LOGGER_NAME).error(f'Could not define File Provider. path="{self._path}"')
-    return file_provider
-
-  class _LocalFileProvider():
+      return self._LocalFileProvider(self._path)
+    raise NotImplementedError(f'Could not define File Provider. path="{self._path}"')
+    
+  class _LocalFileProvider:
     def __init__(self, path: str):
       if path.startswith('file://'):
         path = path[7:]
       self._path = path
 
     def read(self):
-      try:
-        file = open(self._path, 'rb')
-        data = file.read()
-        file.close()
-        return data
-      except Exception as e:
-        logging.getLogger(_LOGGER_NAME).info(f'Unable to read "{self._path}". {e}')
-        return None
+      file = open(self._path, 'rb')
+      data = file.read()
+      file.close()
+      return data
     
     def write(self, data):
-      try:
-        file = open(self._path, 'wb')
-        file.write(data)
-        file.close()
-      except Exception as e:
-        logging.getLogger(_LOGGER_NAME).error(f'Error on writing "{self._path}". {e}')
+      file = open(self._path, 'wb')
+      file.write(data)
+      file.close()
 
-  class _S3FileProvider():
+  class _S3FileProvider:
     def __init__(self, path: str, dataflow_options: DataflowOptions):
       self._path = path
       if path.startswith('s3://'):
@@ -104,28 +100,21 @@ class FileProvider:
       logging.getLogger(_LOGGER_NAME).info(f'S3 File Provider initiated. Bucket: "{bucket_name}". Key="{key}"')
         
     def read(self):
-      try:
-        response = self._s3_client.get_object(
-          Bucket=self._bucket_name,
-          Key=self._key
-        )
-        
-        return response['Body'].read()
-      except Exception as e:
-        logging.getLogger(_LOGGER_NAME).info(f'Unable to read "{self._path}". {e}')
-        return None
-    
+      response = self._s3_client.get_object(
+        Bucket=self._bucket_name,
+        Key=self._key
+      )
+      
+      return response['Body'].read()
+
     def write(self, data):
-      try:
-        response = self._s3_client.put_object(
-          Bucket=self._bucket_name,
-          Key=self._key,
-          Body=data
-        )
-      except Exception as e:
-        logging.getLogger(_LOGGER_NAME).error(f'Error on writing "{self._path}". {e}')
+      response = self._s3_client.put_object(
+        Bucket=self._bucket_name,
+        Key=self._key,
+        Body=data
+      )
         
-  class _GCSFileProvider():
+  class _GCSFileProvider:
     def __init__(self, path: str, dataflow_options: DataflowOptions):
       self._path = path
       if path.startswith('gs://'):
@@ -149,22 +138,12 @@ class FileProvider:
       self._gcs_client = storage.Client(credentials=credentials)
 
     def read(self):
-      try:
-        bucket = self._gcs_client.get_bucket(self._bucket_name)
-        blob = bucket.blob(self._file_path)
-        return blob.download_as_bytes()
-        
-      except Exception as e:
-        logging.getLogger(_LOGGER_NAME).info(f'Unable to read "{self._path}". {e}')
-        return None
+      bucket = self._gcs_client.get_bucket(self._bucket_name)
+      blob = bucket.blob(self._file_path)
+      return blob.download_as_bytes()
     
     def write(self, data):
-      try:
-        bucket = self._gcs_client.get_bucket(self._bucket_name)
-        blob = bucket.blob(self._file_path)
-        file = io.BytesIO(data)
-        blob.upload_from_file(file)
-        
-      except Exception as e:
-        logging.getLogger(_LOGGER_NAME).error(f'Error on writing "{self._path}". {e}')
-        
+      bucket = self._gcs_client.get_bucket(self._bucket_name)
+      blob = bucket.blob(self._file_path)
+      file = io.BytesIO(data)
+      blob.upload_from_file(file)

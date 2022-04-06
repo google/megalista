@@ -16,7 +16,7 @@ from typing import Any, Iterable
 
 class BaseDataSource:
   def retrieve_data(self, execution: Execution) -> Iterable[Any]:
-    yield from ()
+    raise NotImplementedError("Source Type not implemented. Please check your configuration (sheet / json / firestore).")
   
   def write_transactional_info(self, rows, execution):
-    pass
+    raise NotImplementedError("Source Type not implemented. Please check your configuration (sheet / json / firestore).")

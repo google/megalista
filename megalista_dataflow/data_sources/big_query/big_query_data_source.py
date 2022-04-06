@@ -31,18 +31,19 @@ _BIGQUERY_PAGE_SIZE = 20000
 _LOGGER_NAME = 'megalista.data_sources.BigQuery'
 
 class BigQueryDataSource(BaseDataSource):
-    def __init__(self, transatcional_type: TransactionalType, bq_ops_dataset: str):
-        self._transatcional_type = transatcional_type
+    def __init__(self, transactional_type: TransactionalType, bq_ops_dataset: str):
+        self._transactional_type = transactional_type
         self._bq_ops_dataset = bq_ops_dataset
     
     def retrieve_data(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
-        if self._transatcional_type == TransactionalType.NOT_TRANSACTIONAL:
+        if self._transactional_type == TransactionalType.NOT_TRANSACTIONAL:
             return self._retrieve_data_non_transactional(execution)
         else:
             return self._retrieve_data_transactional(execution)
     
     def _retrieve_data_non_transactional(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
-        client = bigquery.Client()
+        client = self._get_bq_client()
+
         table_name = self._get_table_name(execution.source.source_metadata, False)
         query = f"SELECT data.* FROM {table_name} AS data"
         logging.getLogger(_LOGGER_NAME).info(f'Reading from table {table_name} for Execution {execution}')
@@ -53,7 +54,7 @@ class BigQueryDataSource(BaseDataSource):
     def _retrieve_data_transactional(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
         table_name = self._get_table_name(execution.source.source_metadata, False)
         uploaded_table_name = self._get_table_name(execution.source.source_metadata, True)
-        client = bigquery.Client()
+        client = self._get_bq_client()
 
         query = None
         if self._transactional_type == TransactionalType.UUID:
@@ -93,7 +94,7 @@ class BigQueryDataSource(BaseDataSource):
     def write_transactional_info(self, rows, execution: Execution):
         table_name = self._get_table_name(execution.source.source_metadata, True)
 
-        client = bigquery.Client()
+        client = self._get_bq_client()
         table = client.get_table(table_name)
         now = datetime.now().timestamp()
         results = client.insert_rows(table,
@@ -105,16 +106,14 @@ class BigQueryDataSource(BaseDataSource):
     
     def _get_table_name(self, source_metadata: list, uploaded: bool):
         dataset = None
-        if self._is_transactional and uploaded:
+        if self._transactional_type != TransactionalType.NOT_TRANSACTIONAL and uploaded:
             dataset = self._bq_ops_dataset
         else:
             dataset = source_metadata[0]
         table_name = dataset + '.' + source_metadata[1]
         if uploaded:
             table_name = f"{table_name}_uploaded"
-        table_name = table_name.replace('`', '')
-        table_name = f"{table_name}"
-        return table_name
+        return table_name.replace('`', '')
     
     def _get_schema_fields(self):
         if self._transactional_type == TransactionalType.UUID:
@@ -130,6 +129,8 @@ class BigQueryDataSource(BaseDataSource):
             return [{'gclid': row['gclid'], 'time': row['time'], 'timestamp': now} for row in rows]
         raise Exception(f'Unrecognized TransactionalType: {self._transactional_type}')
 
+    def _get_bq_client(self):
+        return bigquery.Client()
 
 def _convert_row_to_dict(row):
     dict = {}
