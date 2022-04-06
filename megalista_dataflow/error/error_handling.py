@@ -69,7 +69,7 @@ class GmailNotifier(ErrorNotifier):
                email_destinations: ValueProvider):
     self._oauth_credentials = oauth_credentials
     self._email_destinations = email_destinations
-    self._should_notify = should_notify
+    self._should_notify_param = should_notify
     self._parsed_emails = None
 
   def _get_gmail_service(self):
@@ -84,10 +84,16 @@ class GmailNotifier(ErrorNotifier):
 
     return build('gmail', 'v1', credentials=credentials)
 
+  def _should_notify(self):
+    if not self._should_notify_param.get():
+      return False
+    should_notify = self._should_notify_param.get()
+    return should_notify.lower() == 'true'
+
   def notify(self, destination_type: DestinationType, errors: Iterable[Error]):
-    if not self._should_notify.get():
+    if not self._should_notify():
       logger = logging.getLogger('megalista.GmailNotifier')
-      logger.info(f'Skipping sending emails notifying of errors: {errors}')
+      logger.info(f'Skipping sending emails notifying of errors: {", ".join(map(str, errors))}')
       return
 
     body = self._build_email_body(destination_type, errors)

@@ -100,7 +100,7 @@ def test_multiple_destinations_separated_by_comma():
   third_email = 'c@c.com'
 
   credentials = OAuthCredentials('', '', '', '')
-  gmail_notifier = GmailNotifier(StaticValueProvider(bool, True), credentials,
+  gmail_notifier = GmailNotifier(StaticValueProvider(str, 'true'), credentials,
                                  StaticValueProvider(str, f'{first_email}, {second_email} ,{third_email}'))
 
   emails = set(gmail_notifier.email_destinations)
@@ -108,13 +108,25 @@ def test_multiple_destinations_separated_by_comma():
   assert set(emails) == {first_email, third_email, second_email}
 
 
-def test_should_not_notify_when_not_setup():
+def test_should_not_notify_when_param_is_false():
   first_email = 'a@a.com'
   second_email = 'b@b.com'
   third_email = 'c@c.com'
 
   credentials = OAuthCredentials('', '', '', '')
-  gmail_notifier = GmailNotifier(StaticValueProvider(bool, False), credentials,
+  gmail_notifier = GmailNotifier(StaticValueProvider(str, 'false'), credentials,
+                                 StaticValueProvider(str, f'{first_email}, {second_email} ,{third_email}'))
+
+  gmail_notifier.notify(DestinationType.ADS_OFFLINE_CONVERSION, [Error(create_execution('s', 'd'), 'error message')])
+
+
+def test_should_not_notify_when_param_is_empty():
+  first_email = 'a@a.com'
+  second_email = 'b@b.com'
+  third_email = 'c@c.com'
+
+  credentials = OAuthCredentials('', '', '', '')
+  gmail_notifier = GmailNotifier(StaticValueProvider(str, None), credentials,
                                  StaticValueProvider(str, f'{first_email}, {second_email} ,{third_email}'))
 
   gmail_notifier.notify(DestinationType.ADS_OFFLINE_CONVERSION, [Error(create_execution('s', 'd'), 'error message')])
