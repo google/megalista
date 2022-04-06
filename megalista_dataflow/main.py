@@ -206,10 +206,14 @@ class GoogleAnalyticsDataImportStep(MegalistaStep):
             | "Load Data -  GA data import"
             >> BatchesFromExecutions(DestinationType.GA_DATA_IMPORT, 1000000)
             | "Delete Data -  GA data import"
-            >> beam.ParDo(GoogleAnalyticsDataImportEraser(self.params._oauth_credentials))
+            >> beam.ParDo(
+          GoogleAnalyticsDataImportEraser(self.params._oauth_credentials,
+                                          ErrorHandler(DestinationType.GA_DATA_IMPORT, self.params.error_notifier)))
             | "Upload - GA data import"
             >> beam.ParDo(
-                GoogleAnalyticsDataImportUploaderDoFn(self.params._oauth_credentials)
+          GoogleAnalyticsDataImportUploaderDoFn(self.params._oauth_credentials,
+                                                ErrorHandler(DestinationType.GA_DATA_IMPORT,
+                                                             self.params.error_notifier))
             )
         )
 

@@ -15,15 +15,17 @@
 import pytest
 from apache_beam.options.value_provider import StaticValueProvider
 
-from models.oauth_credentials import OAuthCredentials
-from uploaders.google_analytics.google_analytics_data_import_uploader import GoogleAnalyticsDataImportUploaderDoFn
+from error.error_handling import ErrorHandler
+from error.error_handling_test import MockErrorNotifier
 from models.execution import AccountConfig
+from models.execution import Batch
 from models.execution import Destination
 from models.execution import DestinationType
 from models.execution import Execution
 from models.execution import Source
 from models.execution import SourceType
-from models.execution import Batch
+from models.oauth_credentials import OAuthCredentials
+from uploaders.google_analytics.google_analytics_data_import_uploader import GoogleAnalyticsDataImportUploaderDoFn
 
 _account_config = AccountConfig('1234567890', False, '1234567890', '', '')
 
@@ -35,7 +37,8 @@ def uploader(mocker):
   access = StaticValueProvider(str, 'access')
   refresh = StaticValueProvider(str, 'refresh')
   credentials = OAuthCredentials(client_id, secret, access, refresh)
-  return GoogleAnalyticsDataImportUploaderDoFn(credentials)
+  return GoogleAnalyticsDataImportUploaderDoFn(credentials,
+                                               ErrorHandler(DestinationType.GA_DATA_IMPORT, MockErrorNotifier()))
 
 
 def test_get_service(uploader):

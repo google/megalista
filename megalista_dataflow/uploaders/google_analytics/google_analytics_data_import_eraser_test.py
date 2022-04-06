@@ -15,8 +15,11 @@
 
 import pytest
 from apache_beam.options.value_provider import StaticValueProvider
-from models.oauth_credentials import OAuthCredentials
+
+from error.error_handling import ErrorHandler
+from error.error_handling_test import MockErrorNotifier
 from models.execution import Execution, SourceType, DestinationType, Source, AccountConfig, Destination, Batch
+from models.oauth_credentials import OAuthCredentials
 from uploaders.google_analytics.google_analytics_data_import_eraser import GoogleAnalyticsDataImportEraser
 
 
@@ -27,7 +30,8 @@ def eraser(mocker):
     access = StaticValueProvider(str, "access")
     refresh = StaticValueProvider(str, "refresh")
     credentials = OAuthCredentials(client_id, secret, access, refresh)
-    return GoogleAnalyticsDataImportEraser(credentials)
+    return GoogleAnalyticsDataImportEraser(credentials,
+                                           ErrorHandler(DestinationType.GA_DATA_IMPORT, MockErrorNotifier()))
 
 
 def test_analytics_has_not_data_sources(mocker, eraser, caplog):
@@ -35,9 +39,6 @@ def test_analytics_has_not_data_sources(mocker, eraser, caplog):
 
     mocker.patch.object(eraser, '_get_analytics_service')
     eraser._get_analytics_service.return_value = service
-
-    mocker.patch.object(eraser, '_is_table_empty')
-    eraser._is_table_empty.return_value = False
 
     service.management().customDataSources().list().execute.return_value = {
         'items': []
@@ -61,9 +62,6 @@ def test_data_source_not_found(mocker, eraser, caplog):
     mocker.patch.object(eraser, '_get_analytics_service')
     eraser._get_analytics_service.return_value = service
 
-    mocker.patch.object(eraser, '_is_table_empty')
-    eraser._is_table_empty.return_value = False
-
     service.management().customDataSources().list().execute.return_value = {
         'items': [{'id': 1, 'name': 'wrong_name'}]
     }
@@ -85,9 +83,6 @@ def test_no_files_found(mocker, eraser):
 
     mocker.patch.object(eraser, '_get_analytics_service')
     eraser._get_analytics_service.return_value = service
-
-    mocker.patch.object(eraser, '_is_table_empty')
-    eraser._is_table_empty.return_value = False
 
     service.management().customDataSources().list().execute.return_value = {
         'items': [{'id': 1, 'name': 'data_import_name'},
@@ -117,9 +112,6 @@ def test_files_deleted(mocker, eraser):
 
     mocker.patch.object(eraser, '_get_analytics_service')
     eraser._get_analytics_service.return_value = service
-
-    mocker.patch.object(eraser, '_is_table_empty')
-    eraser._is_table_empty.return_value = False
 
     service.management().customDataSources().list().execute.return_value = {
         'items': [{'id': 1, 'name': 'data_import_name'},
