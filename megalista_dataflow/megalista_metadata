@@ -63,6 +63,18 @@
             "label": "Developer key for AppsFlyer S2S API",
             "help_text": "Developer key for AppsFlyer S2S API",
             "is_optional": "true"
+        },
+        {
+            "name": "aws_access_key_id",
+            "label": "AWS S3 access key - id",
+            "help_text": "AWS S3 access key - id",
+            "is_optional": "true"
+        },
+        {
+            "name": "aws_secret_access_key",
+            "label": "AWS S3 access key - secret",
+            "help_text": "AWS S3 access key - secret",
+            "is_optional": "true"
         }
     ]
 }

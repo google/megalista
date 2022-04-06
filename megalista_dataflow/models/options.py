@@ -86,7 +86,7 @@ class DataflowOptions(PipelineOptions):
         '--appsflyer_dev_key', help='Developer key for AppsFlyer S2S API')
     # S3 - AWS
     parser.add_value_provider_argument(
-        '--aws_access_key_id', default=None, help='AWS access key - id')
+        '--aws_access_key_id', default=None, help='AWS S3 access key - id')
     parser.add_value_provider_argument(
-        '--aws_secret_access_key', default=None, help='AWS access key - secret')
+        '--aws_secret_access_key', default=None, help='AWS S3 access key - secret')
     
