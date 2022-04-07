@@ -51,6 +51,8 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
             self._get_offline_user_data_job_service(job_definition['customer_id']).run_offline_user_data_job(
                 resource_name=job_definition['job_resource_name'])
 
+        super().finish_bundle()
+
     def _create_list_if_it_does_not_exist(self,
                                           customer_id: str,
                                           list_name: str,
