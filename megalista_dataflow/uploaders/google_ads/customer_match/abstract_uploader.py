@@ -45,11 +45,12 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
     def finish_bundle(self):
         for job_definition in self._job_cache.values():
             logging.getLogger(_DEFAULT_LOGGER).info(f"Running job {job_definition['job_resource_name']}")
-            self._get_offline_user_data_job_service(job_definition['customer_id']).run_offline_user_data_job(
+            self._get_offline_user_data_job_service(job_definition['login_customer_id']).run_offline_user_data_job(
                 resource_name=job_definition['job_resource_name'])
 
     def _create_list_if_it_does_not_exist(self,
                                           customer_id: str,
+                                          login_customer_id: str,
                                           list_name: str,
                                           list_definition: Dict[str, Any]) -> str:
 
@@ -57,17 +58,18 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
         if self._user_list_id_cache.get(list_name) is None:
             self._user_list_id_cache[list_name] = \
                 self._do_create_list_if_it_does_not_exist(
-                    customer_id, list_name, list_definition)
+                    customer_id, login_customer_id, list_name, list_definition)
 
         return self._user_list_id_cache[list_name]
 
     def _do_create_list_if_it_does_not_exist(self,
                                              customer_id: str,
+                                             login_customer_id: str,
                                              list_name: str,
                                              list_definition: Dict[str, Any]
                                              ) -> str:
 
-        resource_name = self._get_user_list_resource_name(customer_id, list_name)
+        resource_name = self._get_user_list_resource_name(customer_id, login_customer_id, list_name)
 
         if resource_name is None:
             # Create list
@@ -82,7 +84,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
                 }]
             }
 
-            user_list_service = self._get_user_list_service(customer_id)
+            user_list_service = self._get_user_list_service(login_customer_id)
             user_list_service_response = user_list_service.mutate_user_lists(request)
             for result in user_list_service_response.results:
                 resource_name = result.resource_name
@@ -93,11 +95,9 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
                                                     list_name, resource_name)
         return str(resource_name)
 
-    def _get_user_list_resource_name(self, customer_id: str, list_name: str) -> Optional[str]:
-        ads_client = utils.get_ads_client(self.oauth_credentials, self.developer_token.get(), customer_id)
-
+    def _get_user_list_resource_name(self, customer_id: str, login_customer_id: str, list_name: str) -> Optional[str]:
         resource_name = None
-        service = self._get_ads_service(customer_id)
+        service = self._get_ads_service(login_customer_id)
 
         # Only search for audiences owned by this account, not MCCs above it.
         query = f"SELECT user_list.resource_name, user_list.access_reason FROM user_list WHERE user_list.name='{list_name}' " \
@@ -143,8 +143,17 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
             return destination.destination_metadata[4].replace('-', '')
         return account_config.google_ads_account_id.replace('-', '')
 
+    def _get_login_customer_id(self, account_config: AccountConfig, destination: Destination) -> str:
+        """
+          If the customer_id in account_config is a mcc, then login with the mcc account id, otherwise use the customer id.
+        """
+        if account_config._mcc:
+            return account_config.google_ads_account_id.replace('-', '')
+        
+        return self._get_customer_id(account_config, destination)
+
     def _get_job_by_list_name(self, offline_user_data_job_service, list_resource_name: str, operator: str,
-                              customer_id: str) -> str:
+                              customer_id: str, login_customer_id: str) -> str:
         cache_key = f"{list_resource_name}:{operator}"
 
         if cache_key in self._job_cache:
@@ -159,7 +168,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
 
         job_resource_name = offline_user_data_job_service.create_offline_user_data_job(customer_id=customer_id,
                                                                                        job=job_creation_payload).resource_name
-        self._job_cache[cache_key] = {'job_resource_name': job_resource_name, 'customer_id': customer_id}
+        self._job_cache[cache_key] = {'job_resource_name': job_resource_name, 'login_customer_id': login_customer_id}
 
         return job_resource_name
 
@@ -189,19 +198,20 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
         self._assert_execution_is_valid(execution)
 
         customer_id = self._get_customer_id(execution.account_config, execution.destination)
+        login_customer_id = self._get_login_customer_id(execution.account_config, execution.destination)
 
         # get API services
-        offline_user_data_job_service = self._get_offline_user_data_job_service(customer_id)
+        offline_user_data_job_service = self._get_offline_user_data_job_service(login_customer_id)
 
         list_resource_name = self._create_list_if_it_does_not_exist(
-            customer_id, execution.destination.destination_metadata[0],
+            customer_id, login_customer_id, execution.destination.destination_metadata[0],
             self.get_list_definition(
                 execution.account_config,
                 execution.destination.destination_metadata))
 
         operator = self._get_list_operator(execution.destination.destination_metadata[1])
         job_resource_name = self._get_job_by_list_name(offline_user_data_job_service, list_resource_name, operator,
-                                                       customer_id)
+                                                       customer_id, login_customer_id)
 
         rows = self.get_filtered_rows(batch.elements, self.get_row_keys())
 
