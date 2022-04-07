@@ -109,7 +109,12 @@ class GmailNotifier(ErrorNotifier):
     logger.info(
       f'Sending error email to {", ".join(self.email_destinations)} regarding the conector {destination_type.name}')
 
-    gmail_service.users().messages().send(userId='me', body={'raw': raw}).execute()
+    try:
+      gmail_service.users().messages().send(userId='me', body={'raw': raw}).execute()
+    except:
+      logger.error(
+        f'Error sending email to {", ".join(self.email_destinations)} regarding the conector {destination_type.name}')
+      raise
 
   @property
   def email_destinations(self) -> Iterable[str]:
