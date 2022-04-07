@@ -17,6 +17,8 @@ import logging
 import pytz
 import math
 
+from models.execution import Batch
+from uploaders.uploaders import MegalistaUploader
 
 MAX_RETRIES = 3
 
@@ -63,6 +65,7 @@ def get_timestamp_micros(date):
 def safe_process(logger):
     def deco(func):
         def inner(*args, **kwargs):
+            self_ = args[0]
             batch = args[1]
             if not batch:
                 logger.warning('Skipping upload, received no elements.')
@@ -71,6 +74,7 @@ def safe_process(logger):
             try:
                 return func(*args, **kwargs)
             except Exception as e:
+                self_._add_error(batch.execution, f'Error uploading data: {e}')
                 logger.error(f'Error uploading data for :{batch.elements}')
                 logger.error(e, exc_info=True)
                 logger.exception('Error uploading data.')
