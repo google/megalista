@@ -86,7 +86,7 @@ class GoogleAdsSSDUploaderDoFn(MegalistaUploader):
         # 2. Creates operations (data insertion)
         data_insertion_payload = {
             'resource_name': job_resource_name,
-            'enable_partial_failure': True,
+            'enable_partial_failure': False,
             'operations': [{
                 'create': {
                     'user_identifiers': [{k: v} for (k, v) in conversion.items() if k not in ('amount', 'time')],
