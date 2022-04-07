@@ -91,7 +91,7 @@ def test_conversion_upload(mocker, uploader):
 
     data_insertion_payload = {
         'resource_name': resource_name,
-        'enable_partial_failure': True,
+        'enable_partial_failure': False,
         'operations': [{
             'create': {
                 'user_identifiers': [{
