@@ -15,22 +15,25 @@
 import logging
 from typing import Dict, Any, List, Optional
 
-import apache_beam as beam
 from apache_beam.options.value_provider import StaticValueProvider
+
+from error.error_handling import ErrorHandler
 from models.execution import AccountConfig, Destination
 from models.execution import Batch
 from models.execution import DestinationType
 from models.oauth_credentials import OAuthCredentials
 from uploaders import utils
 from uploaders.google_ads import ADS_API_VERSION
+from uploaders.uploaders import MegalistaUploader
 
 _DEFAULT_LOGGER: str = 'megalista.GoogleAdsCustomerMatchAbstractUploader'
 
 
-class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
+class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
 
-    def __init__(self, oauth_credentials: OAuthCredentials, developer_token: StaticValueProvider):
-        super().__init__()
+    def __init__(self, oauth_credentials: OAuthCredentials, developer_token: StaticValueProvider,
+                 error_handler: ErrorHandler):
+        super().__init__(error_handler)
         self.oauth_credentials = oauth_credentials
         self.developer_token = developer_token
         self.active = True
@@ -226,7 +229,10 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(beam.DoFn):
         data_insertion_response = offline_user_data_job_service.add_offline_user_data_job_operations(
             request=data_insertion_payload)
 
-        utils.print_partial_error_messages(_DEFAULT_LOGGER, 'uploading customer match', data_insertion_response)
+        error_message = utils.print_partial_error_messages(_DEFAULT_LOGGER, 'uploading customer match',
+                                                           data_insertion_response)
+        if error_message:
+            self._add_error(execution, error_message)
 
     def get_list_definition(self, account_config: AccountConfig,
                             destination_metadata: List[str]) -> Dict[str, Any]:

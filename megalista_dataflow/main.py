@@ -97,7 +97,8 @@ class GoogleAdsSSDStep(MegalistaStep):
             >> beam.ParDo(
                 GoogleAdsSSDUploaderDoFn(
                     self.params._oauth_credentials,
-                    self.params._dataflow_options.developer_token
+                    self.params._dataflow_options.developer_token,
+                    ErrorHandler(DestinationType.ADS_SSD_UPLOAD, self.params.error_notifier)
                 )
             )
         )
@@ -117,7 +118,8 @@ class GoogleAdsCustomerMatchMobileDeviceIdStep(MegalistaStep):
             >> beam.ParDo(
                 GoogleAdsCustomerMatchMobileUploaderDoFn(
                     self.params._oauth_credentials,
-                    self.params._dataflow_options.developer_token
+                    self.params._dataflow_options.developer_token,
+                    ErrorHandler(DestinationType.ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD, self.params.error_notifier)
                 )
             )
         )
@@ -137,7 +139,8 @@ class GoogleAdsCustomerMatchContactInfoStep(MegalistaStep):
             >> beam.ParDo(
                 GoogleAdsCustomerMatchContactInfoUploaderDoFn(
                     self.params._oauth_credentials,
-                    self.params._dataflow_options.developer_token
+                    self.params._dataflow_options.developer_token,
+                  ErrorHandler(DestinationType.ADS_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD, self.params.error_notifier)
                 )
             )
         )
@@ -155,7 +158,8 @@ class GoogleAdsCustomerMatchUserIdStep(MegalistaStep):
             >> beam.ParDo(
                 GoogleAdsCustomerMatchUserIdUploaderDoFn(
                     self.params._oauth_credentials,
-                    self.params._dataflow_options.developer_token
+                    self.params._dataflow_options.developer_token,
+                    ErrorHandler(DestinationType.ADS_CUSTOMER_MATCH_USER_ID_UPLOAD, self.params.error_notifier)
                 )
             )
         )

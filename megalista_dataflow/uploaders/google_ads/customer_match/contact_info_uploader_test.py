@@ -15,6 +15,8 @@
 import pytest
 from apache_beam.options.value_provider import StaticValueProvider
 
+from error.error_handling import ErrorHandler
+from error.error_handling_test import MockErrorNotifier
 from models.execution import AccountConfig, Destination, DestinationType, Source, SourceType, Execution, Batch
 from models.oauth_credentials import OAuthCredentials
 from uploaders.google_ads.customer_match.contact_info_uploader import GoogleAdsCustomerMatchContactInfoUploaderDoFn
@@ -32,7 +34,8 @@ def uploader(mocker):
   refresh = StaticValueProvider(str, 'refresh')
   credentials = OAuthCredentials(id, secret, access, refresh)
   return GoogleAdsCustomerMatchContactInfoUploaderDoFn(credentials,
-                                                       StaticValueProvider(str, 'devtoken'))
+                                                       StaticValueProvider(str, 'devtoken'), ErrorHandler(
+      DestinationType.ADS_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD, MockErrorNotifier()))
 
 
 def test_upload_add_users(mocker, uploader):

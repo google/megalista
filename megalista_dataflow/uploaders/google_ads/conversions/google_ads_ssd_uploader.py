@@ -12,19 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import apache_beam as beam
-import logging
 import datetime
+import logging
 
+from error.error_handling import ErrorHandler
 from models.execution import Batch, Execution
 from uploaders import utils
 from uploaders.google_ads import ADS_API_VERSION
+from uploaders.uploaders import MegalistaUploader
 
 
-class GoogleAdsSSDUploaderDoFn(beam.DoFn):
+class GoogleAdsSSDUploaderDoFn(MegalistaUploader):
 
-    def __init__(self, oauth_credentials, developer_token):
-        super().__init__()
+    def __init__(self, oauth_credentials, developer_token, error_handler: ErrorHandler):
+        super().__init__(error_handler)
         self.oauth_credentials = oauth_credentials
         self.developer_token = developer_token
         self.active = developer_token is not None
@@ -53,13 +54,16 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
             customer_id)
         conversion_action_resource_name = self._get_resource_name(customer_id,
                                                                   execution.destination.destination_metadata[0])
-        self._do_upload(offline_user_data_job_service,
+        self._do_upload(execution,
+                        offline_user_data_job_service,
                         customer_id,
                         conversion_action_resource_name,
                         execution.destination.destination_metadata[1], batch.elements)
 
-    @staticmethod
-    def _do_upload(offline_user_data_job_service, customer_id, conversion_action_resource_name, ssd_external_upload_id, rows):
+    def _do_upload(self, execution, offline_user_data_job_service, customer_id, conversion_action_resource_name,
+                   ssd_external_upload_id, rows):
+        logger = logging.getLogger('megalista.GoogleAdsSSDUploader')
+
         # Upload is divided into 3 parts:
         # 1. Creates Job
         # 2. Creates operations (data insertion)
@@ -82,7 +86,7 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
         # 2. Creates operations (data insertion)
         data_insertion_payload = {
             'resource_name': job_resource_name,
-            'enable_partial_failure': False,
+            'enable_partial_failure': True,
             'operations': [{
                 'create': {
                     'user_identifiers': [{k: v} for (k, v) in conversion.items() if k not in ('amount', 'time')],
@@ -97,6 +101,11 @@ class GoogleAdsSSDUploaderDoFn(beam.DoFn):
         }
 
         data_insertion_response = offline_user_data_job_service.add_offline_user_data_job_operations(request = data_insertion_payload)
+
+        error_message = utils.print_partial_error_messages(logger, 'uploading customer match',
+                                                           data_insertion_response)
+        if error_message:
+            self._add_error(execution, error_message)
 
         # 3. Runs the Job
         offline_user_data_job_service.run_offline_user_data_job(resource_name = job_resource_name)
