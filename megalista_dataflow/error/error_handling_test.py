@@ -53,7 +53,7 @@ def test_single_error_per_execution():
   error_handler.add_error(second_execution, 'Error for second execution, fist input')
 
   returned_errors = error_handler.errors
-  assert len(returned_errors) is 2
+  assert len(returned_errors) == 2
   assert returned_errors.keys() == {first_execution, second_execution}
 
 
