@@ -43,6 +43,10 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
 
   @utils.safe_process(logger=logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader'))
   def process(self, batch: Batch, **kwargs):
+    return self.do_process(batch)
+
+  # Created to facilitate testing without going into @utils.safe_process
+  def do_process(self, batch: Batch):
     execution = batch.execution
 
     api_secret = execution.destination.destination_metadata[0]
@@ -119,4 +123,4 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
 
     logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(
       f'Successfully uploaded {len(accepted_elements)}/{len(batch.elements)} events.')
-    yield Batch(execution, accepted_elements)
+    return [Batch(execution, accepted_elements)]

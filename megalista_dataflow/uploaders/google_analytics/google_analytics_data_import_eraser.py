@@ -83,7 +83,7 @@ class GoogleAnalyticsDataImportEraser(MegalistaUploader):
             data_source_id = data_source_results[0]['id']
             try:
                 self._call_delete_api(analytics, data_import_name, ga_account_id, data_source_id, web_property_id)
-                yield batch
+                return [batch]
             except Exception as e:
                 error_message = f'Error while delete GA Data Import files: {e}'
                 logging.getLogger("megalista.GoogleAnalyticsDataImportUploader").error(error_message)

@@ -107,7 +107,8 @@ def test_conversion_upload(mocker, uploader):
   uploader._get_oc_service.return_value.upload_click_conversions.return_value = upload_return_mock
 
   # act
-  successful_uploaded_gclids_batch = next(uploader.process(batch))
+  successful_uploaded_gclids_batch = uploader.process(batch)[0]
+  uploader.finish_bundle()
 
   # assert
   assert len(successful_uploaded_gclids_batch.elements) == 1
@@ -174,7 +175,8 @@ def test_upload_with_ads_account_override(mocker, uploader):
   uploader._get_oc_service.return_value.upload_click_conversions.return_value = upload_return_mock
 
   # act
-  next(uploader.process(batch))
+  uploader.process(batch)
+  uploader.finish_bundle()
 
   # assert
   uploader._get_ads_service.return_value.search_stream.assert_called_once_with(
@@ -230,8 +232,8 @@ def test_should_not_notify_errors_when_api_call_is_successful(mocker, uploader, 
   uploader._get_oc_service.return_value.upload_click_conversions.return_value = upload_return_mock
 
   # act
-  next(uploader.process(batch))
-  uploader.teardown()
+  uploader.process(batch)
+  uploader.finish_bundle()
 
   uploader._get_ads_service.return_value.search_stream.assert_called_once_with(
     customer_id='12345567890',
@@ -267,11 +269,8 @@ def test_error_notification(mocker, uploader, error_notifier):
   uploader._get_oc_service.return_value.upload_click_conversions.return_value = upload_return_mock
 
   # act
-  try:
-    next(uploader.process(batch))
-  except StopIteration:
-    pass
-  uploader.teardown()
+  uploader.process(batch)
+  uploader.finish_bundle()
 
   # assert
   assert error_notifier.were_errors_sent is True
@@ -328,8 +327,8 @@ def test_conversion_upload_and_error_notification(mocker, uploader, error_notifi
   uploader._get_oc_service.return_value.upload_click_conversions.return_value = upload_return_mock
 
   # act
-  successful_uploaded_gclids_batch = next(uploader.process(batch))
-  uploader.teardown()
+  successful_uploaded_gclids_batch = uploader.process(batch)[0]
+  uploader.finish_bundle()
 
   # assert
   assert len(successful_uploaded_gclids_batch.elements) == 1

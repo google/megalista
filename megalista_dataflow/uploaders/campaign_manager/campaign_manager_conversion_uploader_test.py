@@ -256,7 +256,7 @@ def test_error_on_api_call(mocker, uploader, caplog, error_notifier):
     execution = Execution(_account_config, source, destination)
 
     uploader._do_process(Batch(execution, [{'gclid': '123'}]), time.time())
-    uploader.teardown()
+    uploader.finish_bundle()
 
     assert 'Error(s) inserting conversions:' in caplog.text
     assert '[123]: error_returned' in caplog.text

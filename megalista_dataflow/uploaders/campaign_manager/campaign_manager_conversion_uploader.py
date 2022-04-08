@@ -65,7 +65,7 @@ class CampaignManagerConversionUploaderDoFn(MegalistaUploader):
   @utils.safe_process(logger=logging.getLogger(_LOGGER_NAME))
   def process(self, batch: Batch, **kwargs):
     self._do_process(batch, time.time())
-    yield batch
+    return [batch]
 
   def _do_process(self, batch: Batch, timestamp):
     execution = batch.execution

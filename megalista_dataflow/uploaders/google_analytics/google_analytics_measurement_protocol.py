@@ -67,4 +67,4 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
       logging.getLogger("megalista.GoogleAnalyticsMeasurementProtocolUploader").error(error_message)
       self._add_error(execution, error_message)
     else:
-      yield batch
+      return [batch]

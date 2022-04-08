@@ -87,7 +87,7 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
 
     batch_with_successful_gclids = self._get_new_batch_with_successfully_uploaded_gclids(batch, response)
     if len(batch_with_successful_gclids.elements) > 0:
-      yield batch_with_successful_gclids
+      return [batch_with_successful_gclids]
 
   def _do_upload(self, oc_service, execution, conversion_resource_name, customer_id, rows):
     logging.getLogger(_DEFAULT_LOGGER).info(f'Uploading {len(rows)} offline conversions on {conversion_resource_name} to Google Ads.')
