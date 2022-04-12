@@ -112,5 +112,14 @@ to update the binary whitouth redoing the whole deployment process, run:
 ## Usage
 Every upload method expects as source a BigQuery data with specific fields, in addition to specific configuration metadata. For details on how to setup your upload routines, refer to the [Megalista Wiki](https://github.com/google/megalista/wiki).
 
+## Errors notifications by email
+To have uploaders errors captured and sent by email, do the following:  
+In Cloud Scheduler, in the `parameters` section of the request body, add `notify_errors_by_email` parameter as `true` and `errors_destination_emails` with a list of emails divided by comma (`a@gmail.com,b@gmail.com` etc).  
+This parameters should be add the same list of pre-configured ones, such as `client_id`, `client_secret` etc.  
+
+If the access tokens being used were generated prior to version `v4.4`, new access and refresh tokens must be generated to activate this feature. This is necessary because old token don't have the `gmail.send` scope.
+
+
+
 ## Note about Google Ads API access
 Calls to the Google Ads API will fail if the user that generated the OAuth2 credentials (Access Token and Refresh Token) doesn't have direct access to the Google Ads account which the calls are being directed to. It's not enough for the user to have access to a MCC above this account and being able to access the account through the interface, it's required that the user has permissions on the account itself.
