@@ -63,6 +63,18 @@
             "label": "Developer key for AppsFlyer S2S API",
             "help_text": "Developer key for AppsFlyer S2S API",
             "is_optional": "true"
+        },
+        {
+            "name": "notify_errors_by_email",
+            "label": "Should send errors by email. True or False",
+            "help_text": "Should send errors by email. True or False",
+            "is_optional": "true"
+        },
+        {
+            "name": "errors_destination_emails",
+            "label": "Emails for sending errors separated by comma",
+            "help_text": "Emails for sending errors separated by comma",
+            "is_optional": "true"
         }
     ]
 }

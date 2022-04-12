@@ -12,27 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 import logging
-
-import apache_beam as beam
 import time
 from datetime import datetime
 from typing import Any, List
 
-import asyncio
 from aiohttp import ClientSession, ClientTimeout
 
+from error.error_handling import ErrorHandler
+from models.execution import Batch
 from uploaders import utils
-from models.execution import DestinationType, Batch
+from uploaders.uploaders import MegalistaUploader
 
 
-class AppsFlyerS2SUploaderDoFn(beam.DoFn):
-  def __init__(self, dev_key):
-    super().__init__()
+class AppsFlyerS2SUploaderDoFn(MegalistaUploader):
+  def __init__(self, dev_key, error_handler: ErrorHandler):
+    super().__init__(error_handler)
     self.API_URL = "https://api2.appsflyer.com/inappevent/"
     self.dev_key = dev_key
     self.app_id = None
-    self.timeout = ClientTimeout(total=15) #15 sec timeout
+    self.timeout = ClientTimeout(total=15)  # 15 sec timeout
 
   def start_bundle(self):
     pass

@@ -15,9 +15,11 @@
 import pytest
 from apache_beam.options.value_provider import StaticValueProvider
 
-from uploaders.google_analytics.google_analytics_user_list_uploader import GoogleAnalyticsUserListUploaderDoFn
-from models.oauth_credentials import OAuthCredentials
+from error.error_handling import ErrorHandler
+from error.error_handling_test import MockErrorNotifier
 from models.execution import Execution, SourceType, DestinationType, Source, AccountConfig, Destination, Batch
+from models.oauth_credentials import OAuthCredentials
+from uploaders.google_analytics.google_analytics_user_list_uploader import GoogleAnalyticsUserListUploaderDoFn
 
 
 @pytest.fixture
@@ -27,7 +29,8 @@ def uploader(mocker):
     access = StaticValueProvider(str, 'access')
     refresh = StaticValueProvider(str, 'refresh')
     credentials = OAuthCredentials(client_id, secret, access, refresh)
-    return GoogleAnalyticsUserListUploaderDoFn(credentials)
+    return GoogleAnalyticsUserListUploaderDoFn(credentials,
+                                               ErrorHandler(DestinationType.GA_USER_LIST_UPLOAD, MockErrorNotifier()))
 
 
 def test_get_service(uploader):

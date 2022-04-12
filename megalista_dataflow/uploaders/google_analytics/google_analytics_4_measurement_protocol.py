@@ -13,21 +13,21 @@
 # limitations under the License.
 
 
+import json
 import logging
 from typing import Dict, Any
-from urllib.parse import quote
 
-import apache_beam as beam
 import requests
-import json
 
+from error.error_handling import ErrorHandler
+from models.execution import Batch
 from uploaders import utils
-from models.execution import DestinationType, Batch
+from uploaders.uploaders import MegalistaUploader
 
 
-class GoogleAnalytics4MeasurementProtocolUploaderDoFn(beam.DoFn):
-  def __init__(self):
-    super().__init__()
+class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
+  def __init__(self, error_handler: ErrorHandler):
+    super().__init__(error_handler)
     self.API_URL = 'https://www.google-analytics.com/mp/collect'
 
   def start_bundle(self):
@@ -43,6 +43,10 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(beam.DoFn):
 
   @utils.safe_process(logger=logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader'))
   def process(self, batch: Batch, **kwargs):
+    return self.do_process(batch)
+
+  # Created to facilitate testing without going into @utils.safe_process
+  def do_process(self, batch: Batch):
     execution = batch.execution
 
     api_secret = execution.destination.destination_metadata[0]
@@ -111,11 +115,12 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(beam.DoFn):
       url = ''.join(url_container)
       response = requests.post(url,data=json.dumps(payload))
       if response.status_code != 204:
-        logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').error(
-          f'Error calling GA4 MP {response.status_code}: {response.raw}')
+        error_message = f'Error calling GA4 MP {response.status_code}: {response.raw}'
+        logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').error(error_message)
+        self._add_error(execution, error_message)
       else:
         accepted_elements.append(row)
 
     logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(
       f'Successfully uploaded {len(accepted_elements)}/{len(batch.elements)} events.')
-    yield Batch(execution, accepted_elements)
+    return [Batch(execution, accepted_elements)]

@@ -16,16 +16,17 @@
 import logging
 from typing import List, Dict
 
-import apache_beam as beam
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaInMemoryUpload
 
+from error.error_handling import ErrorHandler
+from models.execution import Batch, Union
 from uploaders import utils
-from models.execution import DestinationType, Batch, Union
+from uploaders.uploaders import MegalistaUploader
 
 
-class GoogleAnalyticsDataImportUploaderDoFn(beam.DoFn):
+class GoogleAnalyticsDataImportUploaderDoFn(MegalistaUploader):
     """
       This uploader uploads csv files to Google Analytics Data Import.
       The csv headers are the dict received keys.
@@ -34,8 +35,8 @@ class GoogleAnalyticsDataImportUploaderDoFn(beam.DoFn):
 
       """
 
-    def __init__(self, oauth_credentials):
-        super().__init__()
+    def __init__(self, oauth_credentials, error_handler: ErrorHandler):
+        super().__init__(error_handler)
         self.oauth_credentials = oauth_credentials
 
     def _get_analytics_service(self):
@@ -81,10 +82,10 @@ class GoogleAnalyticsDataImportUploaderDoFn(beam.DoFn):
         web_property_id = metadata[0]
         data_import_name = metadata[1]
 
-        self._do_upload_data(web_property_id, data_import_name,
+        self._do_upload_data(execution, web_property_id, data_import_name,
                              ga_account_id, batch.elements)
 
-    def _do_upload_data(self, web_property_id, data_import_name, ga_account_id,
+    def _do_upload_data(self, execution, web_property_id, data_import_name, ga_account_id,
                         rows: List[Dict[str, Union[str, Dict[str, str]]]]):
         analytics = self._get_analytics_service()
         data_sources = analytics.management().customDataSources().list(
@@ -102,20 +103,19 @@ class GoogleAnalyticsDataImportUploaderDoFn(beam.DoFn):
                 self._call_upload_api(analytics, data_import_name, ga_account_id,
                                       data_source_id, rows, web_property_id)
             except Exception as e:
-                logging.getLogger('megalista.GoogleAnalyticsDataImportUploader').error(
-                    'Error while uploading GA Data: %s', e)
-                raise
+                error_message = f'Error while uploading GA Data: {e}'
+                logging.getLogger('megalista.GoogleAnalyticsDataImportUploader').error(error_message)
+                self._add_error(execution, error_message)
         else:
-            logging.getLogger('megalista.GoogleAnalyticsDataImportUploader').error(
-                '%s - data import not found, please configure it in Google Analytics'
-                % data_import_name)
+            error_message = f'{data_import_name} - data import not found, please configure it in Google Analytics'
+            logging.getLogger('megalista.GoogleAnalyticsDataImportUploader').error(error_message)
+            self._add_error(execution, error_message)
 
     @staticmethod
     def prepare_csv(rows):
         """
                 Transform a input into this format:
-                        sample = [{'col1': 'val1a', 'col2': 'val2a', 'col3':
-                        'val3a'},
+                        sample = [{'col1': 'val1a', 'col2': 'val2a', 'col3': 'val3a'},
                           {'col1': 'val1b', 'col2': 'val2b', 'col3': 'val3b'},
                           {'col1': 'val1c', 'col2': 'val2c', 'col3': 'val3c'}]
                 into a csv:

@@ -12,22 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import decimal
+import logging
 import math
 import time
-import logging
-from datetime import datetime, timezone
+from datetime import datetime
 
+import pytest
 from apache_beam.options.value_provider import StaticValueProvider
-from uploaders.campaign_manager.campaign_manager_conversion_uploader import CampaignManagerConversionUploaderDoFn
+
+from error.error_handling import ErrorHandler
+from error.error_handling_test import MockErrorNotifier
 from models.execution import AccountConfig
+from models.execution import Batch
 from models.execution import Destination
 from models.execution import DestinationType
 from models.execution import Execution
 from models.execution import Source
 from models.execution import SourceType
-from models.execution import Batch
 from models.oauth_credentials import OAuthCredentials
-import pytest
+from uploaders.campaign_manager.campaign_manager_conversion_uploader import CampaignManagerConversionUploaderDoFn
 
 _account_config = AccountConfig(mcc=False,
                                 campaign_manager_account_id='dcm_profile_id',
@@ -37,14 +40,19 @@ _account_config = AccountConfig(mcc=False,
 
 
 @pytest.fixture
-def uploader(mocker):
+def error_notifier():
+    return MockErrorNotifier()
+
+@pytest.fixture
+def uploader(error_notifier):
     credential_id = StaticValueProvider(str, 'id')
     secret = StaticValueProvider(str, 'secret')
     access = StaticValueProvider(str, 'access')
     refresh = StaticValueProvider(str, 'refresh')
     credentials = OAuthCredentials(credential_id, secret, access, refresh)
 
-    return CampaignManagerConversionUploaderDoFn(credentials)
+    return CampaignManagerConversionUploaderDoFn(credentials,
+                                                 ErrorHandler(DestinationType.CM_OFFLINE_CONVERSION, error_notifier))
 
 
 def test_get_service(uploader):
@@ -226,7 +234,7 @@ def test_conversion_upload_decimal_value(mocker, uploader):
         profileId='dcm_profile_id', body=expected_body)
 
 
-def test_error_on_api_call(mocker, uploader, caplog):
+def test_error_on_api_call(mocker, uploader, caplog, error_notifier):
     caplog.set_level(logging.INFO, 'megalista.CampaignManagerConversionsUploader')
     mocker.patch.object(uploader, '_get_dcm_service')
     service = mocker.MagicMock()
@@ -242,12 +250,15 @@ def test_error_on_api_call(mocker, uploader, caplog):
         }]
     }
 
-    source = Source('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'))
+    source = Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers'])
     destination = Destination(
         'dest1', DestinationType.CM_OFFLINE_CONVERSION, ['a', 'b'])
     execution = Execution(_account_config, source, destination)
 
     uploader._do_process(Batch(execution, [{'gclid': '123'}]), time.time())
+    uploader.finish_bundle()
 
     assert 'Error(s) inserting conversions:' in caplog.text
     assert '[123]: error_returned' in caplog.text
+
+    assert error_notifier.were_errors_sent

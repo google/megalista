@@ -16,21 +16,21 @@ import logging
 import math
 import time
 
-import apache_beam as beam
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
+from error.error_handling import ErrorHandler
+from models.execution import Batch
 from uploaders import utils
-from models.execution import DestinationType, Batch
+from uploaders.uploaders import MegalistaUploader
 
 _LOGGER_NAME: str = 'megalista.CampaignManagerConversionsUploader'
 
 
-class CampaignManagerConversionUploaderDoFn(beam.DoFn):
-  """Apache Beam DoFn class implementation."""
+class CampaignManagerConversionUploaderDoFn(MegalistaUploader):
 
-  def __init__(self, oauth_credentials):
-    super().__init__()
+  def __init__(self, oauth_credentials, error_handler: ErrorHandler):
+    super().__init__(error_handler)
     self.oauth_credentials = oauth_credentials
 
   def _get_dcm_service(self):
@@ -65,13 +65,14 @@ class CampaignManagerConversionUploaderDoFn(beam.DoFn):
   @utils.safe_process(logger=logging.getLogger(_LOGGER_NAME))
   def process(self, batch: Batch, **kwargs):
     self._do_process(batch, time.time())
-    yield batch
+    return [batch]
 
   def _do_process(self, batch: Batch, timestamp):
     execution = batch.execution
     self._assert_all_list_names_are_present(execution)
 
     self._do_upload_data(
+        execution,
         execution.destination.destination_metadata[0],
         execution.destination.destination_metadata[1],
         execution.account_config.campaign_manager_account_id,
@@ -80,6 +81,7 @@ class CampaignManagerConversionUploaderDoFn(beam.DoFn):
 
   def _do_upload_data(
       self,
+      execution,
       floodlight_activity_id,
       floodlight_configuration_id,
       campaign_manager_account_id,
@@ -145,5 +147,7 @@ class CampaignManagerConversionUploaderDoFn(beam.DoFn):
         if 'errors' in status:
           for error in status['errors']:
             error_messages.append('[{}]: {}'.format(error['code'], error['message']))
-      
-      logger.error('Errors from API:\n{}'.format('\n'.join(error_messages)))
+
+      final_error_message = 'Errors from API:\n{}'.format('\n'.join(error_messages))
+      logger.error(final_error_message)
+      self._add_error(execution, final_error_message)

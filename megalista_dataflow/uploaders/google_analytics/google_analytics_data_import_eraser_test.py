@@ -15,29 +15,34 @@
 
 import pytest
 from apache_beam.options.value_provider import StaticValueProvider
-from models.oauth_credentials import OAuthCredentials
+
+from error.error_handling import ErrorHandler
+from error.error_handling_test import MockErrorNotifier
 from models.execution import Execution, SourceType, DestinationType, Source, AccountConfig, Destination, Batch
+from models.oauth_credentials import OAuthCredentials
 from uploaders.google_analytics.google_analytics_data_import_eraser import GoogleAnalyticsDataImportEraser
 
 
 @pytest.fixture
-def eraser(mocker):
+def error_notifier():
+    return MockErrorNotifier()
+
+@pytest.fixture
+def eraser(error_notifier):
     client_id = StaticValueProvider(str, "id")
     secret = StaticValueProvider(str, "secret")
     access = StaticValueProvider(str, "access")
     refresh = StaticValueProvider(str, "refresh")
     credentials = OAuthCredentials(client_id, secret, access, refresh)
-    return GoogleAnalyticsDataImportEraser(credentials)
+    return GoogleAnalyticsDataImportEraser(credentials,
+                                           ErrorHandler(DestinationType.GA_DATA_IMPORT, error_notifier))
 
 
-def test_analytics_has_not_data_sources(mocker, eraser, caplog):
+def test_analytics_has_not_data_sources(mocker, eraser, caplog, error_notifier):
     service = mocker.MagicMock()
 
     mocker.patch.object(eraser, '_get_analytics_service')
     eraser._get_analytics_service.return_value = service
-
-    mocker.patch.object(eraser, '_is_table_empty')
-    eraser._is_table_empty.return_value = False
 
     service.management().customDataSources().list().execute.return_value = {
         'items': []
@@ -47,22 +52,20 @@ def test_analytics_has_not_data_sources(mocker, eraser, caplog):
                           Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers']),
                           Destination('dest1', DestinationType.GA_DATA_IMPORT, ['web_property', 'data_import_name']))
     # Act
-    try:
-        next(eraser.process(Batch(execution, [])))
-    except StopIteration:
-        pass
+    eraser.process(Batch(execution, []))
+
+    eraser.finish_bundle()
 
     assert 'data_import_name - data import not found, please configure it in Google Analytics' in caplog.text
 
+    assert error_notifier.were_errors_sent
 
-def test_data_source_not_found(mocker, eraser, caplog):
+
+def test_data_source_not_found(mocker, eraser, caplog, error_notifier):
     service = mocker.MagicMock()
 
     mocker.patch.object(eraser, '_get_analytics_service')
     eraser._get_analytics_service.return_value = service
-
-    mocker.patch.object(eraser, '_is_table_empty')
-    eraser._is_table_empty.return_value = False
 
     service.management().customDataSources().list().execute.return_value = {
         'items': [{'id': 1, 'name': 'wrong_name'}]
@@ -71,23 +74,21 @@ def test_data_source_not_found(mocker, eraser, caplog):
     execution = Execution(AccountConfig('', False, '', '', ''),
                           Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers']),
                           Destination('dest1', DestinationType.GA_DATA_IMPORT, ['web_property', 'data_import_name']))
+
+    eraser.process(Batch(execution, []))
+
     # Act
-    try:
-        next(eraser.process(Batch(execution, [])))
-    except StopIteration:
-        pass
+    eraser.finish_bundle()
 
     assert 'data_import_name - data import not found, please configure it in Google Analytics' in caplog.text
 
+    assert error_notifier.were_errors_sent
 
 def test_no_files_found(mocker, eraser):
     service = mocker.MagicMock()
 
     mocker.patch.object(eraser, '_get_analytics_service')
     eraser._get_analytics_service.return_value = service
-
-    mocker.patch.object(eraser, '_is_table_empty')
-    eraser._is_table_empty.return_value = False
 
     service.management().customDataSources().list().execute.return_value = {
         'items': [{'id': 1, 'name': 'data_import_name'},
@@ -106,20 +107,17 @@ def test_no_files_found(mocker, eraser):
     service.management().uploads().deleteUploadData.side_effect = delete_call_mock
 
     # Act
-    next(eraser.process(Batch(execution, [])))
+    eraser.process(Batch(execution, []))
 
     # Called once
     delete_call_mock.assert_not_called()
 
 
-def test_files_deleted(mocker, eraser):
+def test_files_deleted_with_success(mocker, eraser):
     service = mocker.MagicMock()
 
     mocker.patch.object(eraser, '_get_analytics_service')
     eraser._get_analytics_service.return_value = service
-
-    mocker.patch.object(eraser, '_is_table_empty')
-    eraser._is_table_empty.return_value = False
 
     service.management().customDataSources().list().execute.return_value = {
         'items': [{'id': 1, 'name': 'data_import_name'},
@@ -138,7 +136,7 @@ def test_files_deleted(mocker, eraser):
     service.management().uploads().deleteUploadData.side_effect = delete_call_mock
 
     # Act
-    next(eraser.process(Batch(execution, [])))
+    eraser.process(Batch(execution, []))
 
     # Called once
     delete_call_mock.assert_called_once()

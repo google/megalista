@@ -17,6 +17,8 @@ import logging
 import pytz
 import math
 
+from models.execution import Batch
+from uploaders.uploaders import MegalistaUploader
 
 MAX_RETRIES = 3
 
@@ -63,6 +65,7 @@ def get_timestamp_micros(date):
 def safe_process(logger):
     def deco(func):
         def inner(*args, **kwargs):
+            self_ = args[0]
             batch = args[1]
             if not batch:
                 logger.warning('Skipping upload, received no elements.')
@@ -70,7 +73,8 @@ def safe_process(logger):
             logger.info(f'Uploading {len(batch.elements)} rows...')
             try:
                 return func(*args, **kwargs)
-            except Exception as e:
+            except BaseException as e:
+                self_._add_error(batch.execution, f'Error uploading data: {e}')
                 logger.error(f'Error uploading data for :{batch.elements}')
                 logger.error(e, exc_info=True)
                 logger.exception('Error uploading data.')
@@ -101,12 +105,23 @@ def convert_datetime_tz(dt, origin_tz, destination_tz):
     return datetime_obj.astimezone(pytz.timezone(destination_tz))
 
 
-def print_partial_error_messages(logger_name, action, response):
+def print_partial_error_messages(logger_name, action, response) -> str:
+    """
+    Print partials errors received in the response.
+    @param logger_name: logger name to be used
+    @param action: action to be part of the message
+    @param response: response body of the API call
+    @return: the error_message returned, if there was one, None otherwise.
+    """
+    error_message = None
+
     partial_failure = getattr(response, 'partial_failure_error', None)
     if partial_failure is not None and partial_failure.message != '':
-        message = f'Error on {action}: {partial_failure.message}.'
-        logging.getLogger(logger_name).error(message)
+        error_message = f'Error on {action}: {partial_failure.message}.'
+        logging.getLogger(logger_name).error(error_message)
     results = getattr(response, 'results', [])
     for result in results:
         message = f'gclid {result.gclid} uploaded.'
         logging.getLogger(logger_name).debug(message)
+
+    return error_message

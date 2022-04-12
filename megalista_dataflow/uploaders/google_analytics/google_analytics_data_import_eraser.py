@@ -14,15 +14,16 @@
 
 import logging
 
-import apache_beam as beam
-from google.cloud import bigquery
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
-from models.execution import DestinationType, Batch
+from error.error_handling import ErrorHandler
+from models.execution import Batch
+from uploaders import utils
+from uploaders.uploaders import MegalistaUploader
 
 
-class GoogleAnalyticsDataImportEraser(beam.DoFn):
+class GoogleAnalyticsDataImportEraser(MegalistaUploader):
     """
     Clean up every file in a Custom Data Import.
 
@@ -31,8 +32,8 @@ class GoogleAnalyticsDataImportEraser(beam.DoFn):
     Also, make sure that all unit tests pass and write new ones as you feel appropriated.
     """
 
-    def __init__(self, oauth_credentials):
-        super().__init__()
+    def __init__(self, oauth_credentials, error_handler: ErrorHandler):
+        super().__init__(error_handler)
         self.oauth_credentials = oauth_credentials
 
     def _get_analytics_service(self):
@@ -58,6 +59,8 @@ class GoogleAnalyticsDataImportEraser(beam.DoFn):
         if not destination[0] or not destination[1]:
             raise ValueError('Missing destination information. Received {}'.format(str(destination)))
 
+    @utils.safe_process(
+        logger=logging.getLogger('megalista.GoogleAnalyticsDataImportUploader'))
     def process(self, batch: Batch, **kwargs):
         execution = batch.execution
         self._assert_all_list_names_are_present(execution)
@@ -80,23 +83,15 @@ class GoogleAnalyticsDataImportEraser(beam.DoFn):
             data_source_id = data_source_results[0]['id']
             try:
                 self._call_delete_api(analytics, data_import_name, ga_account_id, data_source_id, web_property_id)
-                yield batch
+                return [batch]
             except Exception as e:
-                logging.getLogger("megalista.GoogleAnalyticsDataImportUploader").error(
-                    'Error while delete GA Data Import files: %s' % e)
+                error_message = f'Error while delete GA Data Import files: {e}'
+                logging.getLogger("megalista.GoogleAnalyticsDataImportUploader").error(error_message)
+                self._add_error(execution, error_message)
         else:
-            logging.getLogger("megalista.GoogleAnalyticsDataImportUploader").error(
-                "%s - data import not found, please configure it in Google Analytics" % data_import_name)
-
-    @staticmethod
-    def _is_table_empty(execution):
-        table_name = execution.source.source_metadata[0] + '.' + execution.source.source_metadata[1]
-        client = bigquery.Client()
-        query = "select count(*) from " + table_name + " data"
-        logging.getLogger().info('Counting rows from table %s for Execution (%s)', table_name, str(execution))
-
-        # Get count value from BigQuery response
-        return list(client.query(query).result())[0][0] == 0
+            error_message = f"{data_import_name} - data import not found, please configure it in Google Analytics"
+            logging.getLogger("megalista.GoogleAnalyticsDataImportUploader").error(error_message)
+            self._add_error(execution, error_message)
 
     @staticmethod
     def _call_delete_api(analytics, data_import_name, ga_account_id, data_source_id, web_property_id):

@@ -15,15 +15,17 @@
 import pytest
 from apache_beam.options.value_provider import StaticValueProvider
 
-from uploaders.google_ads.conversions.google_ads_ssd_uploader import GoogleAdsSSDUploaderDoFn
+from error.error_handling import ErrorHandler
+from error.error_handling_test import MockErrorNotifier
 from models.execution import AccountConfig
+from models.execution import Batch
 from models.execution import Destination
 from models.execution import DestinationType
 from models.execution import Execution
 from models.execution import Source
 from models.execution import SourceType
-from models.execution import Batch
 from models.oauth_credentials import OAuthCredentials
+from uploaders.google_ads.conversions.google_ads_ssd_uploader import GoogleAdsSSDUploaderDoFn
 
 _account_config = AccountConfig('account_id', False, 'ga_account_id', '', '')
 
@@ -38,7 +40,8 @@ def uploader(mocker):
     refresh = StaticValueProvider(str, 'refresh')
     credentials = OAuthCredentials(id, secret, access, refresh)
     return GoogleAdsSSDUploaderDoFn(credentials,
-                                    StaticValueProvider(str, 'devtoken'))
+                                    StaticValueProvider(str, 'devtoken'),
+                                    ErrorHandler(DestinationType.ADS_SSD_UPLOAD, MockErrorNotifier()))
 
 
 def test_get_service(mocker, uploader):

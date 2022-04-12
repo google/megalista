@@ -1,8 +1,10 @@
 import sys
+
+from error.error_handling import ErrorHandler
+
 sys.path.append('..') # Adds higher directory to python modules path.
 
 import apache_beam as beam
-from apache_beam.options.pipeline_options import PipelineOptions
 
 from third_party.uploaders.appsflyer.appsflyer_s2s_uploader_async import AppsFlyerS2SUploaderDoFn
 from models.execution import DestinationType
@@ -24,7 +26,9 @@ class AppsFlyerEventsStep(beam.PTransform):
                 TransactionalType.UUID,
                 self.params.dataflow_options.bq_ops_dataset)
             | 'Upload - AppsFlyer S2S events' >>
-            beam.ParDo(AppsFlyerS2SUploaderDoFn(self.params.dataflow_options.appsflyer_dev_key))
+            beam.ParDo(AppsFlyerS2SUploaderDoFn(self.params.dataflow_options.appsflyer_dev_key,
+                                                ErrorHandler(DestinationType.APPSFLYER_S2S_EVENTS,
+                                                             self.params.error_notifier)))
             | 'Persist results - AppsFlyer S2S events' >> beam.ParDo(
                             TransactionalEventsResultsWriter(
                               self.params.dataflow_options.bq_ops_dataset,
