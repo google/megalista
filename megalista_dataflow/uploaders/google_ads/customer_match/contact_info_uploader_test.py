@@ -75,7 +75,7 @@ def test_upload_add_users(mocker, uploader):
     'resource_name': 'a',
   }
 
-  uploader._get_offline_user_data_job_service.assert_called_once_with('mcc_account_id') 
+  uploader._get_offline_user_data_job_service.assert_called_once_with('account_id') 
   uploader._get_offline_user_data_job_service.return_value.add_offline_user_data_job_operations.assert_called_once_with(
     request=data_insertion_payload
   )
@@ -120,7 +120,7 @@ def test_upload_replace_users(mocker, uploader):
     'resource_name': 'a',
   }
 
-  uploader._get_offline_user_data_job_service.assert_called_once_with('mcc_account_id') 
+  uploader._get_offline_user_data_job_service.assert_called_once_with('account_id') 
   uploader._get_offline_user_data_job_service.return_value.add_offline_user_data_job_operations.assert_called_once_with(
     request=data_insertion_payload
   )
