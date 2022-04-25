@@ -28,7 +28,17 @@ from models.oauth_credentials import OAuthCredentials
 from uploaders.google_ads.conversions.google_ads_ssd_uploader import GoogleAdsSSDUploaderDoFn
 
 _account_config = AccountConfig('account_id', False, 'ga_account_id', '', '')
+_mcc_account_config = AccountConfig('mcc_account_id', True, 'ga_account_id', '', '')
 
+_conversion_name = 'ssd_conversion'
+_external_upload_id = '123' #TODO(caiotomazelli): Remove, not being used
+_should_hash = True
+
+_time1 = '2020-04-09T14:13:55.0005'
+_time1_result = '2020-04-09 14:13:55-03:00'
+
+_time2 = '2020-04-09T13:13:55.0005'
+_time2_result = '2020-04-09 13:13:55-03:00'
 
 @pytest.fixture
 def uploader(mocker):
@@ -43,10 +53,36 @@ def uploader(mocker):
                                     StaticValueProvider(str, 'devtoken'),
                                     ErrorHandler(DestinationType.ADS_SSD_UPLOAD, MockErrorNotifier()))
 
+@pytest.fixture
+def ssd_batch():
+    return create_batch(_account_config, '', '')
+
+@pytest.fixture
+def ssd_batch_with_account_and_currency_override():
+    return create_batch(_account_config, 'currency_override', 'account_override')
+
+@pytest.fixture
+def ssd_batch_with_mcc_account_override():
+    return create_batch(_mcc_account_config, '', '')
+
+def create_batch(account_config, currency_override, account_override):
+    source = Source('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'))
+    destination = Destination('dest1', DestinationType.ADS_SSD_UPLOAD,
+                              [_conversion_name, _external_upload_id, _should_hash, currency_override, account_override])
+    execution = Execution(account_config, source, destination)
+
+    return Batch(execution, [{
+        'hashed_email': 'a@a.com',
+        'time': _time1,
+        'amount': '123'
+    }, {
+        'hashed_email': 'b@b.com',
+        'time': _time2,
+        'amount': '234'
+    }])
 
 def test_get_service(mocker, uploader):
     assert uploader._get_offline_user_data_job_service(mocker.ANY) is not None
-
 
 def test_fail_missing_destination_metadata(uploader, mocker):
     mocker.patch.object(uploader, '_get_offline_user_data_job_service')
@@ -57,37 +93,14 @@ def test_fail_missing_destination_metadata(uploader, mocker):
     uploader.process(batch)
     uploader._get_offline_user_data_job_service.assert_not_called()
 
-
-def test_conversion_upload(mocker, uploader):
+def test_conversion_upload(mocker, uploader, ssd_batch):
     mocker.patch.object(uploader, '_get_offline_user_data_job_service')
     mocker.patch.object(uploader, '_get_resource_name')
-    conversion_name = 'ssd_conversion'
+
     resource_name = uploader._get_offline_user_data_job_service.return_value.create_offline_user_data_job.return_value.resource_name
     conversion_name_resource_name = uploader._get_resource_name.return_value
-    external_upload_id = '123' #TODO(caiotomazelli): Remove, not being used
-    should_hash = True
-    source = Source('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'))
-    destination = Destination('dest1', DestinationType.ADS_SSD_UPLOAD,
-                              [conversion_name, external_upload_id, should_hash])
-    execution = Execution(_account_config, source, destination)
 
-    time1 = '2020-04-09T14:13:55.0005'
-    time1_result = '2020-04-09 14:13:55-03:00'
-
-    time2 = '2020-04-09T13:13:55.0005'
-    time2_result = '2020-04-09 13:13:55-03:00'
-
-    batch = Batch(execution, [{
-        'hashed_email': 'a@a.com',
-        'time': time1,
-        'amount': '123'
-    }, {
-        'hashed_email': 'b@b.com',
-        'time': time2,
-        'amount': '234'
-    }])
-
-    uploader.process(batch)
+    uploader.process(ssd_batch)
 
     data_insertion_payload = {
         'resource_name': resource_name,
@@ -101,7 +114,7 @@ def test_conversion_upload(mocker, uploader):
                     'conversion_action': conversion_name_resource_name,
                     'currency_code': 'BRL',
                     'transaction_amount_micros': '123',
-                    'transaction_date_time': time1_result
+                    'transaction_date_time': _time1_result
                 }
             }
         }, {
@@ -113,10 +126,95 @@ def test_conversion_upload(mocker, uploader):
                     'conversion_action': conversion_name_resource_name,
                     'currency_code': 'BRL',
                     'transaction_amount_micros': '234',
-                    'transaction_date_time': time2_result
+                    'transaction_date_time': _time2_result
                 }
             }
         }]
     }
 
+    uploader._get_offline_user_data_job_service.assert_called_with('account_id')
+    uploader._get_offline_user_data_job_service.return_value.add_offline_user_data_job_operations.assert_any_call(request = data_insertion_payload)
+
+def test_conversion_upload_account_and_currency_override(mocker, uploader, ssd_batch_with_account_and_currency_override):
+    mocker.patch.object(uploader, '_get_offline_user_data_job_service')
+    mocker.patch.object(uploader, '_get_resource_name')
+
+    resource_name = uploader._get_offline_user_data_job_service.return_value.create_offline_user_data_job.return_value.resource_name
+    conversion_name_resource_name = uploader._get_resource_name.return_value
+
+    uploader.process(ssd_batch_with_account_and_currency_override)
+
+    data_insertion_payload = {
+        'resource_name': resource_name,
+        'enable_partial_failure': False,
+        'operations': [{
+            'create': {
+                'user_identifiers': [{
+                    'hashed_email': 'a@a.com'
+                }],
+                'transaction_attribute': {
+                    'conversion_action': conversion_name_resource_name,
+                    'currency_code': 'currency_override',
+                    'transaction_amount_micros': '123',
+                    'transaction_date_time': _time1_result
+                }
+            }
+        }, {
+            'create': {
+                'user_identifiers': [{
+                    'hashed_email': 'b@b.com'
+                }],
+                'transaction_attribute': {
+                    'conversion_action': conversion_name_resource_name,
+                    'currency_code': 'currency_override',
+                    'transaction_amount_micros': '234',
+                    'transaction_date_time': _time2_result
+                }
+            }
+        }]
+    }
+
+    uploader._get_offline_user_data_job_service.assert_called_with('account_override')
+    uploader._get_offline_user_data_job_service.return_value.add_offline_user_data_job_operations.assert_any_call(request = data_insertion_payload)
+
+def test_conversion_mcc_account_override(mocker, uploader, ssd_batch_with_mcc_account_override):
+    mocker.patch.object(uploader, '_get_offline_user_data_job_service')
+    mocker.patch.object(uploader, '_get_resource_name')
+
+    resource_name = uploader._get_offline_user_data_job_service.return_value.create_offline_user_data_job.return_value.resource_name
+    conversion_name_resource_name = uploader._get_resource_name.return_value
+
+    uploader.process(ssd_batch_with_mcc_account_override)
+
+    data_insertion_payload = {
+        'resource_name': resource_name,
+        'enable_partial_failure': False,
+        'operations': [{
+            'create': {
+                'user_identifiers': [{
+                    'hashed_email': 'a@a.com'
+                }],
+                'transaction_attribute': {
+                    'conversion_action': conversion_name_resource_name,
+                    'currency_code': 'BRL',
+                    'transaction_amount_micros': '123',
+                    'transaction_date_time': _time1_result
+                }
+            }
+        }, {
+            'create': {
+                'user_identifiers': [{
+                    'hashed_email': 'b@b.com'
+                }],
+                'transaction_attribute': {
+                    'conversion_action': conversion_name_resource_name,
+                    'currency_code': 'BRL',
+                    'transaction_amount_micros': '234',
+                    'transaction_date_time': _time2_result
+                }
+            }
+        }]
+    }
+
+    uploader._get_offline_user_data_job_service.assert_called_with('mcc_account_id')
     uploader._get_offline_user_data_job_service.return_value.add_offline_user_data_job_operations.assert_any_call(request = data_insertion_payload)
