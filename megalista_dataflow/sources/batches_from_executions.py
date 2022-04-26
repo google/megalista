@@ -71,6 +71,8 @@ class BatchesFromExecutions(beam.PTransform):
     """
 
     class _ExecutionIntoBigQueryRequest(beam.DoFn):
+        def __init__(self, bq_location):
+            self._bq_location = bq_location
 
         def process(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
             client = bigquery.Client()
@@ -78,15 +80,16 @@ class BatchesFromExecutions(beam.PTransform):
             table_name = table_name.replace('`', '')
             query = f"SELECT data.* FROM `{table_name}` AS data"
             logging.getLogger(_LOGGER_NAME).info(f'Reading from table {table_name} for Execution {execution}')
-            for row in client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE):
+            for row in client.query(query, location=self._bq_location.get()).result(page_size=_BIGQUERY_PAGE_SIZE):
                 yield execution, _convert_row_to_dict(row)
 
     class _ExecutionIntoBigQueryRequestTransactional(beam.DoFn):
 
-        def __init__(self, bq_ops_dataset, create_table_query, join_query):
+        def __init__(self, bq_ops_dataset, bq_location, create_table_query, join_query):
             self._bq_ops_dataset = bq_ops_dataset
             self._create_table_query = create_table_query
             self._join_query = join_query
+            self._bq_location = bq_location
 
         def process(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
             table_name = execution.source.source_metadata[0] + \
@@ -97,6 +100,7 @@ class BatchesFromExecutions(beam.PTransform):
                 "_uploaded"
             uploaded_table_name = uploaded_table_name.replace('`', '')
             client = bigquery.Client()
+            bq_location = self._bq_location.get()
 
             create_table_query_ready = \
                 Template(self._create_table_query).substitute(uploaded_table_name=uploaded_table_name)
@@ -104,14 +108,14 @@ class BatchesFromExecutions(beam.PTransform):
             logging.getLogger(_LOGGER_NAME).info(
                 f"Creating table {uploaded_table_name} if it doesn't exist")
 
-            client.query(create_table_query_ready).result()
+            client.query(create_table_query_ready, location=bq_location).result()
 
             join_query_ready = \
                 Template(self._join_query).substitute(table_name=table_name, uploaded_table_name=uploaded_table_name)
 
             logging.getLogger(_LOGGER_NAME).info(
                 f'Reading from table {table_name} for Execution {execution}')
-            for row in client.query(join_query_ready).result(page_size=_BIGQUERY_PAGE_SIZE):
+            for row in client.query(join_query_ready, location=bq_location).result(page_size=_BIGQUERY_PAGE_SIZE):
                 yield execution, _convert_row_to_dict(row)
 
 
@@ -136,21 +140,25 @@ class BatchesFromExecutions(beam.PTransform):
         destination_type: DestinationType,
         batch_size: int = 5000,
         transactional_type: TransactionalType = TransactionalType.NOT_TRANSACTIONAL,
-        bq_ops_dataset: ValueProvider = None
+        bq_ops_dataset: ValueProvider = None,
+        bq_location: ValueProvider = None
     ):
         super().__init__()
-        if transactional_type is not TransactionalType.NOT_TRANSACTIONAL and not bq_ops_dataset:
-            raise Exception('Missing bq_ops_dataset for this uploader')
+        if transactional_type is not TransactionalType.NOT_TRANSACTIONAL:
+            if not bq_ops_dataset or not bq_location:
+                raise Exception('Missing bq_ops_dataset/bq_location for this uploader')
 
         self._destination_type = destination_type
         self._batch_size = batch_size
         self._transactional_type = transactional_type
         self._bq_ops_dataset = bq_ops_dataset
+        self._bq_location = bq_location
 
     def _get_bq_request_class(self):
         if self._transactional_type == TransactionalType.UUID:
             return self._ExecutionIntoBigQueryRequestTransactional(
                 self._bq_ops_dataset,
+                self._bq_location,
                 "CREATE TABLE IF NOT EXISTS `$uploaded_table_name` ( \
                              timestamp TIMESTAMP OPTIONS(description= 'Event timestamp'), \
                              uuid STRING OPTIONS(description='Event unique identifier')) \
@@ -163,6 +171,7 @@ class BatchesFromExecutions(beam.PTransform):
         if self._transactional_type == TransactionalType.GCLID_TIME:
             return self._ExecutionIntoBigQueryRequestTransactional(
                 self._bq_ops_dataset,
+                self._bq_location,
                 "CREATE TABLE IF NOT EXISTS `$uploaded_table_name` ( \
                              timestamp TIMESTAMP OPTIONS(description= 'Event timestamp'), \
                              gclid STRING OPTIONS(description= 'Original gclid'), \
@@ -173,7 +182,7 @@ class BatchesFromExecutions(beam.PTransform):
                                LEFT JOIN $uploaded_table_name AS uploaded USING(gclid, time) \
                                WHERE uploaded.gclid IS NULL;"
             )
-        return self._ExecutionIntoBigQueryRequest()
+        return self._ExecutionIntoBigQueryRequest(self._bq_location)
 
     def expand(self, executions):
         return (

@@ -24,7 +24,8 @@ class AppsFlyerEventsStep(beam.PTransform):
                 DestinationType.APPSFLYER_S2S_EVENTS,
                 1000,
                 TransactionalType.UUID,
-                self.params.dataflow_options.bq_ops_dataset)
+                self.params.dataflow_options.bq_ops_dataset,
+                self.params.dataflow_options.bq_location)
             | 'Upload - AppsFlyer S2S events' >>
             beam.ParDo(AppsFlyerS2SUploaderDoFn(self.params.dataflow_options.appsflyer_dev_key,
                                                 ErrorHandler(DestinationType.APPSFLYER_S2S_EVENTS,

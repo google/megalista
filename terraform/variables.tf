@@ -52,21 +52,10 @@ variable "setup_firestore_collection" {
     description = "Setup Firestore collection (leave blank if using JSON or Sheets)"
 }
 
-variable "location" {
-  type        = string
-  description = "GCP location https://cloud.google.com/compute/docs/regions-zones?hl=pt-br default us"
-  default     = "us"
-}
 
 variable "region" {
   type        = string
   description = "GCP region https://cloud.google.com/compute/docs/regions-zones?hl=pt-br default us-central1"
-  default     = "us-central1"
 }
 
-variable "zone" {
-  type        = string
-  description = "GCP zone https://cloud.google.com/compute/docs/regions-zones?hl=pt-br default us-central1"
-  default     = "us-central1-f"
-}
 
