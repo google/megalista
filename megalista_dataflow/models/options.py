@@ -40,6 +40,9 @@ class DataflowOptions(PipelineOptions):
     parser.add_value_provider_argument(
         '--bq_ops_dataset',
         help='Auxliary bigquery dataset used for Megalista operations')
+    parser.add_value_provider_argument(
+        '--bq_location',
+        help='Location of Megalista operations (default us-central-1)')
     # Google Ads
     parser.add_value_provider_argument(
         '--developer_token', help='Developer Token for Google Ads API')
