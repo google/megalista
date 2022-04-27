@@ -174,7 +174,8 @@ class GoogleAdsOfflineConversionsStep(MegalistaStep):
                 DestinationType.ADS_OFFLINE_CONVERSION,
                 2000,
                 TransactionalType.GCLID_TIME,
-                self.params.dataflow_options.bq_ops_dataset)
+                self.params.dataflow_options.bq_ops_dataset,
+                self.params.dataflow_options.bq_location)
             | "Upload - GoogleAdsOfflineConversions"
             >> beam.ParDo(
                 GoogleAdsOfflineUploaderDoFn(
@@ -233,7 +234,8 @@ class GoogleAnalyticsMeasurementProtocolStep(MegalistaStep):
                 DestinationType.GA_MEASUREMENT_PROTOCOL,
                 20,
                 TransactionalType.UUID,
-                self.params.dataflow_options.bq_ops_dataset)
+                self.params.dataflow_options.bq_ops_dataset,
+                self.params.dataflow_options.bq_location)
             | "Upload - GA measurement protocol"
             >> beam.ParDo(GoogleAnalyticsMeasurementProtocolUploaderDoFn(
                 ErrorHandler(DestinationType.GA_MEASUREMENT_PROTOCOL, self.params.error_notifier)))
@@ -255,7 +257,8 @@ class GoogleAnalytics4MeasurementProtocolStep(MegalistaStep):
                 DestinationType.GA_4_MEASUREMENT_PROTOCOL,
                 20,
                 TransactionalType.UUID,
-                self.params.dataflow_options.bq_ops_dataset)
+                self.params.dataflow_options.bq_ops_dataset,
+                self.params.dataflow_options.bq_location)
             | "Upload - GA 4 measurement protocol"
             >> beam.ParDo(GoogleAnalytics4MeasurementProtocolUploaderDoFn(
                 ErrorHandler(DestinationType.GA_4_MEASUREMENT_PROTOCOL, self.params.error_notifier)))
@@ -277,7 +280,8 @@ class CampaignManagerConversionStep(MegalistaStep):
                 DestinationType.CM_OFFLINE_CONVERSION,
                 1000,
                 TransactionalType.UUID,
-                self.params.dataflow_options.bq_ops_dataset)
+                self.params.dataflow_options.bq_ops_dataset,
+                self.params.dataflow_options.bq_location)
             | "Upload - CM conversion"
             >> beam.ParDo(
                 CampaignManagerConversionUploaderDoFn(self.params._oauth_credentials,
