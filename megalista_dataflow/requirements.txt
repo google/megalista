@@ -1,10 +1,18 @@
-google-ads==15.0.0
-google-api-python-client==2.37.0
-google-cloud-bigquery==2.34.0
-google-cloud-firestore==2.3.4
-google-cloud-storage==2.1.0
+apache-beam[gcp]==2.38.0
+google-ads==15.1.1
+google-api-python-client==2.45.0
+google-cloud-bigquery==2.34.3
+google-cloud-firestore==2.4.0
+google-cloud-storage==2.2.1
 
 aiohttp==3.6.2
+
+
+# These packages are indirected dependencies.
+# Their versions are fixed here to improove resolution time.
+google_auth==1.35.0
+fasteners==0.17.3
+google_api_core==1.31.5
 
 # Test deps
 mypy==0.790
@@ -13,48 +21,3 @@ pytest-cov==2.10.0
 pytest-mock==3.2.0
 pytz==2021.3
 requests-mock==1.8.0
-
-
-
-#apache beam deps below
-google-apitools==0.5.31
-cachetools==4.2.4
-certifi==2021.10.8
-charset-normalizer==2.0.12
-cloudpickle==2.0.0
-crcmod==1.7
-dill==0.3.1.1
-docopt==0.6.2
-fastavro==1.4.9
-fasteners==0.17.3
-google-resumable-media==2.2.1
-googleapis-common-protos==1.54.0
-grpc-google-iam-v1==0.12.3
-grpcio==1.44.0
-grpcio-gcp==0.2.2
-grpcio-status==1.44.0
-hdfs==2.6.0
-httplib2==0.19.1
-idna==3.3
-libcst==0.4.1
-mypy-extensions==0.4.3
-numpy==1.21.5
-oauth2client==4.1.3
-orjson==3.6.7
-overrides==6.1.0
-packaging==21.3
-pyarrow==6.0.1
-pyasn1==0.4.8
-pyasn1-modules==0.2.8
-pydot==1.4.2
-pymongo==3.12.3
-pyparsing==2.4.7
-python-dateutil==2.8.2
-# pyyaml==6.0
-requests==2.27.1
-rsa==4.8
-six==1.16.0
-typing-extensions==4.1.1
-typing-inspect==0.7.1
-typing-utils==0.1.0
-urllib3==1.26.8
