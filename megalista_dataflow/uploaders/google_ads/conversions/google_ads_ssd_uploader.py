@@ -16,7 +16,7 @@ import datetime
 import logging
 
 from error.error_handling import ErrorHandler
-from models.execution import Batch, Execution
+from models.execution import AccountConfig, Batch, Destination, Execution
 from uploaders import utils
 from uploaders.google_ads import ADS_API_VERSION
 from uploaders.uploaders import MegalistaUploader
@@ -48,19 +48,24 @@ class GoogleAdsSSDUploaderDoFn(MegalistaUploader):
     def process(self, batch: Batch, **kwargs):
         execution = batch.execution
         self._assert_conversion_metadata_is_present(execution)
-        customer_id = execution.account_config.google_ads_account_id.replace('-', '')
+
+        currency_code = self._get_currency_code(execution.destination)
+        customer_id = self._get_customer_id(execution.account_config, execution.destination)
+        login_customer_id = self._get_login_customer_id(execution.account_config, execution.destination)
 
         offline_user_data_job_service = self._get_offline_user_data_job_service(
-            customer_id)
+            login_customer_id)
         conversion_action_resource_name = self._get_resource_name(customer_id,
+                                                                  login_customer_id,  
                                                                   execution.destination.destination_metadata[0])
         self._do_upload(execution,
                         offline_user_data_job_service,
                         customer_id,
+                        currency_code,
                         conversion_action_resource_name,
                         execution.destination.destination_metadata[1], batch.elements)
 
-    def _do_upload(self, execution, offline_user_data_job_service, customer_id, conversion_action_resource_name,
+    def _do_upload(self, execution, offline_user_data_job_service, customer_id, currency_code, conversion_action_resource_name,
                    ssd_external_upload_id, rows):
         logger = logging.getLogger('megalista.GoogleAdsSSDUploader')
 
@@ -92,7 +97,7 @@ class GoogleAdsSSDUploaderDoFn(MegalistaUploader):
                     'user_identifiers': [{k: v} for (k, v) in conversion.items() if k not in ('amount', 'time')],
                     'transaction_attribute': {
                         'conversion_action': conversion_action_resource_name,
-                        'currency_code': 'BRL',
+                        'currency_code': currency_code,
                         'transaction_amount_micros': conversion['amount'],
                         'transaction_date_time': utils.format_date(conversion['time'])
                     }
@@ -110,15 +115,40 @@ class GoogleAdsSSDUploaderDoFn(MegalistaUploader):
         # 3. Runs the Job
         offline_user_data_job_service.run_offline_user_data_job(resource_name = job_resource_name)
 
+    def _get_currency_code(self, destination: Destination) -> str:
+        """
+          If the currency_code is present on the destination, return it, otherwise default to BRL.
+        """
+        if len(destination.destination_metadata) >= 5 and len(destination.destination_metadata[3]) > 0:
+            return destination.destination_metadata[3]
+        return 'BRL'
+
+    def _get_customer_id(self, account_config: AccountConfig, destination: Destination) -> str:
+        """
+          If the customer_id is present on the destination, returns it, otherwise defaults to the account_config info.
+        """
+        if len(destination.destination_metadata) >= 5 and len(destination.destination_metadata[4]) > 0:
+            return destination.destination_metadata[4].replace('-', '')
+        return account_config.google_ads_account_id.replace('-', '')
+
+    def _get_login_customer_id(self, account_config: AccountConfig, destination: Destination) -> str:
+        """
+          If the customer_id in account_config is a mcc, then login with the mcc account id, otherwise use the customer id.
+        """
+        if account_config._mcc:
+            return account_config.google_ads_account_id.replace('-', '')
+        
+        return self._get_customer_id(account_config, destination)
+
     def _get_ads_service(self, customer_id: str):
       return utils.get_ads_service('GoogleAdsService', ADS_API_VERSION,
                                        self.oauth_credentials,
                                        self.developer_token.get(),
                                        customer_id)
 
-    def _get_resource_name(self, customer_id: str, name: str):
+    def _get_resource_name(self, customer_id: str, login_customer_id: str, name: str):
         resource_name = None
-        service = self._get_ads_service(customer_id)
+        service = self._get_ads_service(login_customer_id)
         query = f"SELECT conversion_action.resource_name FROM conversion_action WHERE conversion_action.name = '{name}'"
         response_query = service.search_stream(customer_id=customer_id, query=query)
         for batch in response_query:

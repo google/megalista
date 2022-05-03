@@ -94,7 +94,8 @@ class FirestoreExecutionSource(BaseBoundedSource):
       metadata_list = {
         'ADS_OFFLINE_CONVERSION': ['gads_conversion_name'],
         'ADS_ENHANCED_CONVERSION': ['gads_conversion_label', 'gads_conversion_tracking_id', 'gads_currency_code'],
-        'ADS_SSD_UPLOAD': ['gads_conversion_name', 'gads_external_upload_id'],
+        'ADS_SSD_UPLOAD': ['gads_conversion_name', 'gads_external_upload_id', 'gads_hash',
+          'gads_currency_code', 'gads_account'],
         'ADS_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD': ['gads_audience_name', 'gads_operation', 'gads_hash',
           'metadata_padding', 'gads_account'],
         'ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD': ['gads_audience_name', 'gads_operation', 
