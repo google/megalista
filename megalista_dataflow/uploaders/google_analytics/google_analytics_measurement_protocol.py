@@ -42,6 +42,8 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
   def process(self, batch: Batch, **kwargs):
     execution = batch.execution
     rows = batch.elements
+
+    # parameters starting with ** are optional.
     payloads = [{
       "v": 1,
       "tid": execution.destination.destination_metadata[0],
@@ -55,7 +57,9 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
       "ev": row.get('event_value'),
       "el": row.get('event_label'),
       "ua": self.UA,
-      **{key: row[key] for key in row.keys() if re.match('c[dm]\d+', key)}
+      **{key: row[key] for key in row.keys() if re.match('c[dm]\d+', key)},
+      **{'cs': row[key] for key in row.keys() if key.startswith("campaign_source")},
+      **{'cm': row[key] for key in row.keys() if key.startswith("campaign_medium")}
     } for row in rows]
 
     encoded = [self._format_hit(payload) for payload in payloads]
