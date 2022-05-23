@@ -8,7 +8,7 @@ import apache_beam as beam
 
 from third_party.uploaders.appsflyer.appsflyer_s2s_uploader_async import AppsFlyerS2SUploaderDoFn
 from models.execution import DestinationType
-from uploaders.big_query.transactional_events_results_writer import TransactionalEventsResultsWriter
+from uploaders.support.transactional_events_results_writer import TransactionalEventsResultsWriter
 from sources.batches_from_executions import BatchesFromExecutions, TransactionalType
 
 
@@ -21,17 +21,16 @@ class AppsFlyerEventsStep(beam.PTransform):
             executions
             | 'Load Data - AppsFlyer S2S events' >>
             BatchesFromExecutions(
+                self.params._dataflow_options,
                 DestinationType.APPSFLYER_S2S_EVENTS,
                 1000,
-                TransactionalType.UUID,
-                self.params.dataflow_options.bq_ops_dataset,
-                self.params.dataflow_options.bq_location)
+                TransactionalType.UUID)
             | 'Upload - AppsFlyer S2S events' >>
             beam.ParDo(AppsFlyerS2SUploaderDoFn(self.params.dataflow_options.appsflyer_dev_key,
                                                 ErrorHandler(DestinationType.APPSFLYER_S2S_EVENTS,
                                                              self.params.error_notifier)))
             | 'Persist results - AppsFlyer S2S events' >> beam.ParDo(
                             TransactionalEventsResultsWriter(
-                              self.params.dataflow_options.bq_ops_dataset,
+                              self.params.dataflow_options,
                               TransactionalType.UUID))
         )

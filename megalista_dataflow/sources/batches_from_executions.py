@@ -103,7 +103,7 @@ class BatchesFromExecutions(beam.PTransform):
         return (
             executions
             | beam.Filter(lambda execution: execution.destination.destination_type == self._destination_type)
-            | beam.ParDo(self._ReadDataSource(self._transactional, self._dataflow_options))
+            | beam.ParDo(self._ReadDataSource(self._transactional_type, self._dataflow_options))
             | beam.GroupByKey()
             | beam.ParDo(self._BatchElements(self._batch_size))
         )
