@@ -35,7 +35,9 @@ SCOPES = ['https://www.googleapis.com/auth/adwords',
           'https://www.googleapis.com/auth/ddmconversions',
           "https://www.googleapis.com/auth/analytics.edit",
           'https://www.googleapis.com/auth/spreadsheets.readonly',
-          'https://www.googleapis.com/auth/gmail.send']
+          'https://www.googleapis.com/auth/gmail.send',
+          'https://www.googleapis.com/auth/display-video'
+          ]
 
 # The redirect URI set for the given Client ID. The redirect URI for Client ID
 # generated for an installed application will always have this value.

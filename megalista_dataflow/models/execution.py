@@ -32,7 +32,9 @@ class DestinationType(Enum):
         GA_MEASUREMENT_PROTOCOL,
         GA_DATA_IMPORT,
         GA_4_MEASUREMENT_PROTOCOL,
-    ) = range(12)
+        DV_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD,
+        DV_CUSTOMER_MATCH_DEVICE_ID_UPLOAD,
+    ) = range(14)
 
     def __eq__(self, other):
         if other is None:
@@ -253,7 +255,7 @@ class Execution:
 
     @property
     def account_config(self) -> AccountConfig:
-        return self._account_config
+        return self._account_config 
 
     def to_dict(self):
         return {
