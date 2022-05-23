@@ -23,9 +23,8 @@ def test_get_big_query_data_source(mocker):
     destination_type = DestinationType.ADS_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD
     transactional_type = TransactionalType.NOT_TRANSACTIONAL
     dataflow_options = mocker.MagicMock()
-    args = {}
     
-    data_source = DataSource.get_data_source(source_type, destination_type, transactional_type, dataflow_options, args)
+    data_source = DataSource.get_data_source(source_type, destination_type, transactional_type, dataflow_options)
 
     assert type(data_source) is BigQueryDataSource
     
