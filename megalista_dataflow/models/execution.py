@@ -41,8 +41,7 @@ class DestinationType(Enum):
 
 
 class SourceType(Enum):
-    BIG_QUERY, CSV = range(2)
-    # TODO: CSV not yet implemented
+    BIG_QUERY, FILE = range(2)
 
 class TransactionalType(Enum):
     """
