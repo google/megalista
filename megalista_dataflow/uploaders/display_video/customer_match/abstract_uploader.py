@@ -72,13 +72,13 @@ class DisplayVideoCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
                                           advertiser_id: str,
                                           list_name: str,
                                           list_definition: Dict[str, Any]) -> Dict[str, Any]:
-        wasAudienceCreated = False
+        was_audience_created = False
         if self._user_list_id_cache.get(list_name) is None:
-            wasAudienceCreated, self._user_list_id_cache[list_name] = \
+            was_audience_created, self._user_list_id_cache[list_name] = \
                  self._do_create_list_if_it_does_not_exist(
                     advertiser_id, list_name, list_definition)
 
-        return wasAudienceCreated, self._user_list_id_cache[list_name]
+        return was_audience_created, self._user_list_id_cache[list_name]
 
     def _do_create_list_if_it_does_not_exist(self,
                                              advertiser_id: str,
@@ -86,7 +86,7 @@ class DisplayVideoCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
                                              list_definition: Dict[str, Any]
                                              ) -> str:
 
-        wasAudienceCreated = False
+        was_audience_created = False
         found_audience = self._get_advertiser_audience_by_display_name(
             advertiser_id, list_name)
 
@@ -96,7 +96,7 @@ class DisplayVideoCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
                 '%s list does not exist, creating...', list_name)
             
             # Marks the newly created audience    
-            wasAudienceCreated = True
+            was_audience_created = True
             
             found_audience = self._get_dv_audience_service().create(
                 advertiserId=advertiser_id,
@@ -109,7 +109,7 @@ class DisplayVideoCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
             logging.getLogger(_DEFAULT_LOGGER).info(
                 'List found with name: %s [%s]', found_audience['displayName'], found_audience['firstAndThirdPartyAudienceId'] )
 
-        return wasAudienceCreated, found_audience
+        return was_audience_created, found_audience
 
     def _get_advertiser_audience_by_display_name(self, advertiser_id: str, display_name: str) -> Optional[str]:
         """
@@ -185,13 +185,13 @@ class DisplayVideoCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
 
         # Checks if the audience already exists and returns, or creates a new one
         # If the audience was just created, skips the update for this batch
-        wasAudienceCreated, audience = self._create_list_if_it_does_not_exist(
+        was_audience_created, audience = self._create_list_if_it_does_not_exist(
             advertiser_id,
             list_name,
             list_definition
         )
         
-        if not wasAudienceCreated:
+        if not was_audience_created:
             # Payload for updating an existing list
             updated_list_definition = self.get_update_list_definition(
                 execution.account_config,
