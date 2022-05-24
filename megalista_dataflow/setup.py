@@ -22,6 +22,7 @@ setuptools.setup(
     url='https://github.com/google/megalista/',
     install_requires=['google-ads==15.0.0', 'google-api-python-client==2.37.0',
                       'google-cloud-bigquery==2.34.0','aiohttp==3.6.2',
-                      'google-cloud-storage==2.1.0', 'google-cloud-firestore==2.3.4'],
+                      'google-cloud-storage==2.1.0', 'google-cloud-firestore==2.3.4',
+                      'pandas==1.3.5', 'boto3==1.21.4'],
     packages=setuptools.find_packages(),
 )
