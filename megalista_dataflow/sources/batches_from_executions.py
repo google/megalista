@@ -22,7 +22,7 @@ from apache_beam.options.value_provider import ValueProvider
 from google.cloud import bigquery
 from models.execution import DestinationType, Execution, Batch
 from string import Template
-from typing import Any, List, Iterable, Tuple, Dict
+from typing import Any, List, Iterable, Optional, Tuple, Dict
 
 
 _BIGQUERY_PAGE_SIZE = 20000
@@ -35,6 +35,12 @@ def _convert_row_to_dict(row):
     for key, value in row.items():
         dict[key] = value
     return dict
+
+def _get_bq_location_or_none(bq_location: ValueProvider = None) -> Optional[str]:
+    """Passes bq_location along if there's one. Otherwise, returns None"""
+    if not bq_location:
+        return bq_location
+    return bq_location.get()
 
 
 class ExecutionCoder(coders.Coder):
@@ -76,11 +82,12 @@ class BatchesFromExecutions(beam.PTransform):
 
         def process(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
             client = bigquery.Client()
+            bq_location = _get_bq_location_or_none(self._bq_location)
             table_name = execution.source.source_metadata[0] + '.' + execution.source.source_metadata[1]
             table_name = table_name.replace('`', '')
             query = f"SELECT data.* FROM `{table_name}` AS data"
             logging.getLogger(_LOGGER_NAME).info(f'Reading from table {table_name} for Execution {execution}')
-            for row in client.query(query, location=self._bq_location.get()).result(page_size=_BIGQUERY_PAGE_SIZE):
+            for row in client.query(query, location=bq_location).result(page_size=_BIGQUERY_PAGE_SIZE):
                 yield execution, _convert_row_to_dict(row)
 
     class _ExecutionIntoBigQueryRequestTransactional(beam.DoFn):
@@ -100,7 +107,7 @@ class BatchesFromExecutions(beam.PTransform):
                 "_uploaded"
             uploaded_table_name = uploaded_table_name.replace('`', '')
             client = bigquery.Client()
-            bq_location = self._bq_location.get()
+            bq_location = _get_bq_location_or_none(self._bq_location)
 
             create_table_query_ready = \
                 Template(self._create_table_query).substitute(uploaded_table_name=uploaded_table_name)
@@ -138,10 +145,10 @@ class BatchesFromExecutions(beam.PTransform):
     def __init__(
         self,
         destination_type: DestinationType,
+        bq_location: ValueProvider,
         batch_size: int = 5000,
         transactional_type: TransactionalType = TransactionalType.NOT_TRANSACTIONAL,
-        bq_ops_dataset: ValueProvider = None,
-        bq_location: ValueProvider = None
+        bq_ops_dataset: ValueProvider = None    
     ):
         super().__init__()
         if transactional_type is not TransactionalType.NOT_TRANSACTIONAL:
