@@ -79,7 +79,8 @@
         {
             "name": "bq_location",
             "label": "Location/Region of the BQ source",
-            "help_text": "Location of Megalista operations (E.g. us-central1)"
+            "help_text": "Location of Megalista operations (E.g. us-central1)",
+            "is_optional": "true"
         }
     ]
 }
