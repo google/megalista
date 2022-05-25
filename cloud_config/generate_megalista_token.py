@@ -19,7 +19,7 @@
 
 import argparse
 import sys
-
+from urllib import parse
 from google_auth_oauthlib.flow import InstalledAppFlow
 from oauthlib.oauth2.rfc6749.errors import InvalidGrantError
 
@@ -41,7 +41,9 @@ SCOPES = ['https://www.googleapis.com/auth/adwords',
 
 # The redirect URI set for the given Client ID. The redirect URI for Client ID
 # generated for an installed application will always have this value.
-_REDIRECT_URI = 'urn:ietf:wg:oauth:2.0:oob'
+# Ps.: Even if the following address/port is not active or being listened,
+# the authorization process will generate the full, required URL.
+_REDIRECT_URI = 'http://localhost:8080'
 
 parser = argparse.ArgumentParser(description='Generates a refresh token with '
                                  'the provided credentials.')
@@ -106,8 +108,9 @@ def main(client_id, client_secret, scopes):
 
     print('Log into the Google Account you use to access your AdWords account '
           'and go to the following URL: \n%s\n' % auth_url)
-    print('After approving the token enter the verification code (if specified).')
-    code = input('Code: ').strip()
+    print('After approving the token copy and paste the full URL.')
+    url = input('URL: ').strip()
+    code = parse.parse_qs(parse.urlparse(url).query)['code'][0]
 
     try:
         flow.fetch_token(code=code)
