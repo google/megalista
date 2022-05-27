@@ -21,6 +21,10 @@ Sample integration code for onboarding offline/CRM data from BigQuery as custom 
 - **Google Analytics 4**
   - Measurement protocol (Web + App) [[details]](https://developers.google.com/analytics/devguides/collection/protocol/ga4)
 
+- **Display & Video**
+  - Contact Info **Customer Match** (email, phone, address) [[details]](https://support.google.com/displayvideo/answer/9539301?hl=en)
+  - Id Based **Customer Match** (device Id)
+
 - **Appsflyer**
   - S2S Offline events API (conversion upload), to be used for audience creation and in-app events with Google Ads and DV360 [[details]](https://support.appsflyer.com/hc/en-us/articles/207034486-API-de-eventos-de-servidor-para-servidor-S2S-mobile-para-mobile)
 
@@ -43,6 +47,7 @@ The solution consists of #1 a configuration environment (either Google Sheet or 
   - **Google Ads** API Access
   - **Campaign Manager** API Access
   - **Google Analytics** API Access
+  - **Display & Video** API Access
 - **Python3**
 - **Google Cloud SDK**
 
@@ -67,6 +72,7 @@ Required APIs will depend on upload endpoints in use.
 - Google Ads [[link]](https://console.cloud.google.com/apis/library/googleads.googleapis.com)
 - Campaign Manager [[link]](https://console.cloud.google.com/apis/library/dfareporting.googleapis.com)
 - Google Cloud Firestore [[link]](https://console.cloud.google.com/apis/library/firestore.googleapis.com)
+- Display & Video [[link]](https://console.cloud.google.com/apis/library/displayvideo.googleapis.com)
 
 ## Configure Megalista
 Megalista can be configured via Google Sheets, a JSON file or a Google Cloud Firestore collection. Expected data schemas (Sources) and metadata (Destinations) for each use case defined in [the Megalista Wiki](https://github.com/google/megalista/wiki).

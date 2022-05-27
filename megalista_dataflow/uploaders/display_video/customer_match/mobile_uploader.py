@@ -29,8 +29,8 @@ class DisplayVideoCustomerMatchMobileUploaderDoFn(DisplayVideoCustomerMatchAbstr
     app_id = account_config.app_id
     
     #overwrite app_id from default to custom
-    if len(destination_metadata) >=3 and destination_metadata[2]:
-      app_id = destination_metadata[2]
+    if len(destination_metadata) >=4 and destination_metadata[3]:
+      app_id = destination_metadata[3]
       
     return {
       'displayName': list_name,
