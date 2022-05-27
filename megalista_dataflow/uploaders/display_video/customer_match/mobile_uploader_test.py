@@ -64,7 +64,7 @@ def test_upload_add_users(mocker, uploader, error_notifier):
     destination = Destination(
         'dest1',
         DestinationType.DV_CUSTOMER_MATCH_DEVICE_ID_UPLOAD,
-        ['advertiser_id', 'list_name', 1234]
+        ['advertiser_id', 'list_name', True, 1234]
     )
 
     source = Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers'])
@@ -131,7 +131,7 @@ def test_upload_update_users(mocker, uploader, error_notifier):
     destination = Destination(
         'dest1',
         DestinationType.DV_CUSTOMER_MATCH_DEVICE_ID_UPLOAD,
-        ['advertiser_id', 'list_name', 1234]
+        ['advertiser_id', 'list_name', True, 1234]
     )
 
     source = Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers'])
