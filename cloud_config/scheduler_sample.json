@@ -11,7 +11,7 @@
         "setup_firestore_collection": "Setup Firestore collection (not needed for Sheets or JSON config)",
         "bq_ops_dataset": "Auxliary bigquery dataset used for Megalista operations",
         "bq_location": "Specify the location of the BigQuery dataset. E.g. US, us-central1, etc",
-	    "appsflyer_dev_key": "Apps flyer dev key"
+        "appsflyer_dev_key": "Apps flyer dev key"
     },
     "environment": {
         "tempLocation": "gs://megalista-data/temp",
