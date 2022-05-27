@@ -98,8 +98,8 @@ class GoogleAdsSSDStep(MegalistaStep):
             | "Load Data -  Google Ads SSD"
             >> BatchesFromExecutions(
                 DestinationType.ADS_SSD_UPLOAD, 
-                5000, 
-                bq_location=self.params.dataflow_options.bq_location
+                self.params.dataflow_options.bq_location,
+                5000
             )
             | "Hash Users - Google Ads SSD" >> beam.Map(ADS_CM_HASHER.hash_users)
             | "Upload - Google Ads SSD"
@@ -120,7 +120,7 @@ class GoogleAdsCustomerMatchMobileDeviceIdStep(MegalistaStep):
             | "Load Data - Google Ads Customer Match Mobile Device Id"
             >> BatchesFromExecutions(
                 DestinationType.ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD,
-                bq_location=self.params.dataflow_options.bq_location
+                self.params.dataflow_options.bq_location
             )
             | "Hash Users - Google Ads Customer Match Contact Info"
             >> beam.Map(ADS_CM_HASHER.hash_users)
@@ -142,7 +142,7 @@ class GoogleAdsCustomerMatchContactInfoStep(MegalistaStep):
             | "Load Data - Google Ads Customer Match Contact Info"
             >> BatchesFromExecutions(
                 DestinationType.ADS_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD,
-                bq_location=self.params.dataflow_options.bq_location
+                self.params.dataflow_options.bq_location
             )
             | "Hash Users - Google Ads Customer Match Contact Info"
             >> beam.Map(ADS_CM_HASHER.hash_users)
@@ -164,7 +164,7 @@ class GoogleAdsCustomerMatchUserIdStep(MegalistaStep):
             | "Load Data - Google Ads Customer Match User Id"
             >> BatchesFromExecutions(
                 DestinationType.ADS_CUSTOMER_MATCH_USER_ID_UPLOAD,
-                bq_location=self.params.dataflow_options.bq_location
+                self.params.dataflow_options.bq_location
             )
             | "Hash Users - Google Ads Customer Match Contact Info"
             >> beam.Map(ADS_CM_HASHER.hash_users)
@@ -186,10 +186,10 @@ class GoogleAdsOfflineConversionsStep(MegalistaStep):
             | "Load Data - GoogleAdsOfflineConversions"
             >> BatchesFromExecutions(
                 DestinationType.ADS_OFFLINE_CONVERSION,
+                self.params.dataflow_options.bq_location,
                 2000,
                 TransactionalType.GCLID_TIME,
-                self.params.dataflow_options.bq_ops_dataset,
-                self.params.dataflow_options.bq_location
+                self.params.dataflow_options.bq_ops_dataset
             )
             | "Upload - GoogleAdsOfflineConversions"
             >> beam.ParDo(
@@ -215,8 +215,8 @@ class GoogleAnalyticsUserListStep(MegalistaStep):
             | "Load Data -  GA user list"
             >> BatchesFromExecutions(
                 DestinationType.GA_USER_LIST_UPLOAD, 
-                5000000,
-                bq_location=self.params.dataflow_options.bq_location
+                self.params.dataflow_options.bq_location,
+                5000000
             )
             | "Upload - GA user list"
             >> beam.ParDo(GoogleAnalyticsUserListUploaderDoFn(self.params._oauth_credentials,
@@ -232,8 +232,8 @@ class GoogleAnalyticsDataImportStep(MegalistaStep):
             | "Load Data -  GA data import"
             >> BatchesFromExecutions(
                 DestinationType.GA_DATA_IMPORT,
-                1000000,
-                bq_location=self.params.dataflow_options.bq_location
+                self.params.dataflow_options.bq_location,
+                1000000
             )
             | "Delete Data -  GA data import"
             >> beam.ParDo(
@@ -255,10 +255,10 @@ class GoogleAnalyticsMeasurementProtocolStep(MegalistaStep):
             | "Load Data - GA measurement protocol"
             >> BatchesFromExecutions(
                 DestinationType.GA_MEASUREMENT_PROTOCOL,
+                self.params.dataflow_options.bq_location,
                 20,
                 TransactionalType.UUID,
-                self.params.dataflow_options.bq_ops_dataset,
-                self.params.dataflow_options.bq_location
+                self.params.dataflow_options.bq_ops_dataset
             )
             | "Upload - GA measurement protocol"
             >> beam.ParDo(GoogleAnalyticsMeasurementProtocolUploaderDoFn(
@@ -279,10 +279,10 @@ class GoogleAnalytics4MeasurementProtocolStep(MegalistaStep):
             | "Load Data - GA 4 measurement protocol"
             >> BatchesFromExecutions(
                 DestinationType.GA_4_MEASUREMENT_PROTOCOL,
+                self.params.dataflow_options.bq_location,
                 20,
                 TransactionalType.UUID,
-                self.params.dataflow_options.bq_ops_dataset,
-                self.params.dataflow_options.bq_location
+                self.params.dataflow_options.bq_ops_dataset
             )
             | "Upload - GA 4 measurement protocol"
             >> beam.ParDo(GoogleAnalytics4MeasurementProtocolUploaderDoFn(
@@ -303,10 +303,10 @@ class CampaignManagerConversionStep(MegalistaStep):
             | "Load Data -  CM conversion"
             >> BatchesFromExecutions(
                 DestinationType.CM_OFFLINE_CONVERSION,
+                self.params.dataflow_options.bq_location,
                 1000,
                 TransactionalType.UUID,
-                self.params.dataflow_options.bq_ops_dataset,
-                self.params.dataflow_options.bq_location
+                self.params.dataflow_options.bq_ops_dataset
             )
             | "Upload - CM conversion"
             >> beam.ParDo(
@@ -329,7 +329,7 @@ class DisplayVideoCustomerMatchDeviceIdStep(MegalistaStep):
             | "Load Data - Display & Video Customer Match Device Id"
             >> BatchesFromExecutions(
                 DestinationType.DV_CUSTOMER_MATCH_DEVICE_ID_UPLOAD,
-                bq_location=self.params.dataflow_options.bq_location
+                self.params.dataflow_options.bq_location
             )
             | "Hash Users - Display & Video Customer Match Contact Info"
             >> beam.Map(DV_CM_HASHER.hash_users)
@@ -351,7 +351,7 @@ class DisplayVideoCustomerMatchContactInfoStep(MegalistaStep):
             | "Load Data - Display & Video Customer Match Contact Info"
             >> BatchesFromExecutions(
                 DestinationType.DV_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD,
-                bq_location=self.params.dataflow_options.bq_location
+                self.params.dataflow_options.bq_location
             )
             | "Hash Users - Display & Video Customer Match Contact Info"
             >> beam.Map(DV_CM_HASHER.hash_users)
