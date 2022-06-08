@@ -75,7 +75,7 @@ class CampaignManagerConversionUploaderDoFn(MegalistaUploader):
         execution,
         execution.destination.destination_metadata[0],
         execution.destination.destination_metadata[1],
-        execution.account_config.campaign_manager_account_id,
+        execution.account_config.campaign_manager_profile_id,
         timestamp,
         batch.elements)
 
@@ -84,7 +84,7 @@ class CampaignManagerConversionUploaderDoFn(MegalistaUploader):
       execution,
       floodlight_activity_id,
       floodlight_configuration_id,
-      campaign_manager_account_id,
+      campaign_manager_profile_id,
       timestamp,
       rows):
 
@@ -135,7 +135,7 @@ class CampaignManagerConversionUploaderDoFn(MegalistaUploader):
     logger.info(f'Conversions: \n{conversions}')
 
     request = service.conversions().batchinsert(
-        profileId=campaign_manager_account_id, body=request_body)
+        profileId=campaign_manager_profile_id, body=request_body)
     response = request.execute()
 
     if response['hasFailures']:
