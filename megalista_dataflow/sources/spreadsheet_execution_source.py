@@ -49,7 +49,7 @@ class SpreadsheetExecutionSource(BaseBoundedSource):
     mcc = False if mcc_trix is None else bool(distutils.util.strtobool(mcc_trix))
     app_id = self._sheets_config.get_value(sheet_id, "AppId")
     google_analytics_account_id = self._sheets_config.get_value(sheet_id, "GoogleAnalyticsAccountId")
-    campaign_manager_account_id = self._sheets_config.get_value(sheet_id, "CampaignManagerAccountId")
+    campaign_manager_account_id = self._sheets_config.get_value(sheet_id, "CampaignManagerProfileId")
     account_config = AccountConfig(google_ads_id, mcc, google_analytics_account_id, campaign_manager_account_id, app_id)
     logging.getLogger("megalista.SpreadsheetExecutionSource").info(f"Loaded: {account_config}")
 
