@@ -62,9 +62,9 @@ class FirestoreExecutionSource(BaseBoundedSource):
     mcc = False if mcc_trix is None else bool(distutils.util.strtobool(mcc_trix))
     app_id = account_data.get('app_id', 'empty')
     google_analytics_account_id = account_data.get('google_analytics_account_id', 'empty')
-    campaign_manager_account_id = account_data.get('campaign_manager_account_id', 'empty')
+    campaign_manager_profile_id = account_data.get('campaign_manager_profile_id', 'empty')
     
-    account_config = AccountConfig(google_ads_id, mcc, google_analytics_account_id, campaign_manager_account_id, app_id)
+    account_config = AccountConfig(google_ads_id, mcc, google_analytics_account_id, campaign_manager_profile_id, app_id)
     logging.getLogger("megalista.FirestoreExecutionSource").info(f"Loaded: {account_config}")
     
     sources = self._read_sources(entries)
