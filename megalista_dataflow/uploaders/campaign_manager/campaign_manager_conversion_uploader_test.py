@@ -33,7 +33,7 @@ from models.oauth_credentials import OAuthCredentials
 from uploaders.campaign_manager.campaign_manager_conversion_uploader import CampaignManagerConversionUploaderDoFn
 
 _account_config = AccountConfig(mcc=False,
-                                campaign_manager_account_id='dcm_profile_id',
+                                campaign_manager_profile_id='dcm_profile_id',
                                 google_ads_account_id='',
                                 google_analytics_account_id='',
                                 app_id='')
