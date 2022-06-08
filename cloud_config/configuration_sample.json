@@ -3,7 +3,7 @@
   "GoogleAdsMCC": false,
   "AppId": "",
   "GoogleAnalyticsAccountId": "",
-  "CampaignManagerAccountId": "",
+  "CampaignManagerProfileId": "",
   "Sources": [
     {
       "Name": "example Ads offline conversions source",
