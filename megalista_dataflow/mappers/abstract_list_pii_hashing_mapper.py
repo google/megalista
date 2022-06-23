@@ -79,7 +79,7 @@ class ListPIIHashingMapper:
         return Batch(
             batch.execution, 
             [element for element in hashed_elements if element],
-            batch.iteration
+            batch.iterarion
         )
     
     def _hash_user(self, user, hasher):
