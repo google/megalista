@@ -293,11 +293,11 @@ class Batch:
         self,
         execution: Execution,
         elements: List[Dict[str, Union[str, Dict[str, str]]]],
-        iterarion: int = 1,
+        iteration: int = 1,
     ):
         self._execution = execution
         self._elements = elements
-        self._iteration = iterarion
+        self._iteration = iteration
 
     @property
     def execution(self) -> Execution:
@@ -308,7 +308,7 @@ class Batch:
         return self._elements
 
     @property
-    def iterarion(self) -> int:
+    def iteration(self) -> int:
         return self._iteration
 
     def __str__(self):

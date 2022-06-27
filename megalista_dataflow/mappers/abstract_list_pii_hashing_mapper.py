@@ -74,5 +74,5 @@ class ListPIIHashingMapper:
         return Batch(
             batch.execution, 
             [element for element in hashed_elements if element],
-            batch.iterarion
+            batch.iteration
         )
