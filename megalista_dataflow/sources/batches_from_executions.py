@@ -91,7 +91,6 @@ class BatchesFromExecutions(beam.PTransform):
         self,
         dataflow_options: DataflowOptions,
         destination_type: DestinationType,
-        bq_location: ValueProvider,
         batch_size: int = 5000,
         transactional_type: TransactionalType = TransactionalType.NOT_TRANSACTIONAL
     ):
