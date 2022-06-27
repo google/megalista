@@ -22,6 +22,8 @@ from apache_beam.options.pipeline_options import PipelineOptions
 from error.error_handling import ErrorHandler, ErrorNotifier, GmailNotifier
 from mappers.ads_user_list_pii_hashing_mapper import \
   AdsUserListPIIHashingMapper
+from mappers.dv_user_list_pii_hashing_mapper import \
+  DVUserListPIIHashingMapper
 from models.execution import DestinationType, Execution
 from models.json_config import JsonConfig
 from models.oauth_credentials import OAuthCredentials
@@ -44,12 +46,15 @@ from uploaders.google_analytics.google_analytics_data_import_uploader import Goo
 from uploaders.google_analytics.google_analytics_measurement_protocol import \
   GoogleAnalyticsMeasurementProtocolUploaderDoFn
 from uploaders.google_analytics.google_analytics_user_list_uploader import GoogleAnalyticsUserListUploaderDoFn
+from uploaders.display_video.customer_match.contact_info_uploader import DisplayVideoCustomerMatchContactInfoUploaderDoFn
+from uploaders.display_video.customer_match.mobile_uploader import DisplayVideoCustomerMatchMobileUploaderDoFn
 
 warnings.filterwarnings(
     "ignore", "Your application has authenticated using end user credentials"
 )
 
 ADS_CM_HASHER = AdsUserListPIIHashingMapper()
+DV_CM_HASHER = DVUserListPIIHashingMapper()
 
 def filter_by_action(execution: Execution, destination_type: DestinationType):
     return execution.destination.destination_type is destination_type
@@ -309,6 +314,48 @@ class CampaignManagerConversionStep(MegalistaStep):
             )
         )
 
+class DisplayVideoCustomerMatchDeviceIdStep(MegalistaStep):
+    def expand(self, executions):
+        return (
+            executions
+            | "Load Data - Display & Video Customer Match Device Id"
+            >> BatchesFromExecutions(
+                self.params.dataflow_options, 
+                DestinationType.DV_CUSTOMER_MATCH_DEVICE_ID_UPLOAD,
+            )
+            | "Hash Users - Display & Video Customer Match Contact Info"
+            >> beam.Map(DV_CM_HASHER.hash_users)
+            | "Upload - Display & Video Customer Match Mobile Device Id"
+            >> beam.ParDo(
+                DisplayVideoCustomerMatchMobileUploaderDoFn(
+                    self.params._oauth_credentials,
+                    self.params._dataflow_options.developer_token,
+                    ErrorHandler(DestinationType.DV_CUSTOMER_MATCH_DEVICE_ID_UPLOAD, self.params.error_notifier)
+                )
+            )
+        )
+
+
+class DisplayVideoCustomerMatchContactInfoStep(MegalistaStep):
+    def expand(self, executions):
+        return (
+            executions
+            | "Load Data - Display & Video Customer Match Contact Info"
+            >> BatchesFromExecutions(
+                self.params.dataflow_options, 
+                DestinationType.DV_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD
+            )
+            | "Hash Users - Display & Video Customer Match Contact Info"
+            >> beam.Map(DV_CM_HASHER.hash_users)
+            | "Upload - Display & Video Customer Match Contact Info"
+            >> beam.ParDo(
+                DisplayVideoCustomerMatchContactInfoUploaderDoFn(
+                    self.params._oauth_credentials,
+                    self.params._dataflow_options.developer_token,
+                  ErrorHandler(DestinationType.DV_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD, self.params.error_notifier)
+                )
+            )
+        )
 
 def run(argv=None):
     pipeline_options = PipelineOptions()
@@ -349,6 +396,8 @@ def run(argv=None):
         executions | GoogleAnalyticsMeasurementProtocolStep(params)
         executions | GoogleAnalytics4MeasurementProtocolStep(params)
         executions | CampaignManagerConversionStep(params)
+        executions | DisplayVideoCustomerMatchDeviceIdStep(params)
+        executions | DisplayVideoCustomerMatchContactInfoStep(params)
 
         # Add third party steps
         for step in THIRD_PARTY_STEPS:

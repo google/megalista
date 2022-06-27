@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from models.execution import SourceType, DestinationType
+from models.execution import SourceType, DestinationType, TransactionalType
 from models.options import DataflowOptions
 from data_sources.base_data_source import BaseDataSource
 from data_sources.big_query.big_query_data_source import BigQueryDataSource
@@ -35,7 +35,7 @@ class DataSource:
                 bq_location = dataflow_options.bq_location.get()
             return BigQueryDataSource(transactional_type, bq_ops_dataset, bq_location)
         elif source_type == SourceType.FILE:
-            return FileDataSource(transactional_type, dataflow_options, destination_type)
+            raise NotImplementedError("FILE Source Type not implemented. Please check your configuration (sheet / json / firestore).")
         else:
             raise NotImplementedError("Source Type not implemented. Please check your configuration (sheet / json / firestore).")
         return data_source

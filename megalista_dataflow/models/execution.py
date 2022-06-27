@@ -32,7 +32,9 @@ class DestinationType(Enum):
         GA_MEASUREMENT_PROTOCOL,
         GA_DATA_IMPORT,
         GA_4_MEASUREMENT_PROTOCOL,
-    ) = range(12)
+        DV_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD,
+        DV_CUSTOMER_MATCH_DEVICE_ID_UPLOAD,
+    ) = range(14)
 
     def __eq__(self, other):
         if other is None:
@@ -267,7 +269,7 @@ class Execution:
 
     @property
     def account_config(self) -> AccountConfig:
-        return self._account_config
+        return self._account_config 
 
     def to_dict(self):
         return {
@@ -305,9 +307,11 @@ class Batch:
         self,
         execution: Execution,
         elements: List[Dict[str, Union[str, Dict[str, str]]]],
+        iteration: int = 1,
     ):
         self._execution = execution
         self._elements = elements
+        self._iteration = iteration
 
     @property
     def execution(self) -> Execution:
@@ -316,6 +320,10 @@ class Batch:
     @property
     def elements(self) -> List[Dict[str, Union[str, Dict[str, str]]]]:
         return self._elements
+
+    @property
+    def iteration(self) -> int:
+        return self._iteration
 
     def __str__(self):
         return f"Execution: {self._execution}. Elements: {self._elements}"

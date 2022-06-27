@@ -221,7 +221,8 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
         rows = self.get_filtered_rows(batch.elements, self.get_row_keys())
 
         operations = []
-        if self._get_remove_all(execution.destination.destination_metadata[1]):
+        # Only removes all at the first interation. Otherwise, skip it
+        if (self._get_remove_all(execution.destination.destination_metadata[1]) and batch.iteration == 1):
             operations.append({
                 'remove_all': True
             })

@@ -37,8 +37,8 @@ class BigQueryDataSource(BaseDataSource):
         self._bq_ops_dataset = bq_ops_dataset
         self._bq_location = bq_location
         if transactional_type is not TransactionalType.NOT_TRANSACTIONAL:
-            if not bq_ops_dataset or not bq_location:
-                raise Exception('Missing bq_ops_dataset/bq_location for this uploader')
+            if not bq_ops_dataset:
+                raise Exception('Missing bq_ops_dataset for this uploader')
 
     
     def retrieve_data(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
