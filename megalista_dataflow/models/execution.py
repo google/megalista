@@ -46,6 +46,21 @@ class SourceType(Enum):
     BIG_QUERY, CSV = range(2)
     # TODO: CSV not yet implemented
 
+class TransactionalType(Enum):
+    """
+        Distinct types to handle data uploading deduplication.
+        NOT_TRANSACTION: don't handle.
+        UUID: Expect a 'uuid' field in the source table as a unique identifier to each row.
+        GCLID_DATE_TIME: Expect 'gclid' and 'time' fields in the source table as unique identifiers to each row.
+    """
+    (
+        NOT_TRANSACTIONAL,
+        UUID,
+        GCLID_TIME,
+    ) = range(3)
+
+
+    
 
 class AccountConfig:
     def __init__(
