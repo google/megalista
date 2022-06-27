@@ -22,7 +22,7 @@ from apache_beam.options.value_provider import ValueProvider
 from google.cloud import bigquery
 from models.execution import DestinationType, Execution, Batch, TransactionalType
 from string import Template
-from typing import Any, List, Iterable, Tuple, Dict
+from typing import Any, List, Iterable, Tuple, Dict, Optional
 from models.options import DataflowOptions
 from data_sources.data_source import DataSource
 
@@ -37,7 +37,6 @@ def _convert_row_to_dict(row):
     for key, value in row.items():
         dict[key] = value
     return dict
-
 
 class ExecutionCoder(coders.Coder):
     """A custom coder for the Execution class."""
@@ -76,19 +75,23 @@ class BatchesFromExecutions(beam.PTransform):
         def process(self, grouped_elements):
             # grouped_elements[0] is the grouping key, the execution
             execution = grouped_elements[0]
-            batch: List[Any] = []
+            batch: List[Any] = []        
+            # Keeps track of the batch iteration
+            iteration = 1
             # grouped_elements[1] is the list of elements
             for i, element in enumerate(grouped_elements[1]):
                 if i != 0 and i % self._batch_size == 0:
-                    yield Batch(execution, batch)
+                    yield Batch(execution, batch, iteration)
+                    iteration += 1
                     batch = []
                 batch.append(element)
-            yield Batch(execution, batch)
+            yield Batch(execution, batch, iteration)
 
     def __init__(
         self,
         dataflow_options: DataflowOptions,
         destination_type: DestinationType,
+        bq_location: ValueProvider,
         batch_size: int = 5000,
         transactional_type: TransactionalType = TransactionalType.NOT_TRANSACTIONAL
     ):

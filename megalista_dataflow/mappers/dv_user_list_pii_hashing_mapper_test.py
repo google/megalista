@@ -1,0 +1,163 @@
+# Copyright 2021 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from mappers.dv_user_list_pii_hashing_mapper import DVUserListPIIHashingMapper
+from models.execution import Batch
+
+
+def test_get_should_hash_fields():
+
+    hasher = DVUserListPIIHashingMapper()
+
+    # True
+    assert hasher._get_should_hash_fields(['ListName', 'Operator', 'True'])
+    assert hasher._get_should_hash_fields(['ListName', 'Operator'])
+    assert hasher._get_should_hash_fields(['ListName', 'Operator', None])
+    assert hasher._get_should_hash_fields(['ListName', 'Operator', ''])
+    assert hasher._get_should_hash_fields(['ListName', 'Operator', 'anything'])
+
+    # False
+    assert not hasher._get_should_hash_fields(['ListName', 'Operator', 'false'])
+    assert not hasher._get_should_hash_fields(['ListName', 'Operator', 'FALSE'])
+    assert not hasher._get_should_hash_fields(['ListName', 'Operator', 'False'])
+
+
+def test_pii_hashing(mocker):
+
+    users = [{
+            "email": "john@doe.com",
+            "phone": "+551199999999",
+            "mailing_address_first_name": "John ",
+            "mailing_address_last_name": "Doe",
+            "mailing_address_zip": "12345",
+            "mailing_address_country": "US"
+        },
+        {
+            "email": "jane@doe.com",
+            "phone": "+551199999910",
+            "mailing_address_first_name": "Jane",
+            "mailing_address_last_name": " Doe",
+            "mailing_address_zip": "12345",
+            "mailing_address_country": "US"
+        },
+        {
+            "email": "only@email.com",
+            "phone": None,
+            "mailing_address_first_name": "",
+            "mailing_address_last_name": "",
+            "mailing_address_zip": "",
+            "mailing_address_country": ""
+        },
+        {
+            "email": "",
+            "phone": "+551199999910",
+            "mailing_address_first_name": "",
+            "mailing_address_last_name": "",
+            "mailing_address_zip": "",
+            "mailing_address_country": ""
+        },
+        {
+            "phone": "+551199999911",
+            "mailing_address_first_name": "Incomplete",
+            "mailing_address_last_name": "Register",
+            "mailing_address_zip": None,
+        },
+        {
+            "phone": "",
+            "mailing_address_first_name": "Incomplete",
+            "mailing_address_last_name": None,
+            "mailing_address_zip": None,
+        }
+    ]
+
+    # Execution mock
+    execution = mocker.MagicMock()
+    execution.destination.destination_metadata = ['Audience', 'ADD']
+
+    batch = Batch(execution, users)
+
+    # Call
+    hasher = DVUserListPIIHashingMapper()
+    hashed = hasher.hash_users(batch).elements
+
+    assert len(hashed) == 5
+
+    assert hashed[0] == {
+        'hashedEmails': 'd709f370e52b57b4eb75f04e2b3422c4d41a05148cad8f81776d94a048fb70af',
+        'hashedPhoneNumbers': 'a58d4dce9db87c65ebb6137f91edb9bbe7f274f5b0d07eea82f756ea70532b9c',      
+        'countryCode': 'US',
+        'hashedFirstName': '96d9632f363564cc3032521409cf22a852f2032eec099ed5967c0d000cec607a',
+        'hashedLastName': '799ef92a11af918e3fb741df42934f3b568ed2d93ac1df74f1b8d41a27932a6f',
+        'zipCodes': '12345'
+        }
+
+    assert hashed[1] == {
+        'hashedEmails': '7c815580ad3844bcb627c74d24eaf700e1a711d9c23e9beb62ab8d28e8cb7954',
+        'hashedPhoneNumbers': 'd9303375de7036858c05f5836dd6db59d7f66899d3c8f85fbf09a8b60c79b236', 
+        'countryCode': 'US',
+        'hashedFirstName': '81f8f6dde88365f3928796ec7aa53f72820b06db8664f5fe76a7eb13e24546a2',
+        'hashedLastName': '799ef92a11af918e3fb741df42934f3b568ed2d93ac1df74f1b8d41a27932a6f',
+        'zipCodes': '12345'
+        }
+
+    assert hashed[2] == {'hashedEmails': '785af30a27e429e1a2dc2f5e589d59f268239db551c3af29821eb0b3f05d40af'}
+
+    assert hashed[3] == {'hashedPhoneNumbers': 'd9303375de7036858c05f5836dd6db59d7f66899d3c8f85fbf09a8b60c79b236'}
+
+    assert hashed[4] == {'hashedPhoneNumbers': 'd8d1da09dd3584315610e314b781d0b964a260e6311879930aa2ff678a897753'}
+
+
+def test_avoid_pii_hashing(mocker):
+    users = [{
+        "email": "john@doe.com",
+        "mailing_address_first_name": "John",
+        "mailing_address_last_name": "Doe",
+        "mailing_address_zip": "12345",
+        "mailing_address_country": "US"
+    },
+        {
+            "email": "jane@doe.com",
+            "mailing_address_first_name": "Jane",
+            "mailing_address_last_name": "Doe",
+            "mailing_address_zip": "12345",
+            "mailing_address_country": "US"
+        }]
+
+    # Mock the execution
+    execution = mocker.MagicMock()
+    execution.destination.destination_metadata = ['Audience', 'ADD', 'False']
+
+    batch = Batch(execution, [users[0], users[1]])
+
+    # Call
+    hasher = DVUserListPIIHashingMapper()
+    hashed = hasher.hash_users(batch).elements
+
+    assert len(hashed) == 2
+
+    assert hashed[0] == {
+        'hashedEmails': 'john@doe.com', 
+        'countryCode': 'US',
+        'hashedFirstName': 'John',
+        'hashedLastName': 'Doe',
+        'zipCodes': '12345'
+        }
+
+    assert hashed[1] == {
+        'hashedEmails': 'jane@doe.com', 
+        'countryCode': 'US',
+        'hashedFirstName': 'Jane',
+        'hashedLastName': 'Doe',
+        'zipCodes': '12345'
+        }

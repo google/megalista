@@ -13,3 +13,4 @@ generate_csv.sh
 .idea
 .venv
 .vscode
+.DS_Store
