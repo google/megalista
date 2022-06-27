@@ -26,11 +26,18 @@ class GoogleAdsCustomerMatchUserIdUploaderDoFn(
       account_config: AccountConfig,
       destination_metadata: List[str]) -> Dict[str, Any]:
     list_name = destination_metadata[0]
+    # Defines the list's lifespan to unlimited
+    life_span = 10000
+    
+    # Overwrites lifespan value if any
+    if len(destination_metadata) >=6 and destination_metadata[5]:
+        life_span = destination_metadata[5] 
+
     return {
       'membership_status': 'OPEN',
       'name': list_name,
       'description': 'List created automatically by Megalista',
-      'membership_life_span': 10000,
+      'membership_life_span': life_span,
       'crm_based_user_list': {
         'upload_key_type': 'CRM_ID',
         'data_source_type': 'FIRST_PARTY',
