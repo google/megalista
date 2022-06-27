@@ -222,7 +222,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
 
         operations: List[Dict[str, Union[bool, Dict[str, Any]]]] = []
         # Only removes all at the first interation. Otherwise, skip it
-        if (self._get_remove_all(execution.destination.destination_metadata[1]) and batch.iterarion == 1):
+        if (self._get_remove_all(execution.destination.destination_metadata[1]) and batch.iteration == 1):
             operations.append({
                 'remove_all': True
             })
