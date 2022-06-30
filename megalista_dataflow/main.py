@@ -34,6 +34,7 @@ from sources.primary_execution_source import PrimaryExecutionSource
 from third_party import THIRD_PARTY_STEPS
 from uploaders.support.transactional_events_results_writer import TransactionalEventsResultsWriter
 from uploaders.campaign_manager.campaign_manager_conversion_uploader import CampaignManagerConversionUploaderDoFn
+from uploaders.google_ads.conversions.google_ads_offline_conversions_calls_uploader import GoogleAdsOfflineUploaderCallsDoFn
 from uploaders.google_ads.conversions.google_ads_offline_conversions_uploader import GoogleAdsOfflineUploaderDoFn
 from uploaders.google_ads.conversions.google_ads_ssd_uploader import GoogleAdsSSDUploaderDoFn
 from uploaders.google_ads.customer_match.contact_info_uploader import GoogleAdsCustomerMatchContactInfoUploaderDoFn
@@ -195,6 +196,33 @@ class GoogleAdsOfflineConversionsStep(MegalistaStep):
                     self.params._oauth_credentials,
                     self.params._dataflow_options.developer_token,
                     ErrorHandler(DestinationType.ADS_OFFLINE_CONVERSION, self.params.error_notifier)
+                )
+            )
+            | "Persist results - GoogleAdsOfflineConversions"
+            >> beam.ParDo(
+              TransactionalEventsResultsWriter(
+                self.params._dataflow_options,
+                TransactionalType.GCLID_TIME)
+            )
+        )
+
+
+class GoogleAdsOfflineConversionsCallsStep(MegalistaStep):
+    def expand(self, executions):
+        return (
+            executions
+            | "Load Data - GoogleAdsOfflineConversionsCalls"
+            >> BatchesFromExecutions(
+                self.params.dataflow_options, 
+                DestinationType.ADS_OFFLINE_CONVERSION_CALLS,
+                2000,
+                TransactionalType.NOT_TRANSACTIONAL)
+            | "Upload - GoogleAdsOfflineConversionsCalls"
+            >> beam.ParDo(
+                GoogleAdsOfflineUploaderCallsDoFn(
+                    self.params._oauth_credentials,
+                    self.params._dataflow_options.developer_token,
+                    ErrorHandler(DestinationType.ADS_OFFLINE_CONVERSION_CALLS, self.params.error_notifier)
                 )
             )
             | "Persist results - GoogleAdsOfflineConversions"
@@ -391,6 +419,7 @@ def run(argv=None):
         executions | GoogleAdsCustomerMatchContactInfoStep(params)
         executions | GoogleAdsCustomerMatchUserIdStep(params)
         executions | GoogleAdsOfflineConversionsStep(params)
+        executions | GoogleAdsOfflineConversionsCallsStep(params)
         executions | GoogleAnalyticsUserListStep(params)
         executions | GoogleAnalyticsDataImportStep(params)
         executions | GoogleAnalyticsMeasurementProtocolStep(params)
