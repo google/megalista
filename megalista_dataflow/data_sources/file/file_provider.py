@@ -23,6 +23,7 @@ import io
 import logging
 
 from models.options import DataflowOptions
+from models.execution import SourceType
 from google.cloud import storage
 from google.oauth2.credentials import Credentials
 
@@ -31,11 +32,13 @@ _LOGGER_NAME = 'megalista.data_sources.FileProvider'
 import boto3
 
 class FileProvider:
-  def __init__(self, path: str, dataflow_options: DataflowOptions):
+  def __init__(self, path: str, dataflow_options: DataflowOptions, source_type: SourceType, source_name: str):
     self._path = path
     self._dataflow_options = dataflow_options
     self._provider = self._define_file_provider()
-    
+    self._source_type = source_type
+    self._source_name = source_name
+
   def read(self):
     return self._provider.read()
 
@@ -54,7 +57,7 @@ class FileProvider:
     elif self._path.startswith('file://') or not '://' in self._path:
       #Local File
       return self._LocalFileProvider(self._path)
-    raise NotImplementedError(f'Could not define File Provider. path="{self._path}"')
+    raise NotImplementedError(f'Could not define File Provider. Path="{self._path}". Source="{self._source_name}"')
     
   class _LocalFileProvider:
     def __init__(self, path: str):

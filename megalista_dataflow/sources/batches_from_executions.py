@@ -64,7 +64,8 @@ class BatchesFromExecutions(beam.PTransform):
 
         def process(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
             data_source = DataSource.get_data_source(
-                execution.source.source_type, execution.destination.destination_type, 
+                execution.source.source_type, execution.source.source_name,
+                execution.destination.destination_type, execution.destination.destination_name,
                 self._transactional_type, self._dataflow_options)
             return data_source.retrieve_data(execution)
 

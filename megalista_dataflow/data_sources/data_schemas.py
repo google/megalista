@@ -53,7 +53,6 @@ def process_by_destination_type(df: pd.DataFrame, destination_type: DestinationT
 
 # Data treatment - CM_OFFLINE_CONVERSION
 def _join_custom_variables(df) -> pd.DataFrame:
-    # df['customVariables'] = '{ "' + df['customVariables.type'] + '": "' + df['customVariables.value'] + '" }'
     df['customVariables'] = '{ "type": "' + df['customVariables.type'] + '", "value": "' + df['customVariables.value'] + '"}'
     df.drop(['customVariables.type', 'customVariables.value'], axis=1, inplace=True)
     df['customVariables'] = df.groupby('uuid')['customVariables'].transform(lambda x: '[' + ', '.join(x) + ']')

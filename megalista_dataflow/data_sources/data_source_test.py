@@ -21,21 +21,25 @@ from models.options import DataflowOptions
 
 def test_get_big_query_data_source(mocker):
     source_type = SourceType.BIG_QUERY
+    source_name = 'source_name'
     destination_type = DestinationType.ADS_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD
+    destination_name = 'destination_name'
     transactional_type = TransactionalType.NOT_TRANSACTIONAL
     dataflow_options = mocker.MagicMock()
     
-    data_source = DataSource.get_data_source(source_type, destination_type, transactional_type, dataflow_options)
+    data_source = DataSource.get_data_source(source_type, source_name, destination_type, destination_name, transactional_type, dataflow_options)
 
     assert type(data_source) is BigQueryDataSource
     
 def test_get_file_data_source(mocker):
     source_type = SourceType.FILE
+    source_name = 'source_name'
     destination_type = DestinationType.ADS_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD
+    destination_name = 'destination_name'
     transactional_type = TransactionalType.NOT_TRANSACTIONAL
     dataflow_options = mocker.MagicMock()
     
-    data_source = DataSource.get_data_source(source_type, destination_type, transactional_type, dataflow_options)
+    data_source = DataSource.get_data_source(source_type, source_name, destination_type, destination_name, transactional_type, dataflow_options)
 
     assert type(data_source) is FileDataSource
     
