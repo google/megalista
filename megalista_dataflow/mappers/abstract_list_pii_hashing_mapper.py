@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import hashlib
 import logging
+import re
 
 from models.execution import Batch
 
@@ -22,16 +24,17 @@ class FieldHasher:
         self.should_hash_fields = should_hash_fields
 
     def hash_field(self, field):
-        import hashlib
 
         if self.should_hash_fields:
             return hashlib.sha256(field.strip().lower().encode("utf-8")).hexdigest()
 
         return field
 
+
 class ListPIIHashingMapper:
     def __init__(self):
-        self.logger = logging.getLogger("megalista.AbstractListPIIHashingMapper")
+        self.logger = logging.getLogger(
+            "megalista.AbstractListPIIHashingMapper")
 
     def _get_default_hasheable_keys(self):
         return (
@@ -66,11 +69,44 @@ class ListPIIHashingMapper:
         )
         self.logger.debug(f"Should hash fields is {str(should_hash_fields)}")
 
+        field_hasher = FieldHasher(should_hash_fields)
+
         hashed_elements = [
-            self._hash_user(element, FieldHasher(should_hash_fields))
+            self._hash_user(element, field_hasher)
             for element in batch.elements
         ]
 
         return Batch(
-            batch.execution, [element for element in hashed_elements if element]
+            batch.execution, [
+                element for element in hashed_elements if element]
         )
+
+    def normalize_email(self, email_address):
+        """Returns the result of normalizing and hashing an email address.
+
+        For this use case, Google Ads requires removal of any '.' characters
+        preceding "gmail.com" or "googlemail.com"
+
+        Args:
+            email_address: An email address to normalize.
+
+        Returns:
+            A normalized (lowercase, removed whitespace).
+        """
+
+        normalized_email = email_address.lower()
+        email_parts = normalized_email.split("@")
+        # Checks whether the domain of the email address is either "gmail.com"
+        # or "googlemail.com". If this regex does not match then this statement
+        # will evaluate to None.
+        is_gmail = re.match(r"^(gmail|googlemail)\.com$", email_parts[1])
+
+        # Check that there are at least two segments and the second segment
+        # matches the above regex expression validating the email domain name.
+        if len(email_parts) > 1 and is_gmail:
+            # Removes any '.' characters from the portion of the email address
+            # before the domain if the domain is gmail.com or googlemail.com.
+            email_parts[0] = email_parts[0].replace(".", "")
+            normalized_email = "@".join(email_parts)
+
+        return normalized_email
