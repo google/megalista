@@ -77,8 +77,9 @@ class ListPIIHashingMapper:
         ]
 
         return Batch(
-            batch.execution, [
-                element for element in hashed_elements if element]
+            batch.execution, 
+            [element for element in hashed_elements if element],
+            batch.iteration
         )
 
     def normalize_email(self, email_address):

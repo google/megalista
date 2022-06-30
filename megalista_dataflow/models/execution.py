@@ -46,6 +46,21 @@ class SourceType(Enum):
     BIG_QUERY, CSV = range(2)
     # TODO: CSV not yet implemented
 
+class TransactionalType(Enum):
+    """
+        Distinct types to handle data uploading deduplication.
+        NOT_TRANSACTION: don't handle.
+        UUID: Expect a 'uuid' field in the source table as a unique identifier to each row.
+        GCLID_DATE_TIME: Expect 'gclid' and 'time' fields in the source table as unique identifiers to each row.
+    """
+    (
+        NOT_TRANSACTIONAL,
+        UUID,
+        GCLID_TIME,
+    ) = range(3)
+
+
+    
 
 class AccountConfig:
     def __init__(
@@ -293,9 +308,11 @@ class Batch:
         self,
         execution: Execution,
         elements: List[Dict[str, Union[str, Dict[str, str]]]],
+        iteration: int = 1,
     ):
         self._execution = execution
         self._elements = elements
+        self._iteration = iteration
 
     @property
     def execution(self) -> Execution:
@@ -304,6 +321,10 @@ class Batch:
     @property
     def elements(self) -> List[Dict[str, Union[str, Dict[str, str]]]]:
         return self._elements
+
+    @property
+    def iteration(self) -> int:
+        return self._iteration
 
     def __str__(self):
         return f"Execution: {self._execution}. Elements: {self._elements}"
