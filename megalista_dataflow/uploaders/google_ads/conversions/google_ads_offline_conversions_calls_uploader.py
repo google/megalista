@@ -22,6 +22,7 @@ from models.oauth_credentials import OAuthCredentials
 from uploaders import utils
 from uploaders.google_ads import ADS_API_VERSION
 from uploaders.uploaders import MegalistaUploader
+from typing import Any, List, Dict, Union
 
 _DEFAULT_LOGGER: str = 'megalista.GoogleAdsOfflineConversionsUploaderCalls'
 
@@ -39,13 +40,13 @@ class GoogleAdsOfflineUploaderCallsDoFn(MegalistaUploader):
                                      self.developer_token.get(),
                                      customer_id)
 
-  def _get_oc_service(self, customer_id):
+  def _get_oc_service(self, customer_id: str):
     return utils.get_ads_service('ConversionUploadService', ADS_API_VERSION,
                                      self.oauth_credentials,
                                      self.developer_token.get(),
                                      customer_id)
 
-  def _get_oc_action_service(self, customer_id):
+  def _get_oc_action_service(self, customer_id: str):
     return utils.get_ads_service('ConversionActionService', ADS_API_VERSION,
                                      self.oauth_credentials,
                                      self.developer_token.get(),
@@ -91,7 +92,7 @@ class GoogleAdsOfflineUploaderCallsDoFn(MegalistaUploader):
                     customer_id,
                     batch.elements)
 
-  def _do_upload(self, oc_service, execution, conversion_resource_name, customer_id, rows):
+  def _do_upload(self, oc_service: Any, execution: Execution, conversion_resource_name: str, customer_id: str, rows: List[Dict[str, Union[str, Dict[str, str]]]]):
     logging.getLogger(_DEFAULT_LOGGER).info(f'Uploading {len(rows)} offline conversions (calls) on {conversion_resource_name} to Google Ads.')
     conversions = [{
           'conversion_action': conversion_resource_name,
