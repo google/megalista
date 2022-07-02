@@ -121,7 +121,15 @@ def print_partial_error_messages(logger_name, action, response) -> str:
         logging.getLogger(logger_name).error(error_message)
     results = getattr(response, 'results', [])
     for result in results:
-        message = f'gclid {result.gclid} uploaded.'
+        gclid = getattr(result, 'gclid', None)
+        caller_id = getattr(result, 'caller_id', None)
+        if gclid is not None:
+            message = f'gclid {result.gclid} uploaded.'
+        elif caller_id is not None:
+            message = f'caller_id {result.caller_id} uploaded.'
+        else:
+            message = f'item {result} uploaded.'
+
         logging.getLogger(logger_name).debug(message)
 
     return error_message

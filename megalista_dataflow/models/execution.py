@@ -22,6 +22,7 @@ class DestinationType(Enum):
     (
         CM_OFFLINE_CONVERSION,
         ADS_OFFLINE_CONVERSION,
+        ADS_OFFLINE_CONVERSION_CALLS,
         ADS_SSD_UPLOAD,
         ADS_ENHANCED_CONVERSION,
         ADS_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD,
@@ -34,7 +35,7 @@ class DestinationType(Enum):
         GA_4_MEASUREMENT_PROTOCOL,
         DV_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD,
         DV_CUSTOMER_MATCH_DEVICE_ID_UPLOAD,
-    ) = range(14)
+    ) = range(15)
 
     def __eq__(self, other):
         if other is None:
