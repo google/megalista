@@ -39,15 +39,15 @@ table_name_uploaded = f'{table_name}_uploaded'
 
 @pytest.fixture
 def bq_data_source_uuid():
-  return BigQueryDataSource(TransactionalType.UUID, bq_ops_dataset, bq_location)
+  return BigQueryDataSource(TransactionalType.UUID, bq_ops_dataset, bq_location, SourceType.BIG_QUERY, 'source_name', DestinationType.ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD, 'destination_name')
 
 @pytest.fixture
 def bq_data_source_gclid_time():
-  return BigQueryDataSource(TransactionalType.GCLID_TIME, bq_ops_dataset, bq_location)
+  return BigQueryDataSource(TransactionalType.GCLID_TIME, bq_ops_dataset, bq_location, SourceType.BIG_QUERY, 'source_name', DestinationType.ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD, 'destination_name')
 
 @pytest.fixture
 def bq_data_source_non_transactional():
-  return BigQueryDataSource(TransactionalType.NOT_TRANSACTIONAL, bq_ops_dataset, bq_location)
+  return BigQueryDataSource(TransactionalType.NOT_TRANSACTIONAL, bq_ops_dataset, bq_location, SourceType.BIG_QUERY, 'source_name', DestinationType.ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD, 'destination_name')
 
 def test_get_table_name(mocker, bq_data_source_uuid, bq_data_source_gclid_time, bq_data_source_non_transactional):
   result_transactional_uploaded = f'{bq_ops_dataset}.{table_name_uploaded}'

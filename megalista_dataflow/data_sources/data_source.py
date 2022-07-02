@@ -16,6 +16,7 @@ from models.execution import SourceType, DestinationType
 from models.options import DataflowOptions
 from data_sources.base_data_source import BaseDataSource
 from data_sources.big_query.big_query_data_source import BigQueryDataSource
+from data_sources.file.file_data_source import FileDataSource
 from models.execution import TransactionalType
 
 import importlib
@@ -23,7 +24,7 @@ import importlib
 _LOGGER_NAME = 'megalista.data_sources.DataSource'
 
 class DataSource:
-    def get_data_source(source_type: SourceType, destination_type: DestinationType, transactional_type: TransactionalType, dataflow_options: DataflowOptions) -> BaseDataSource:
+    def get_data_source(source_type: SourceType, source_name: str, destination_type: DestinationType, destination_name: str, transactional_type: TransactionalType, dataflow_options: DataflowOptions) -> BaseDataSource:
         data_source = None
         if source_type == SourceType.BIG_QUERY:
             bq_ops_dataset = None
@@ -32,9 +33,9 @@ class DataSource:
                 bq_ops_dataset = dataflow_options.bq_ops_dataset.get()
             if dataflow_options.bq_location:
                 bq_location = dataflow_options.bq_location.get()
-            return BigQueryDataSource(transactional_type, bq_ops_dataset, bq_location)
+            return BigQueryDataSource(transactional_type, bq_ops_dataset, bq_location, source_type, source_name, destination_type, destination_name)
         elif source_type == SourceType.FILE:
-            raise NotImplementedError("FILE Source Type not implemented. Please check your configuration (sheet / json / firestore).")
+            return FileDataSource(transactional_type, dataflow_options, source_type, source_name, destination_type, destination_name)
         else:
             raise NotImplementedError("Source Type not implemented. Please check your configuration (sheet / json / firestore).")
         return data_source
