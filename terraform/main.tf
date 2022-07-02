@@ -146,7 +146,7 @@ resource "google_cloud_scheduler_job" "megalista_job" {
     body        = base64encode(local.scheduler_body)
     oauth_token {
       service_account_email = google_service_account.sa.email
-      scope = "https://www.googleapis.com/auth/compute"
+      scope = "https://www.googleapis.com/auth/cloud-platform"
     }
   }
 }

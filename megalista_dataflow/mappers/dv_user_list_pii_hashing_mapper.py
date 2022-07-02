@@ -27,12 +27,14 @@ class DVUserListPIIHashingMapper(ListPIIHashingMapper):
         processed_user = {}
         # include non PII keys as is (these should not be hashed)
         for k, v in user.items():
-          if k not in hashable_keys:
-            processed_user[k] = v
+            if k not in hashable_keys:
+                processed_user[k] = v
 
         try:
             if self._is_data_present(user, "email"):
-                processed_user["hashedEmails"] = hasher.hash_field(user["email"])
+                processed_email = self.normalize_email(user["email"])
+                processed_user["hashedEmails"] = hasher.hash_field(
+                    processed_email)
         except:
             self.logger.error(f"Error hashing email for user: {str(user)}")
 
@@ -43,17 +45,20 @@ class DVUserListPIIHashingMapper(ListPIIHashingMapper):
                 and self._is_data_present(user, "mailing_address_country")
                 and self._is_data_present(user, "mailing_address_zip")
             ):
-                processed_user["hashedFirstName"] = hasher.hash_field(user["mailing_address_first_name"])
-                processed_user["hashedLastName"] = hasher.hash_field(user["mailing_address_last_name"])
+                processed_user["hashedFirstName"] = hasher.hash_field(
+                    user["mailing_address_first_name"])
+                processed_user["hashedLastName"] = hasher.hash_field(
+                    user["mailing_address_last_name"])
                 processed_user["countryCode"] = user["mailing_address_country"]
                 processed_user["zipCodes"] = user["mailing_address_zip"]
-            
+
         except:
             self.logger.error(f"Error hashing address for user: {str(user)}")
 
         try:
             if self._is_data_present(user, "phone"):
-                processed_user["hashedPhoneNumbers"] = hasher.hash_field(user["phone"])
+                processed_user["hashedPhoneNumbers"] = hasher.hash_field(
+                    user["phone"])
         except:
             self.logger.error(f"Error hashing phone for user: {str(user)}")
 
