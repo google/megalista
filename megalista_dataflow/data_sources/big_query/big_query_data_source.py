@@ -21,7 +21,7 @@ from google.cloud import bigquery
 from google.cloud.bigquery import SchemaField, Client
 from apache_beam.io.gcp.bigquery import ReadFromBigQueryRequest
 
-from models.execution import Execution
+from models.execution import Execution, SourceType, DestinationType
 
 from data_sources.base_data_source import BaseDataSource
 
@@ -32,13 +32,19 @@ _BIGQUERY_PAGE_SIZE = 20000
 _LOGGER_NAME = 'megalista.data_sources.BigQuery'
 
 class BigQueryDataSource(BaseDataSource):
-    def __init__(self, transactional_type: TransactionalType, bq_ops_dataset: str, bq_location: str):
+    def __init__(self, transactional_type: TransactionalType, bq_ops_dataset: str, bq_location: str, source_type: SourceType, source_name: str, destination_type: DestinationType, destination_name: str):
         self._transactional_type = transactional_type
         self._bq_ops_dataset = bq_ops_dataset
         self._bq_location = bq_location
+        
+        self._source_type = source_type
+        self._source_name = source_name
+        self._destination_type = destination_type
+        self._destination_name = destination_name
+  
         if transactional_type is not TransactionalType.NOT_TRANSACTIONAL:
             if not bq_ops_dataset:
-                raise Exception('Missing bq_ops_dataset for this uploader')
+                raise Exception(f'Missing bq_ops_dataset for this uploader. Source="{self._source_name}". Destination="{self._destination_name}"')
 
     
     def retrieve_data(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
@@ -73,7 +79,7 @@ class BigQueryDataSource(BaseDataSource):
                             LEFT JOIN $uploaded_table_name AS uploaded USING(gclid, time) \
                             WHERE uploaded.gclid IS NULL;"
         else:
-            raise Exception(f'Unrecognized TransactionalType: {self._transactional_type}')
+            raise Exception(f'Unrecognized TransactionalType: {self._transactional_type}. Source="{self._source_name}". Destination="{self._destination_name}"')
 
         query = Template(template).substitute(table_name=table_name, uploaded_table_name=uploaded_table_name)
         logging.getLogger(_LOGGER_NAME).info(
@@ -97,7 +103,7 @@ class BigQueryDataSource(BaseDataSource):
                             PARTITION BY _PARTITIONDATE \
                             OPTIONS(partition_expiration_days=15)"
         else:
-            raise Exception(f'Unrecognized TransactionalType: {self._transactional_type}')
+            raise Exception(f'Unrecognized TransactionalType: {self._transactional_type}. Source="{self._source_name}". Destination="{self._destination_name}"')
 
         query = Template(template).substitute(uploaded_table_name=uploaded_table_name)
 
@@ -138,14 +144,14 @@ class BigQueryDataSource(BaseDataSource):
             return SchemaField("uuid", "string"), SchemaField("timestamp", "timestamp")
         if self._transactional_type == TransactionalType.GCLID_TIME:
             return SchemaField("gclid", "string"), SchemaField("time", "string"), SchemaField("timestamp", "timestamp")
-        raise Exception(f'Unrecognized TransactionalType: {self._transactional_type}')
+        raise Exception(f'Unrecognized TransactionalType: {self._transactional_type}. Source="{self._source_name}". Destination="{self._destination_name}"')
 
     def _get_bq_rows(self, rows, now):
         if self._transactional_type == TransactionalType.UUID:
             return [{'uuid': row['uuid'], 'timestamp': now} for row in rows]
         if self._transactional_type == TransactionalType.GCLID_TIME:
             return [{'gclid': row['gclid'], 'time': row['time'], 'timestamp': now} for row in rows]
-        raise Exception(f'Unrecognized TransactionalType: {self._transactional_type}')
+        raise Exception(f'Unrecognized TransactionalType: {self._transactional_type}. Source="{self._source_name}". Destination="{self._destination_name}"')
 
     def _get_bq_client(self):
         return bigquery.Client(location=self._bq_location)
