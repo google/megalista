@@ -94,9 +94,13 @@ class ListPIIHashingMapper:
         Returns:
             A normalized (lowercase, removed whitespace).
         """
-
         normalized_email = email_address.lower()
         email_parts = normalized_email.split("@")
+
+        # if email does not have the right format, assumed it is hashed and returns original data
+        if len(email_parts) < 2:
+            return email_address
+
         # Checks whether the domain of the email address is either "gmail.com"
         # or "googlemail.com". If this regex does not match then this statement
         # will evaluate to None.
