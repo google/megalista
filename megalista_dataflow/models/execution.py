@@ -68,13 +68,13 @@ class AccountConfig:
         google_ads_account_id: str,
         mcc: bool,
         google_analytics_account_id: str,
-        campaign_manager_account_id: str,
+        campaign_manager_profile_id: str,
         app_id: str,
     ):
         self._google_ads_account_id = google_ads_account_id
         self._mcc = mcc
         self._google_analytics_account_id = google_analytics_account_id
-        self._campaign_manager_account_id = campaign_manager_account_id
+        self._campaign_manager_profile_id = campaign_manager_profile_id
         self._app_id = app_id
 
     @property
@@ -90,8 +90,8 @@ class AccountConfig:
         return self._google_analytics_account_id
 
     @property
-    def campaign_manager_account_id(self) -> str:
-        return self._campaign_manager_account_id
+    def campaign_manager_profile_id(self) -> str:
+        return self._campaign_manager_profile_id
 
     @property
     def app_id(self) -> str:
@@ -102,7 +102,7 @@ class AccountConfig:
             'google_ads_account_id' : self.google_ads_account_id,
             'mcc': self.mcc,
             'google_analytics_account_id': self.google_analytics_account_id,
-            'campaign_manager_account_id': self.campaign_manager_account_id,
+            'campaign_manager_profile_id': self.campaign_manager_profile_id,
             'app_id': self.app_id,
         }
 
@@ -112,7 +112,7 @@ class AccountConfig:
             dict_account_config['google_ads_account_id'],
             dict_account_config['mcc'],
             dict_account_config['google_analytics_account_id'],
-            dict_account_config['campaign_manager_account_id'],
+            dict_account_config['campaign_manager_profile_id'],
             dict_account_config['app_id'],
         )
 
@@ -122,7 +122,7 @@ class AccountConfig:
             f"Google Ads Customer Id: {self.google_ads_account_id}\n\t"
             f"Google Ads MCC: {self._mcc}\n\t"
             f"Google Analytics Account Id: {self.google_analytics_account_id}\n\t"
-            f"Campaign Manager Account Id: {self.campaign_manager_account_id}\n\t"
+            f"Campaign Manager Account Id: {self.campaign_manager_profile_id}\n\t"
             f"Play Store App Id: {self.app_id}"
         )
 
@@ -130,7 +130,7 @@ class AccountConfig:
         return (
             self.google_ads_account_id == other.google_ads_account_id
             and self.google_analytics_account_id == other.google_analytics_account_id
-            and self.campaign_manager_account_id == other.campaign_manager_account_id
+            and self.campaign_manager_profile_id == other.campaign_manager_profile_id
             and self.app_id == other.app_id
         )
 
@@ -139,7 +139,7 @@ class AccountConfig:
             (
                 self.google_ads_account_id,
                 self.google_analytics_account_id,
-                self.campaign_manager_account_id,
+                self.campaign_manager_profile_id,
                 self.app_id,
             )
         )
