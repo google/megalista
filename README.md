@@ -1,6 +1,6 @@
 # Megalista
 
-Sample integration code for onboarding offline/CRM data from BigQuery as custom audiences or offline conversions in Google Ads, Google Analytics 360, Google Display & Video 360 and Google Campaign Manager.
+Sample integration code for onboarding offline/CRM data from BigQuery as custom audiences or offline conversions in Google Ads, Google Analytics 360, Google Display & Video 360, and Google Campaign Manager.
 
 **Disclaimer:** This is not an officially supported Google product.
 
@@ -29,7 +29,7 @@ Sample integration code for onboarding offline/CRM data from BigQuery as custom 
   - S2S Offline events API (conversion upload), to be used for audience creation and in-app events with Google Ads and DV360 [[details]](https://support.appsflyer.com/hc/en-us/articles/207034486-API-de-eventos-de-servidor-para-servidor-S2S-mobile-para-mobile)
 
 ## How does it work
-Megalista was design to separate the configuration of conversion/audience upload rules from the engine, giving more freedom for non-technical teams (i.e. Media and Business Inteligence) to setup multiple upload rules on their own.
+Megalista was designed to separate the configuration of conversion/audience upload rules from the engine, giving more freedom for non-technical teams (i.e. Media and Business Intelligence) to setup multiple upload rules on their own.
 
 The solution consists of #1 a configuration environment (either Google Sheet or JSON file, or a Google Cloud Firestore collection) in which all rules are defined by mapping a data source (BigQuery Table) to a destination (data upload endpoint) and #2, an Apache Beam workflow running on Google Dataflow, scheduled to upload the data in batch mode.
 
@@ -75,7 +75,7 @@ Required APIs will depend on upload endpoints in use.
 - Display & Video [[link]](https://console.cloud.google.com/apis/library/displayvideo.googleapis.com)
 
 ## Configure Megalista
-Megalista can be configured via Google Sheets, a JSON file or a Google Cloud Firestore collection. Expected data schemas (Sources) and metadata (Destinations) for each use case defined in [the Megalista Wiki](https://github.com/google/megalista/wiki).
+Megalista can be configured via Google Sheets, a JSON file, or a Google Cloud Firestore collection. Expected data schemas (Sources) and metadata (Destinations) for each use case are defined in [the Megalista Wiki](https://github.com/google/megalista/wiki).
 
 Instructions for each configuration method method can be found in the Megalista wiki
 - [Google Sheets] (https://github.com/google/megalista/wiki/Google-Sheets)
@@ -84,13 +84,13 @@ Instructions for each configuration method method can be found in the Megalista 
 
 ## Deployment
 
-These guide assumes it'll be followed inside Google Cloud Platform Console.
+This guide assumes it'll be followed inside Google Cloud Platform Console.
 
 ### Creating required access tokens
 To access campaigns and user lists on Google's platforms, this dataflow will need OAuth tokens for an account that can authenticate in those systems.
 
 In order to create it, follow these steps:
- - Access GCP console
+ - Access the GCP console
  - Go to the **API & Services** section on the top-left menu.
  - On the **OAuth Consent Screen** and configure an *Internal Consent Screen*
  - Then, go to the **Credentials** and create an *OAuth client Id* with Application type set as *Desktop App*
@@ -103,11 +103,11 @@ In order to create it, follow these steps:
 ### Deploying Pipeline
 To deploy the full Megalista pipeline, use the following command from the root folder:
 `./terraform_deploy.sh`
-The script will required some parameters, between them:
+The script will require some parameters, between them:
 - Auxliary bigquery dataset for Megalista operations to create
   - This dataset will be used for storing operational data and will be created by Terraform
 - Google Cloud Storage Bucket to create
-  - This Cloud Storage Bucket will be used to store Megalista compiled binary, metadata and temp files and will be created by Terraform.
+  - This Cloud Storage Bucket will be used to store Megalista compiled binary, metadata, and temp files and will be created by Terraform.
 - *Setup Firestore collection*, *URL for JSON configuration* and *Setup Sheet Id*
   - Only one of these three should be filled and the other should be left black accordingly to the chosen configuration method.
 
@@ -121,11 +121,11 @@ Every upload method expects as source a BigQuery data with specific fields, in a
 ## Errors notifications by email
 To have uploaders errors captured and sent by email, do the following:  
 In Cloud Scheduler, in the `parameters` section of the request body, add `notify_errors_by_email` parameter as `true` and `errors_destination_emails` with a list of emails divided by comma (`a@gmail.com,b@gmail.com` etc).  
-This parameters should be add the same list of pre-configured ones, such as `client_id`, `client_secret` etc.  
+These parameters should be added to the same list of pre-configured ones, such as `client_id`, `client_secret` etc.  
 
-If the access tokens being used were generated prior to version `v4.4`, new access and refresh tokens must be generated to activate this feature. This is necessary because old token don't have the `gmail.send` scope.
+If the access tokens being used were generated prior to version `v4.4`, new access and refresh tokens must be generated to activate this feature. This is necessary because old tokens don't have the `gmail.send` scope.
 
 
 
 ## Note about Google Ads API access
-Calls to the Google Ads API will fail if the user that generated the OAuth2 credentials (Access Token and Refresh Token) doesn't have direct access to the Google Ads account which the calls are being directed to. It's not enough for the user to have access to a MCC above this account and being able to access the account through the interface, it's required that the user has permissions on the account itself.
+Calls to the Google Ads API will fail if the user that generated the OAuth2 credentials (Access Token and Refresh Token) doesn't have direct access to the Google Ads account to which the calls are being directed. It's not enough for the user to have access to a MCC above this account and being able to access the account through the interface, it's required that the user has permissions on the account itself.
