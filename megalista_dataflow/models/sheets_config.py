@@ -52,3 +52,13 @@ class SheetsConfig:
     if range.get('values') is None:
       return None
     return range['values'][0][0]
+
+  def check_if_range_exists(self, sheet_id, range):
+      try:
+        self._get_sheets_service().spreadsheets().get(spreadsheetId=sheet_id, range=range).execute()
+      except:
+        return False
+      else:
+        return True
+      finally:
+        pass 

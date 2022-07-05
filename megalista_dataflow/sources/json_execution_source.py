@@ -51,7 +51,7 @@ class JsonExecutionSource(BaseBoundedSource):
     campaign_manager_profile_id = self._json_config.get_value(json_data, "CampaignManagerProfileId")
     
     if campaign_manager_profile_id is None:
-      campaign_manager_profile_id = self._json_config.get_value(sheet_id, "CampaignManagerAccountId")
+      campaign_manager_profile_id = self._json_config.get_value(json_data, "CampaignManagerAccountId")
     
     account_config = AccountConfig(google_ads_id, mcc, google_analytics_account_id, campaign_manager_profile_id, app_id)
     logging.getLogger("megalista.JsonExecutionSource").info(f"Loaded: {account_config}")
