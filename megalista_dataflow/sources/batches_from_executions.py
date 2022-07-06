@@ -20,7 +20,8 @@ import json
 from apache_beam.coders import coders
 from apache_beam.options.value_provider import ValueProvider
 from google.cloud import bigquery
-from megalista_dataflow.uploaders.uploaders import MegalistaUploader
+from error.error_handling import ErrorHandler
+from uploaders.uploaders import MegalistaUploader
 from models.execution import DestinationType, Execution, Batch, TransactionalType
 from string import Template
 from typing import Any, List, Iterable, Tuple, Dict, Optional
@@ -58,8 +59,8 @@ class BatchesFromExecutions(beam.PTransform):
     """
 
     class _ReadDataSource(MegalistaUploader):
-        def __init__(self, transactional_type: TransactionalType, dataflow_options: DataflowOptions):
-            super().__init__()
+        def __init__(self, transactional_type: TransactionalType, dataflow_options: DataflowOptions, error_handler: ErrorHandler):
+            super().__init__(error_handler)
             self._transactional_type = transactional_type
             self._dataflow_options = dataflow_options
 
@@ -71,7 +72,8 @@ class BatchesFromExecutions(beam.PTransform):
             return data_source.retrieve_data(execution)
 
     class _BatchElements(MegalistaUploader):
-        def __init__(self, batch_size: int):
+        def __init__(self, batch_size: int, error_handler: ErrorHandler):
+            super().__init__(error_handler)
             self._batch_size = batch_size
 
         def process(self, grouped_elements):
@@ -91,6 +93,7 @@ class BatchesFromExecutions(beam.PTransform):
 
     def __init__(
         self,
+        error_handler: ErrorHandler,
         dataflow_options: DataflowOptions,
         destination_type: DestinationType,
         batch_size: int = 5000,
@@ -98,6 +101,7 @@ class BatchesFromExecutions(beam.PTransform):
     ):
         super().__init__()
         
+        self._error_handler = error_handler
         self._dataflow_options = dataflow_options
         self._destination_type = destination_type
         self._batch_size = batch_size
@@ -107,7 +111,7 @@ class BatchesFromExecutions(beam.PTransform):
         return (
             executions
             | beam.Filter(lambda execution: execution.destination.destination_type == self._destination_type)
-            | beam.ParDo(self._ReadDataSource(self._transactional_type, self._dataflow_options))
+            | beam.ParDo(self._ReadDataSource(self._transactional_type, self._dataflow_options, self._error_handler))
             | beam.GroupByKey()
-            | beam.ParDo(self._BatchElements(self._batch_size))
+            | beam.ParDo(self._BatchElements(self._batch_size, self._error_handler))
         )
