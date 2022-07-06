@@ -22,8 +22,9 @@ from models.execution import Batch
 from models.options import DataflowOptions
 from data_sources.data_source import DataSource
 from models.execution import TransactionalType
+from uploaders import MegalistaUploader
 
-class TransactionalEventsResultsWriter(beam.DoFn):
+class TransactionalEventsResultsWriter(MegalistaUploader):
   """
   Uploads UUIDs from rows successfully sent by the uploader.
   It uploads the rows to a table with the same name of the source table plus the suffix '_uploaded'.
@@ -42,7 +43,8 @@ class TransactionalEventsResultsWriter(beam.DoFn):
     execution = batch.execution
 
     data_source = DataSource.get_data_source(
-      execution.source.source_type, execution.destination.destination_type, 
+      execution.source.source_type, execution.source.source_name,
+      execution.destination.destination_type, execution.destination.destination_name, 
       self._transactional_type, self._dataflow_options)
     return data_source.write_transactional_info(batch.elements, execution)
     

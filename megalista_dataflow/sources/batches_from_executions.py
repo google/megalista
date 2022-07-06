@@ -20,6 +20,7 @@ import json
 from apache_beam.coders import coders
 from apache_beam.options.value_provider import ValueProvider
 from google.cloud import bigquery
+from megalista_dataflow.uploaders.uploaders import MegalistaUploader
 from models.execution import DestinationType, Execution, Batch, TransactionalType
 from string import Template
 from typing import Any, List, Iterable, Tuple, Dict, Optional
@@ -56,7 +57,7 @@ class BatchesFromExecutions(beam.PTransform):
     load the data using the received source and group by that batch size and Execution.
     """
 
-    class _ReadDataSource(beam.DoFn):
+    class _ReadDataSource(MegalistaUploader):
         def __init__(self, transactional_type: TransactionalType, dataflow_options: DataflowOptions):
             super().__init__()
             self._transactional_type = transactional_type
@@ -69,7 +70,7 @@ class BatchesFromExecutions(beam.PTransform):
                 self._transactional_type, self._dataflow_options)
             return data_source.retrieve_data(execution)
 
-    class _BatchElements(beam.DoFn):
+    class _BatchElements(MegalistaUploader):
         def __init__(self, batch_size: int):
             self._batch_size = batch_size
 
