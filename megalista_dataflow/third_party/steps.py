@@ -21,6 +21,7 @@ class AppsFlyerEventsStep(beam.PTransform):
             executions
             | 'Load Data - AppsFlyer S2S events' >>
             BatchesFromExecutions(
+                ErrorHandler(DestinationType.APPSFLYER_S2S_EVENTS, self.params.error_notifier),
                 self.params._dataflow_options,
                 DestinationType.APPSFLYER_S2S_EVENTS,
                 1000,
@@ -32,5 +33,6 @@ class AppsFlyerEventsStep(beam.PTransform):
             | 'Persist results - AppsFlyer S2S events' >> beam.ParDo(
                             TransactionalEventsResultsWriter(
                               self.params.dataflow_options,
-                              TransactionalType.UUID))
+                              TransactionalType.UUID,
+                              ErrorHandler(DestinationType.APPSFLYER_S2S_EVENTS, self.params.error_notifier)))
         )
