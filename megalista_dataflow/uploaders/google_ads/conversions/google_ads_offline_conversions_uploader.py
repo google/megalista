@@ -56,6 +56,14 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
       return destination.destination_metadata[1].replace('-', '')
     return account_config.google_ads_account_id.replace('-', '')
 
+  def _get_login_customer_id(self, account_config: AccountConfig, destination: Destination) -> str:
+    """
+      If the customer_id in account_config is a mcc, then login with the mcc account id, otherwise use the customer id.
+    """
+    if account_config._mcc:
+        return account_config.google_ads_account_id.replace('-', '')
+    
+    return self._get_customer_id(account_config, destination)
 
   @staticmethod
   def _assert_conversion_name_is_present(execution: Execution):
@@ -75,9 +83,15 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     self._assert_conversion_name_is_present(execution)
 
     customer_id = self._get_customer_id(execution.account_config, execution.destination)
-    oc_service = self._get_oc_service(customer_id)
-
-    resource_name = self._get_resource_name(customer_id, execution.destination.destination_metadata[0])
+    
+    # Retrieves the login-customer-id if mcc enabled
+    login_customer_id = self._get_login_customer_id(execution.account_config, execution.destination)
+    # Initiates OCI service
+    oc_service = self._get_oc_service(login_customer_id)
+    # Initiates ADS service
+    ads_service = self._get_ads_service(login_customer_id)
+    
+    resource_name = self._get_resource_name(ads_service, customer_id, execution.destination.destination_metadata[0])
 
     response = self._do_upload(oc_service,
                     execution,
@@ -113,10 +127,9 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
 
     return response
 
-  def _get_resource_name(self, customer_id: str, name: str):
-      service = self._get_ads_service(customer_id)
+  def _get_resource_name(self, ads_service, customer_id: str, name: str):
       query = f"SELECT conversion_action.resource_name FROM conversion_action WHERE conversion_action.name = '{name}'"
-      response_query = service.search_stream(customer_id=customer_id, query=query)
+      response_query = ads_service.search_stream(customer_id=customer_id, query=query)
       for batch in response_query:
         for row in batch.results:
           return row.conversion_action.resource_name
