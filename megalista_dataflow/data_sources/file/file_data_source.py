@@ -100,7 +100,7 @@ class FileDataSource(BaseDataSource):
         # Add _uploaded into path
         path = FileDataSource._append_filename_uploaded(execution.source.source_metadata[1])
         bytes = data_source._get_file_from_data_frame(df).getbuffer().tobytes()
-        FileProvider(path, self._dataflow_options, self._source_type, self._source_name).write(bytes)
+        FileProvider(path, self._dataflow_options, self._source_type, self._source_name, False).write(bytes)
 
     def get_data_frame(self, source_name: str, path: str, is_uploaded: bool = False) -> pd.DataFrame:
         # Change filename if uploaded
@@ -109,7 +109,7 @@ class FileDataSource(BaseDataSource):
             path = FileDataSource._append_filename_uploaded(path)
         
         # Retrieve file
-        file = io.BytesIO(FileProvider(path, self._dataflow_options, self._source_type, self._source_name).read())
+        file = io.BytesIO(FileProvider(path, self._dataflow_options, self._source_type, self._source_name, is_uploaded).read())
 
         # Convert file into Data Frame
         if file.getbuffer().nbytes == 0:

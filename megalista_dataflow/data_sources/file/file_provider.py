@@ -33,12 +33,14 @@ _LOGGER_NAME = 'megalista.data_sources.FileProvider'
 import boto3
 
 class FileProvider:
-  def __init__(self, path: str, dataflow_options: DataflowOptions, source_type: SourceType, source_name: str):
+  def __init__(self, path: str, dataflow_options: DataflowOptions, source_type: SourceType, source_name: str, can_skip_read: bool):
     self._path = path
     self._dataflow_options = dataflow_options
-    self._provider = self._define_file_provider()
     self._source_type = source_type
     self._source_name = source_name
+    self._can_skip_read = can_skip_read
+
+    self._provider = self._define_file_provider()
 
   def read(self):
     return self._provider.read()
@@ -57,20 +59,27 @@ class FileProvider:
       return self._GCSFileProvider(self._path, self._dataflow_options)
     elif self._path.startswith('file://') or not '://' in self._path:
       #Local File
-      return self._LocalFileProvider(self._path)
+      return self._LocalFileProvider(self._path, self._can_skip_read)
     raise NotImplementedError(f'Could not define File Provider. Path="{self._path}". Source="{self._source_name}"')
     
   class _LocalFileProvider:
-    def __init__(self, path: str):
+    def __init__(self, path: str, can_skip_read: bool):
       if path.startswith('file://'):
         path = path[7:]
       self._path = path
+      self._can_skip_read = can_skip_read
 
     def read(self):
-      file = open(self._path, 'rb')
-      data = file.read()
-      file.close()
-      return data
+      if exists(self._path):
+        file = open(self._path, 'rb')
+        data = file.read()
+        file.close()
+        return data
+      elif self._can_skip_read:
+        return b''
+      else:
+        raise FileNotFoundError(f'Could not find file. Path="{self._path}". Source="{self._source_name}"')
+
     
     def write(self, data):
       file = open(self._path, 'wb')
