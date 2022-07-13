@@ -24,6 +24,7 @@ from apache_beam.io.gcp.bigquery import ReadFromBigQueryRequest
 from models.execution import Execution, SourceType, DestinationType
 
 from data_sources.base_data_source import BaseDataSource
+import data_sources.data_schemas as DataSchemas
 
 from models.execution import TransactionalType
 
@@ -57,10 +58,15 @@ class BigQueryDataSource(BaseDataSource):
         client = self._get_bq_client()
 
         table_name = self._get_table_name(execution.source.source_metadata, False)
-        query = f"SELECT data.* FROM `{table_name}` AS data"
-        logging.getLogger(_LOGGER_NAME).info(f'Reading from table {table_name} for Execution {execution}')
-        for row in client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE):
-            yield execution, _convert_row_to_dict(row)
+        cols = self._get_table_columns(client, table_name)
+        if DataSchemas.validate_data_columns(cols, self._destination_type):
+            cols = DataSchemas.get_cols_names(cols, self._destination_type)
+            query = f"SELECT {','.join(cols)} FROM `{table_name}` AS data"
+            logging.getLogger(_LOGGER_NAME).info(f'Reading from table {table_name} for Execution {execution}')
+            for row in client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE):
+                yield execution, _convert_row_to_dict(row)
+        else:
+            raise ValueError(f'Data source incomplete, columns missing. Source="{self._source_name}". Destination="{self._destination_name}"')
     
     def _retrieve_data_transactional(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
         table_name = self._get_table_name(execution.source.source_metadata, False)
@@ -68,24 +74,29 @@ class BigQueryDataSource(BaseDataSource):
         client = self._get_bq_client()
 
         self._ensure_control_table_exists(client, uploaded_table_name)
+        
+        cols = self._get_table_columns(client, table_name)
+        logging.getLogger(_LOGGER_NAME).info(f'Destination Type: {self._destination_type}')
+        if DataSchemas.validate_data_columns(cols, self._destination_type):
+            cols = DataSchemas.get_cols_names(cols, self._destination_type)
+            query_cols = ','.join(['data.' + col for col in cols])
+            template = None
+            if self._transactional_type == TransactionalType.UUID:
+                template = "SELECT $query_cols FROM `$table_name` AS data \
+                                LEFT JOIN $uploaded_table_name AS uploaded USING(uuid) \
+                                WHERE uploaded.uuid IS NULL;"
+            elif self._transactional_type == TransactionalType.GCLID_TIME:
+                template = "SELECT $query_cols FROM `$table_name` AS data \
+                                LEFT JOIN $uploaded_table_name AS uploaded USING(gclid, time) \
+                                WHERE uploaded.gclid IS NULL;"
+            else:
+                raise Exception(f'Unrecognized TransactionalType: {self._transactional_type}. Source="{self._source_name}". Destination="{self._destination_name}"')
 
-        template = None
-        if self._transactional_type == TransactionalType.UUID:
-            template = "SELECT data.* FROM `$table_name` AS data \
-                            LEFT JOIN $uploaded_table_name AS uploaded USING(uuid) \
-                            WHERE uploaded.uuid IS NULL;"
-        elif self._transactional_type == TransactionalType.GCLID_TIME:
-            template = "SELECT data.* FROM `$table_name` AS data \
-                            LEFT JOIN $uploaded_table_name AS uploaded USING(gclid, time) \
-                            WHERE uploaded.gclid IS NULL;"
-        else:
-            raise Exception(f'Unrecognized TransactionalType: {self._transactional_type}. Source="{self._source_name}". Destination="{self._destination_name}"')
-
-        query = Template(template).substitute(table_name=table_name, uploaded_table_name=uploaded_table_name)
-        logging.getLogger(_LOGGER_NAME).info(
-            f'Reading from table `{table_name}` for Execution {execution}')
-        for row in client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE):
-            yield execution, _convert_row_to_dict(row)
+            query = Template(template).substitute(table_name=table_name, uploaded_table_name=uploaded_table_name, query_cols=query_cols)
+            logging.getLogger(_LOGGER_NAME).info(
+                f'Reading from table `{table_name}` for Execution {execution}')
+            for row in client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE):
+                yield execution, _convert_row_to_dict(row)
   
     def _ensure_control_table_exists(self, client: Client, uploaded_table_name: str):
         template = None
@@ -152,6 +163,10 @@ class BigQueryDataSource(BaseDataSource):
         if self._transactional_type == TransactionalType.GCLID_TIME:
             return [{'gclid': row['gclid'], 'time': row['time'], 'timestamp': now} for row in rows]
         raise Exception(f'Unrecognized TransactionalType: {self._transactional_type}. Source="{self._source_name}". Destination="{self._destination_name}"')
+
+    def _get_table_columns(self, client, table_name):
+        table = client.get_table(table_name)
+        return [schema.name for schema in table.schema]
 
     def _get_bq_client(self):
         return bigquery.Client(location=self._bq_location)

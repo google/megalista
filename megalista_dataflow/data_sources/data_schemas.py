@@ -201,12 +201,12 @@ def validate_data_columns(data_cols: list, destination_type: DestinationType) ->
     data_type_colnames = [col['name'] for col in data_type_cols if col['required'] == True]
     
     # checks if every column marked as required exists in dataframe columns
-    required_cols = functools.reduce(lambda a, b: a and b, [col in data_cols for col in data_type_colnames])
+    required_cols = functools.reduce(lambda a, b: a and b, [col in data_cols for col in data_type_colnames], True)
 
     # checks if every column group is verified
     groups_validated = True
     for group in data_type_groups:
-        group_validated = functools.reduce(lambda a, b: a or b, [col in data_cols for col in group])
+        group_validated = functools.reduce(lambda a, b: a or b, [col in data_cols for col in group], False)
         groups_validated = groups_validated and group_validated
 
     return required_cols and groups_validated
