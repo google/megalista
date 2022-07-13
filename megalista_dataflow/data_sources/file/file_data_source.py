@@ -177,11 +177,17 @@ class ParquetDataSource(FileDataSource):
 
 class CSVDataSource(FileDataSource):
     def _get_data_frame_from_file(self, file: io.BytesIO) -> pd.DataFrame:
-        df = pd.read_csv(file, dtype='string')
-        df = DataSchemas.update_data_types_not_string(df, self._destination_type)
-        DataSchemas.process_by_destination_type(df, self._destination_type)
-        return df
-
+        cols = pd.read_csv(file, dtype='string', nrows=0).columns
+        if DataSchemas.validate_data_columns(cols, self._destination_type):
+            cols = DataSchemas.get_cols_names(cols, self._destination_type)
+            file.seek(0)
+            df = pd.read_csv(file, dtype='string', usecols=cols)
+            df = DataSchemas.update_data_types_not_string(df, self._destination_type)
+            DataSchemas.process_by_destination_type(df, self._destination_type)
+            return df
+        else:
+            raise ValueError(f'Data source incomplete, columns missing. Source="{self._source_name}". Destination="{self._destination_name}"')
+        
     def _get_file_from_data_frame(self, df: pd.DataFrame) -> io.BytesIO:
         to_write = io.BytesIO()
         df.to_csv(to_write, index=False)

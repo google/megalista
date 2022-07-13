@@ -21,6 +21,7 @@ This module is responsible for handling file operatios. As of now, it handles th
 
 import io
 import logging
+from os.path import exists
 
 from models.options import DataflowOptions
 from models.execution import SourceType
