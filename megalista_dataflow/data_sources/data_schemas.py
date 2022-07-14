@@ -18,22 +18,7 @@ from models.execution import Destination, DestinationType, Execution, Batch
 import functools
 import pandas as pd
 import ast
-
-# data types that aren't  string
-_dtypes_not_string = {
-    'CM_OFFLINE_CONVERSION': {'value': 'int', 'quantity': 'int'},
-    'ADS_OFFLINE_CONVERSION': {},
-    'ADS_SSD_UPLOAD': {'amount': 'int'},
-    'ADS_ENHANCED_CONVERSION': {},
-    'ADS_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD': {},
-    'ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD': {},
-    'ADS_CUSTOMER_MATCH_USER_ID_UPLOAD': {},
-    'GA_USER_LIST_UPLOAD': {},
-    'APPSFLYER_S2S_EVENTS': {'event_eventTime': 'datetime'},
-    'GA_MEASUREMENT_PROTOCOL': {},
-    'GA_DATA_IMPORT': {},
-    'GA_4_MEASUREMENT_PROTOCOL': {},
-}
+import re
 
 _dtypes = {
     'CM_OFFLINE_CONVERSION': {
@@ -129,7 +114,7 @@ _dtypes = {
             {'name': 'device_ids_imei', 'required': False, 'data_type': 'string'},
             {'name': 'event_eventName', 'required': True, 'data_type': 'string'},
             {'name': 'event_eventCurrency', 'required': False, 'data_type': 'string'},
-            {'name': 'event_eventTime', 'required': False, 'data_type': 'datetime'},
+            {'name': 'event_eventTime', 'required': False, 'data_type': 'string'},
             {'name': 'event_eventValue', 'required': False, 'data_type': 'string'},
         ],
         'groups': []
@@ -190,6 +175,21 @@ _dtypes = {
             {'name': 'mobile_device_id', 'required': True, 'data_type': 'string'}  
         ],
         'groups': []
+    },
+    'UPLOADED_GCLID_TIME': {
+        'columns': [
+            {'name': 'timestamp', 'required': True, 'data_type': 'string'},
+            {'name': 'gclid', 'required': True, 'data_type': 'string'}, 
+            {'name': 'time', 'required': True, 'data_type': 'string'}  
+        ],
+        'groups': []
+    },
+    'UPLOADED_UUID': {
+        'columns': [
+            {'name': 'timestamp', 'required': True, 'data_type': 'string'},
+            {'name': 'uuid', 'required': True, 'data_type': 'string'}  
+        ],
+        'groups': []
     }
 }
 
@@ -201,12 +201,33 @@ def validate_data_columns(data_cols: list, destination_type: DestinationType) ->
     data_type_colnames = [col['name'] for col in data_type_cols if col['required'] == True]
     
     # checks if every column marked as required exists in dataframe columns
-    required_cols = functools.reduce(lambda a, b: a and b, [col in data_cols for col in data_type_colnames], True)
+    # required_cols = functools.reduce(lambda a, b: a and b, [col in data_cols for col in data_type_colnames], True)
+    required_cols = True
+    for data_type_col in data_type_colnames:
+        found = False
+        for col in data_cols:
+            if re.match(data_type_col, col) is not None:
+                found = True
+                break
+        if not found:
+            required_cols = False
+            break
 
     # checks if every column group is verified
     groups_validated = True
     for group in data_type_groups:
-        group_validated = functools.reduce(lambda a, b: a or b, [col in data_cols for col in group], False)
+        # group_validated = functools.reduce(lambda a, b: a or b, [col in data_cols for col in group], False)
+        # groups_validated = groups_validated and group_validated
+        group_validated = False
+        for data_type_col in group:
+            found = False
+            for col in data_cols:
+                if re.match(data_type_col, col) is not None:
+                    found = True
+                    break
+            if found:
+                group_validated = True
+                break
         groups_validated = groups_validated and group_validated
 
     return required_cols and groups_validated
@@ -215,8 +236,15 @@ def validate_data_columns(data_cols: list, destination_type: DestinationType) ->
 def get_cols_names(data_cols: list, destination_type: DestinationType) -> list:
     data_type = _dtypes[destination_type.name]
     data_type_cols = [col['name'] for col in data_type['columns']]
+
+    filtered_cols = []
+    for col in data_cols:
+        found = False
+        for data_type_col in data_type_cols:
+            if re.match(data_type_col, col) is not None:
+                filtered_cols.append(col)
     
-    return [col for col in data_cols if col in data_type_cols]
+    return filtered_cols
 
 # Parse columns that aren't string
 def update_data_types_not_string(df: pd.DataFrame, destination_type: DestinationType) -> pd.DataFrame:

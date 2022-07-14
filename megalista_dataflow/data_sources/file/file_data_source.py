@@ -123,7 +123,7 @@ class FileDataSource(BaseDataSource):
             else:
                 raise ValueError(f'Unable to find file: "{path}". Source="{self._source_name}". Destination="{self._destination_name}"')
         else:
-            df = self._get_data_frame_from_file(file)
+            df = self._get_data_frame_from_file(file, is_uploaded)
             # if uploaded, drop items older than 15 days
             if is_uploaded:
                 now = datetime.now()
@@ -157,7 +157,7 @@ class FileDataSource(BaseDataSource):
         types_dict.update({col: "string" for col in col_names if col not in types_dict})
         return types_dict
 
-    def _get_data_frame_from_file(self, file: io.BytesIO) -> pd.DataFrame:
+    def _get_data_frame_from_file(self, file: io.BytesIO, is_uploaded: bool) -> pd.DataFrame:
         raise NotImplementedError(f'Data source not defined. Please call FileDataSource._get_data_source for defining the correct data source. Source="{self._source_name}". Destination="{self._destination_name}"')
 
     def _get_file_from_data_frame(self, df: pd.DataFrame) -> io.BytesIO:
@@ -165,13 +165,17 @@ class FileDataSource(BaseDataSource):
 
 
 class ParquetDataSource(FileDataSource):
-    def _get_data_frame_from_file(self, file: io.BytesIO) -> pd.DataFrame:
+    def _get_data_frame_from_file(self, file: io.BytesIO, is_uploaded: bool) -> pd.DataFrame:
+        destination_type = self._destination_type
+        if is_uploaded:
+            destination_type = DestinationType.UPLOADED_GCLID_TIME if self._transactional_type == TransactionalType.GCLID_TIME else DestinationType.UPLOADED_UUID
         cols = pd.read_parquet(file).columns
-        if DataSchemas.validate_data_columns(cols, self._destination_type):
-            cols = DataSchemas.get_cols_names(cols, self._destination_type)
+        if DataSchemas.validate_data_columns(cols, destination_type):
+            cols = DataSchemas.get_cols_names(cols, destination_type)
             file.seek(0)
             df = pd.read_parquet(file, dtype='string', columns=cols)
-            df = DataSchemas.process_by_destination_type(df, self._destination_type)
+            df = DataSchemas.update_data_types_not_string(df, destination_type)
+            df = DataSchemas.process_by_destination_type(df, destination_type)
             return df
         else:
             raise ValueError(f'Data source incomplete, columns missing. Source="{self._source_name}". Destination="{self._destination_name}"')
@@ -182,19 +186,23 @@ class ParquetDataSource(FileDataSource):
         return to_write
 
 class CSVDataSource(FileDataSource):
-    def _get_data_frame_from_file(self, file: io.BytesIO) -> pd.DataFrame:
+    def _get_data_frame_from_file(self, file: io.BytesIO, is_uploaded: bool) -> pd.DataFrame:
+        destination_type = self._destination_type
+        if is_uploaded:
+            destination_type = DestinationType.UPLOADED_GCLID_TIME if self._transactional_type == TransactionalType.GCLID_TIME else DestinationType.UPLOADED_UUID
         cols = pd.read_csv(file, dtype='string', nrows=0).columns
-        if DataSchemas.validate_data_columns(cols, self._destination_type):
-            cols = DataSchemas.get_cols_names(cols, self._destination_type)
+        if DataSchemas.validate_data_columns(cols, destination_type):
+            cols = DataSchemas.get_cols_names(cols, destination_type)
             file.seek(0)
+            logging.getLogger(_LOGGER_NAME).info(cols)
             df = pd.read_csv(file, dtype='string', usecols=cols)
-            df = DataSchemas.update_data_types_not_string(df, self._destination_type)
-            DataSchemas.process_by_destination_type(df, self._destination_type)
+            df = DataSchemas.update_data_types_not_string(df, destination_type)
+            DataSchemas.process_by_destination_type(df, destination_type)
             return df
         else:
             raise ValueError(f'Data source incomplete, columns missing. Source="{self._source_name}". Destination="{self._destination_name}"')
         
     def _get_file_from_data_frame(self, df: pd.DataFrame) -> io.BytesIO:
         to_write = io.BytesIO()
-        df.to_csv(to_write, index=False)
+        to_write.write(df.to_csv(index=False).encode())
         return to_write
