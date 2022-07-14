@@ -38,29 +38,36 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
   def _format_hit(self, payload: Dict[str, Any]) -> str:
     return "&".join([key + "=" + quote(str(value)) for key, value in payload.items() if value is not None])
 
+  def build_hit(self, row: Dict[str, Any]) -> Dict[str, Any]:
+    # initialize payload with values that are common to all types of hit
+    payload = {
+      "v": 1,
+      "tid": execution.destination.destination_metadata[0],
+      "ni": execution.destination.destination_metadata[1],
+      "ds": "mp - megalista",
+      **{'cid': row[key] for key in row.keys() if key.startswith("client_id")},
+      **{'uid': row[key] for key in row.keys() if key.startswith("user_id")},
+      "ua": self.UA,
+      **{key: row[key] for key in row.keys() if re.match('c[dm]\d+', key)},
+      **{'cs': row[key] for key in row.keys() if key.startswith("campaign_source")},
+      **{'cm': row[key] for key in row.keys() if key.startswith("campaign_medium")}
+    }
+    hit_type = row.get('type')
+    # If type is not explicitly defined, assume "event" 
+    if not hit_type or hit_type == "event":
+      payload["t"] = "event"
+      payload["ea"] = row['event_action']
+      payload["ec"] = row['event_category']
+      payload["ev"] = row.get('event_value')
+      payload["el"] = row.get('event_label')
+
   @utils.safe_process(logger=logging.getLogger("megalista.GoogleAnalyticsMeasurementProtocolUploader"))
   def process(self, batch: Batch, **kwargs):
     execution = batch.execution
     rows = batch.elements
 
     # parameters starting with ** are optional.
-    payloads = [{
-      "v": 1,
-      "tid": execution.destination.destination_metadata[0],
-      "ni": execution.destination.destination_metadata[1],
-      "t": "event",
-      "ds": "mp - megalista",
-      **{'cid': row[key] for key in row.keys() if key.startswith("client_id")},
-      **{'uid': row[key] for key in row.keys() if key.startswith("user_id")},
-      "ea": row['event_action'],
-      "ec": row['event_category'],
-      "ev": row.get('event_value'),
-      "el": row.get('event_label'),
-      "ua": self.UA,
-      **{key: row[key] for key in row.keys() if re.match('c[dm]\d+', key)},
-      **{'cs': row[key] for key in row.keys() if key.startswith("campaign_source")},
-      **{'cm': row[key] for key in row.keys() if key.startswith("campaign_medium")}
-    } for row in rows]
+    payloads = [self.build_hit(row) for row in rows]
 
     encoded = [self._format_hit(payload) for payload in payloads]
 
