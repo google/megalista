@@ -64,7 +64,7 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
       payload["ec"] = row['event_category']
       payload["ev"] = row.get('event_value')
       payload["el"] = row.get('event_label')
-    elif hit_type = "transaction":
+    elif hit_type == "transaction":
       payload["t"] = hit_type
       payload["ti"] = row['transaction_id']   # Transaction ID. Required.
       payload["ta"] = row.get('transaction_affiliation')   # Transaction affiliation.
@@ -72,7 +72,7 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
       payload["ts"] = row.get('transaction_shipping')   # Transaction shipping.
       payload["tt"] = row.get('transaction_tax')   # Transaction tax.
       payload["cu"] = row.get('currency_code')   # Currency code.      
-    elif hit_type = "item":
+    elif hit_type == "item":
       payload["t"] = hit_type
       payload["ti"] = row['transaction_id']   # Transaction ID. Required.
       payload["in"] = row.get('item_name')  # Item name. Required.
