@@ -81,6 +81,10 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
       payload["ic"] = row.get('item_code')  # Item code / SKU.
       payload["iv"] = row.get('item_variation')  # Item variation / category.
       payload["cu"] = row.get('currency_code')  # Currency code.      
+    else:
+      error_message = f"Hit type {hit_type} is not supported."
+      logging.getLogger("megalista.GoogleAnalyticsMeasurementProtocolUploader").error(error_message)
+      self._add_error(batch.execution, error_message)
 
     return payload
 
