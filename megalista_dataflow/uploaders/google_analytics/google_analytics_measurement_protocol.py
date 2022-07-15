@@ -40,12 +40,16 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
 
   def build_hit(self, batch: Batch, row: Dict[str, Any]) -> Dict[str, Any]:
     metadata_list = batch.execution.destination.destination_metadata
+    
+    # get hit type from metadata or default to "event" if not provided
+    hit_type = metadata_list[2] if len(metadata_list) > 2 else "event"
 
     # initialize payload with values that are common to all types of hit
     payload = {
       "v": 1,
       "tid": metadata_list[0],
       "ni": metadata_list[1],
+      "t": hit_type,
       "ds": "mp - megalista",
       **{'cid': row[key] for key in row.keys() if key.startswith("client_id")},
       **{'uid': row[key] for key in row.keys() if key.startswith("user_id")},
@@ -55,17 +59,12 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
       **{'cm': row[key] for key in row.keys() if key.startswith("campaign_medium")}
     }
 
-    # get hit type from metadata or default to "event" if not provided
-    hit_type = metadata_list[2] if len(metadata_list) > 2 else "event"
-
     if hit_type == "event":
-      payload["t"] = hit_type
       payload["ea"] = row['event_action']
       payload["ec"] = row['event_category']
       payload["ev"] = row.get('event_value')
       payload["el"] = row.get('event_label')
     elif hit_type == "transaction":
-      payload["t"] = hit_type
       payload["ti"] = row['transaction_id']   # Transaction ID. Required.
       payload["ta"] = row.get('transaction_affiliation')   # Transaction affiliation.
       payload["tr"] = row.get('transaction_revenue')   # Transaction revenue.
@@ -73,7 +72,6 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
       payload["tt"] = row.get('transaction_tax')   # Transaction tax.
       payload["cu"] = row.get('currency_code')   # Currency code.      
     elif hit_type == "item":
-      payload["t"] = hit_type
       payload["ti"] = row['transaction_id']   # Transaction ID. Required.
       payload["in"] = row.get('item_name')  # Item name. Required.
       payload["ip"] = row.get('item_price')  # Item price.
