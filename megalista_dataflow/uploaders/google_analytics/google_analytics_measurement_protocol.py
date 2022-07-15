@@ -52,7 +52,10 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
       **{'cs': row[key] for key in row.keys() if key.startswith("campaign_source")},
       **{'cm': row[key] for key in row.keys() if key.startswith("campaign_medium")}
     }
-    hit_type = row.get('type')
+
+    # get hit type from metadata
+    hit_type = batch.execution.destination.destination_metadata[2]
+
     # If type is not explicitly defined, assume "event" 
     if not hit_type or hit_type == "event":
       payload["t"] = "event"
