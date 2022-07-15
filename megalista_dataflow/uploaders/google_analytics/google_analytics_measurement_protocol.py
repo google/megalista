@@ -39,11 +39,13 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
     return "&".join([key + "=" + quote(str(value)) for key, value in payload.items() if value is not None])
 
   def build_hit(self, batch: Batch, row: Dict[str, Any]) -> Dict[str, Any]:
+    metadata_list = batch.execution.destination.destination_metadata
+
     # initialize payload with values that are common to all types of hit
     payload = {
       "v": 1,
-      "tid": batch.execution.destination.destination_metadata[0],
-      "ni": batch.execution.destination.destination_metadata[1],
+      "tid": metadata_list[0],
+      "ni": metadata_list[1],
       "ds": "mp - megalista",
       **{'cid': row[key] for key in row.keys() if key.startswith("client_id")},
       **{'uid': row[key] for key in row.keys() if key.startswith("user_id")},
@@ -53,11 +55,10 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
       **{'cm': row[key] for key in row.keys() if key.startswith("campaign_medium")}
     }
 
-    # get hit type from metadata
-    hit_type = batch.execution.destination.destination_metadata[2]
+    # get hit type from metadata or default to "event" if not provided
+    hit_type = metadata_list[2] if len(metadata_list) > 2 else "event"
 
-    # If type is not explicitly defined, assume "event" 
-    if not hit_type or hit_type == "event":
+    if hit_type == "event":
       payload["t"] = "event"
       payload["ea"] = row['event_action']
       payload["ec"] = row['event_category']
