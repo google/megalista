@@ -59,11 +59,28 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
     hit_type = metadata_list[2] if len(metadata_list) > 2 else "event"
 
     if hit_type == "event":
-      payload["t"] = "event"
+      payload["t"] = hit_type
       payload["ea"] = row['event_action']
       payload["ec"] = row['event_category']
       payload["ev"] = row.get('event_value')
       payload["el"] = row.get('event_label')
+    elif hit_type = "transaction":
+      payload["t"] = hit_type
+      payload["ti"] = row['transaction_id']   # Transaction ID. Required.
+      payload["ta"] = row.get('transaction_affiliation')   # Transaction affiliation.
+      payload["tr"] = row.get('transaction_revenue')   # Transaction revenue.
+      payload["ts"] = row.get('transaction_shipping')   # Transaction shipping.
+      payload["tt"] = row.get('transaction_tax')   # Transaction tax.
+      payload["cu"] = row.get('currency_code')   # Currency code.      
+    elif hit_type = "item":
+      payload["t"] = hit_type
+      payload["ti"] = row['transaction_id']   # Transaction ID. Required.
+      payload["in"] = row.get('item_name')  # Item name. Required.
+      payload["ip"] = row.get('item_price')  # Item price.
+      payload["iq"] = row.get('item_quantity')  # Item quantity.
+      payload["ic"] = row.get('item_code')  # Item code / SKU.
+      payload["iv"] = row.get('item_variation')  # Item variation / category.
+      payload["cu"] = row.get('currency_code')  # Currency code.      
 
     return payload
 
