@@ -38,12 +38,12 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
   def _format_hit(self, payload: Dict[str, Any]) -> str:
     return "&".join([key + "=" + quote(str(value)) for key, value in payload.items() if value is not None])
 
-  def build_hit(self, row: Dict[str, Any]) -> Dict[str, Any]:
+  def build_hit(self, batch: Batch, row: Dict[str, Any]) -> Dict[str, Any]:
     # initialize payload with values that are common to all types of hit
     payload = {
       "v": 1,
-      "tid": execution.destination.destination_metadata[0],
-      "ni": execution.destination.destination_metadata[1],
+      "tid": batch.execution.destination.destination_metadata[0],
+      "ni": batch.execution.destination.destination_metadata[1],
       "ds": "mp - megalista",
       **{'cid': row[key] for key in row.keys() if key.startswith("client_id")},
       **{'uid': row[key] for key in row.keys() if key.startswith("user_id")},
@@ -63,11 +63,10 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
 
   @utils.safe_process(logger=logging.getLogger("megalista.GoogleAnalyticsMeasurementProtocolUploader"))
   def process(self, batch: Batch, **kwargs):
-    execution = batch.execution
     rows = batch.elements
 
     # parameters starting with ** are optional.
-    payloads = [self.build_hit(row) for row in rows]
+    payloads = [self.build_hit(batch, row) for row in rows]
 
     encoded = [self._format_hit(payload) for payload in payloads]
 
@@ -76,6 +75,6 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
     if response.status_code != 200:
       error_message = f"Error uploading to Analytics HTTP {response.status_code}: {response.raw}"
       logging.getLogger("megalista.GoogleAnalyticsMeasurementProtocolUploader").error(error_message)
-      self._add_error(execution, error_message)
+      self._add_error(batch.execution, error_message)
     else:
       return [batch]
