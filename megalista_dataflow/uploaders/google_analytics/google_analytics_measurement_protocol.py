@@ -61,6 +61,8 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
       payload["ev"] = row.get('event_value')
       payload["el"] = row.get('event_label')
 
+    return payload
+
   @utils.safe_process(logger=logging.getLogger("megalista.GoogleAnalyticsMeasurementProtocolUploader"))
   def process(self, batch: Batch, **kwargs):
     rows = batch.elements
