@@ -303,6 +303,62 @@ class Execution:
         return hash((self.source, self.destination, self.account_config))
 
 
+class ExecutionsGroupedBySource:
+    def __init__(
+        self,
+        source_name: str,
+        executions: List[Execution]
+    ):
+        self._source_name = source_name
+        self._executions = executions
+
+    @property
+    def executions(self) -> List[Execution]:
+        return self._executions
+    
+    @property
+    def source_name(self) -> str:
+        return self._source_name
+
+    @property
+    def source(self) -> Source:
+        return self._executions[0].source
+    
+    @property
+    def destinations(self) -> List[Destination]:
+        return list([exec.destination for exec in self._executions])
+
+    def __getitem__(self, i):
+        return self._executions[i]
+
+    def to_dict(self):
+        executions_json = [exec.to_dict() for exec in self.executions]
+        return {
+            'source_name': self._source_name,
+            'executions': executions_json
+        }
+        
+
+    @staticmethod
+    def from_dict(dict_executions):
+        executions = [Execution.from_dict(exec_json) for exec_json in dict_executions['executions']]
+
+        return ExecutionsGroupedBySource(
+            dict_executions['source_name'],
+            executions
+        )
+
+    def __str__(self):
+        return f"Source: {self._source_name}. Executions: {self._executions}"
+
+    def __eq__(self, other):
+        if other is None:
+            return False
+        return self.source_name == other.source_name
+
+    def __hash__(self):
+        return hash(("ExecutionsGroupedBySource", self.source_name))
+
 class Batch:
     def __init__(
         self,

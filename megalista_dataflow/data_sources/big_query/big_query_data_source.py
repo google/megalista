@@ -25,46 +25,45 @@ from models.execution import Execution, SourceType, DestinationType
 
 from data_sources.base_data_source import BaseDataSource
 
-from models.execution import TransactionalType
+from models.execution import TransactionalType, ExecutionsGroupedBySource
 
 _BIGQUERY_PAGE_SIZE = 20000
 
 _LOGGER_NAME = 'megalista.data_sources.BigQuery'
 
 class BigQueryDataSource(BaseDataSource):
-    def __init__(self, transactional_type: TransactionalType, bq_ops_dataset: str, bq_location: str, source_type: SourceType, source_name: str, destination_type: DestinationType, destination_name: str):
-        self._transactional_type = transactional_type
+    def __init__(self, 
+        executions: ExecutionsGroupedBySource, transactional_type: TransactionalType, 
+        bq_ops_dataset: str, bq_location: str):
+        super().__init__(executions, transactional_type)
+
         self._bq_ops_dataset = bq_ops_dataset
         self._bq_location = bq_location
         
-        self._source_type = source_type
-        self._source_name = source_name
-        self._destination_type = destination_type
-        self._destination_name = destination_name
   
         if transactional_type is not TransactionalType.NOT_TRANSACTIONAL:
             if not bq_ops_dataset:
                 raise Exception(f'Missing bq_ops_dataset for this uploader. Source="{self._source_name}". Destination="{self._destination_name}"')
 
     
-    def retrieve_data(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
+    def retrieve_data(self, executions: ExecutionsGroupedBySource) -> Iterable[Tuple[ExecutionsGroupedBySource, Dict[str, Any]]]:
         if self._transactional_type == TransactionalType.NOT_TRANSACTIONAL:
-            return self._retrieve_data_non_transactional(execution)
+            return self._retrieve_data_non_transactional(executions)
         else:
-            return self._retrieve_data_transactional(execution)
+            return self._retrieve_data_transactional(executions)
     
-    def _retrieve_data_non_transactional(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
+    def _retrieve_data_non_transactional(self, executions: ExecutionsGroupedBySource) -> Iterable[Tuple[ExecutionsGroupedBySource, Dict[str, Any]]]:
         client = self._get_bq_client()
 
-        table_name = self._get_table_name(execution.source.source_metadata, False)
+        table_name = self._get_table_name(executions.source.source_metadata, False)
         query = f"SELECT data.* FROM `{table_name}` AS data"
-        logging.getLogger(_LOGGER_NAME).info(f'Reading from table {table_name} for Execution {execution}')
+        logging.getLogger(_LOGGER_NAME).info(f'Reading from table {table_name} for Executions {executions}')
         for row in client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE):
-            yield execution, _convert_row_to_dict(row)
+            yield executions, _convert_row_to_dict(row)
     
-    def _retrieve_data_transactional(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
-        table_name = self._get_table_name(execution.source.source_metadata, False)
-        uploaded_table_name = self._get_table_name(execution.source.source_metadata, True)
+    def _retrieve_data_transactional(self, executions: ExecutionsGroupedBySource) -> Iterable[Tuple[ExecutionsGroupedBySource, Dict[str, Any]]]:
+        table_name = self._get_table_name(executions.source.source_metadata, False)
+        uploaded_table_name = self._get_table_name(executions.source.source_metadata, True)
         client = self._get_bq_client()
 
         self._ensure_control_table_exists(client, uploaded_table_name)
@@ -83,9 +82,9 @@ class BigQueryDataSource(BaseDataSource):
 
         query = Template(template).substitute(table_name=table_name, uploaded_table_name=uploaded_table_name)
         logging.getLogger(_LOGGER_NAME).info(
-            f'Reading from table `{table_name}` for Execution {execution}')
+            f'Reading from table `{table_name}` for Executions {executions}')
         for row in client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE):
-            yield execution, _convert_row_to_dict(row)
+            yield executions, _convert_row_to_dict(row)
   
     def _ensure_control_table_exists(self, client: Client, uploaded_table_name: str):
         template = None
