@@ -23,7 +23,7 @@ from apache_beam.options.value_provider import ValueProvider
 from google.cloud import bigquery
 from error.error_handling import ErrorHandler
 from uploaders.uploaders import MegalistaUploader
-from models.execution import DestinationType, Execution, Batch, TransactionalType, ExecutionsGroupedBySource
+from models.execution import DestinationType, Execution, Batch, TransactionalType, ExecutionsGroupedBySource, DataRowsGroupedBySource
 from string import Template
 from typing import Any, List, Iterable, Tuple, Dict, Optional
 from models.options import DataflowOptions
@@ -41,7 +41,7 @@ def _convert_row_to_dict(row):
         dict[key] = value
     return dict
 
-class ExecutionsGroupedBySourceCoder(coders.Coder):
+class ExecutionCoder(coders.Coder):
     """A custom coder for the Execution class."""
 
     def encode(self, o):
@@ -49,6 +49,31 @@ class ExecutionsGroupedBySourceCoder(coders.Coder):
 
     def decode(self, s):
         return Execution.from_dict(json.loads(s.decode('utf-8')))
+
+    def is_deterministic(self):
+        return True
+
+class ExecutionsGroupedBySourceCoder(coders.Coder):
+    """A custom coder for the Execution class."""
+
+    def encode(self, o):
+        return json.dumps(o.to_dict()).encode('utf-8')
+
+    def decode(self, s):
+        return ExecutionsGroupedBySource.from_dict(json.loads(s.decode('utf-8')))
+
+    def is_deterministic(self):
+        return True
+
+
+class DataRowsGroupedBySourceCoder(coders.Coder):
+    """A custom coder for the Execution class."""
+
+    def encode(self, o):
+        return json.dumps(o.to_dict()).encode('utf-8')
+
+    def decode(self, s):
+        return DataRowsGroupedBySource.from_dict(json.loads(s.decode('utf-8')))
 
     def is_deterministic(self):
         return True
@@ -66,7 +91,7 @@ class BatchesFromExecutions(beam.PTransform):
             self._transactional_type = transactional_type
             self._dataflow_options = dataflow_options
 
-        def process(self, executions: ExecutionsGroupedBySource) -> Iterable[Tuple[ExecutionsGroupedBySource, Dict[str, Any]]]:
+        def process(self, executions: ExecutionsGroupedBySource) -> Iterable[DataRowsGroupedBySource]:
             data_source = DataSource.get_data_source(
                 executions, self._transactional_type, self._dataflow_options)
             return data_source.retrieve_data(executions)
@@ -116,15 +141,14 @@ class BatchesFromExecutions(beam.PTransform):
         return (
             executions
             | beam.Filter(
-                lambda tuple: functools.reduce(
+                lambda executionGroupedBySource: functools.reduce(
                     lambda a, b: a or b,
-                    [execution.destination.destination_type == self._destination_type for execution in tuple[1]],
+                    [execution.destination.destination_type == self._destination_type for execution in executionGroupedBySource.executions],
                     False
                 )
             )
-            | beam.Map(lambda el: ExecutionsGroupedBySource(el[0], el[1]))
             | beam.ParDo(self._ReadDataSource(self._transactional_type, self._dataflow_options, self._error_handler))
-            | beam.Map(lambda el: [(execution, el[1]) for execution in iter(el[0])])
+            | beam.Map(lambda el: [(execution, el.rows) for execution in iter(el.executions.executions)])
             | beam.ParDo(self._BreakIntoExecutions())
             | beam.ParDo(self._BatchElements(self._batch_size, self._error_handler))
         )

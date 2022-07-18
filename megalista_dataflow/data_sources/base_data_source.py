@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from site import execsitecustomize
-from models.execution import Execution, ExecutionsGroupedBySource, TransactionalType
-from typing import Any, Iterable
+from models.execution import Execution, ExecutionsGroupedBySource, TransactionalType, DataRowsGroupedBySource
+from typing import Any, Iterable, List
+from apache_beam.typehints.decorators import with_output_types
 
 class BaseDataSource:
   def __init__(self, executions: ExecutionsGroupedBySource, transactional_type: TransactionalType):
@@ -25,7 +26,8 @@ class BaseDataSource:
     self._destination_type = executions[0].destination.destination_type
     self._destination_name = executions[0].destination.destination_name
 
-  def retrieve_data(self, executions: ExecutionsGroupedBySource) -> Iterable[Any]:
+  #@with_output_types(DataRowsGroupedBy.Source)
+  def retrieve_data(self, executions: ExecutionsGroupedBySource) -> List[DataRowsGroupedBySource]:
     raise NotImplementedError("Source Type not implemented. Please check your configuration (sheet / json / firestore).")
   
   def write_transactional_info(self, rows, execution):
