@@ -22,10 +22,12 @@ import io
 import os
 from datetime import datetime, timedelta
 from typing import Any, List, Iterable, Tuple, Dict
+from apache_beam.typehints.decorators import with_output_types
+import numpy as np
 
 import logging
 
-from models.execution import SourceType, DestinationType, Execution, Batch, TransactionalType, ExecutionsGroupedBySource
+from models.execution import SourceType, DestinationType, Execution, Batch, TransactionalType, ExecutionsGroupedBySource, DataRowsGroupedBySource
 from models.options import DataflowOptions
 
 
@@ -42,29 +44,33 @@ class FileDataSource(BaseDataSource):
         dataflow_options: DataflowOptions):
         super().__init__(executions, transactional_type)
         self._dataflow_options = dataflow_options
-        
   
-    def retrieve_data(self, executions: ExecutionsGroupedBySource) -> Iterable[Tuple[ExecutionsGroupedBySource, Dict[str, Any]]]:
+    def retrieve_data(self, executions: ExecutionsGroupedBySource) -> List[Any]:
         if self._transactional_type == TransactionalType.NOT_TRANSACTIONAL:
             return self._retrieve_data_non_transactional(executions)
         else:
-            return self._retrieve_data_transactional(executions)
+            data = self._retrieve_data_transactional(executions)
+            return data
   
-    def _retrieve_data_non_transactional(self, executions: ExecutionsGroupedBySource) -> Iterable[Tuple[ExecutionsGroupedBySource, Dict[str, Any]]]:
+    def _retrieve_data_non_transactional(self, executions: ExecutionsGroupedBySource) -> List[DataRowsGroupedBySource]:
         source = executions.source
         # Get Data Source
         data_source = self._get_data_source(source.source_name, source.source_metadata[0])
         # Get Data Frame
         df = data_source.get_data_frame(source.source_name, source.source_metadata[1])
-        logging.getLogger(_LOGGER_NAME).info(f'Data source ({self._source_name}): using {len(df.index)} of {len(df.index)} rows')
+        logging.getLogger(_LOGGER_NAME).info(f'Data source ({self._source_name}): using {len(df.index)} rows')
         if df is not None:
+            df = df.fillna(np.nan).replace([np.nan], [None])
             # Process Data Frame
-            for _, row in df.iterrows():
-                yield executions, FileDataSource._convert_row_to_dict(row)
+            elements = []
+            for index, row in df.iterrows():
+                elements.append(FileDataSource._convert_row_to_dict(row))
+            return [DataRowsGroupedBySource(executions, elements)]
         else:
             raise Exception(f'Unable to read from data source. Source="{source.source_name}".')
-  
-    def _retrieve_data_transactional(self, executions: ExecutionsGroupedBySource) -> Iterable[Tuple[ExecutionsGroupedBySource, Dict[str, Any]]]:
+    
+    @with_output_types(DataRowsGroupedBySource)
+    def _retrieve_data_transactional(self, executions: ExecutionsGroupedBySource) -> List[DataRowsGroupedBySource]:
         source = executions.source
         # Get Data Source
         data_source = self._get_data_source(source.source_name, source.source_metadata[0])
@@ -78,9 +84,12 @@ class FileDataSource(BaseDataSource):
             df_merged = df.merge(df_uploaded, how='outer')
             df_distinct = df_merged.drop(df_merged[df_merged.timestamp.notnull()].index)
             # Process Data Frame
-            logging.getLogger(_LOGGER_NAME).info(f'Data source ({self._source_name}): using {len(df_distinct.index)} of {len(df.index)} rows')
+            df_distinct = df_distinct.fillna(np.nan).replace([np.nan], [None])
+            logging.getLogger(_LOGGER_NAME).info(f'Data source ({self._source_name}): using {len(df_distinct.index)} rows')
+            elements = []
             for index, row in df_distinct.iterrows():
-                yield executions, FileDataSource._convert_row_to_dict(row)
+                elements.append(FileDataSource._convert_row_to_dict(row))
+            return [DataRowsGroupedBySource(executions, elements)]
         else:
             raise Exception(f'Unable to read from data source. Source="{self._source_name}". Destination="{self._destination_name}"')
 
@@ -186,6 +195,4 @@ class CSVDataSource(FileDataSource):
         return df
 
     def _get_file_from_data_frame(self, df: pd.DataFrame) -> io.BytesIO:
-        to_write = io.BytesIO()
-        df.to_csv(to_write, index=False)
-        return to_write
+        return io.BytesIO(df.to_csv(index=False).encode())

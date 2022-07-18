@@ -30,9 +30,8 @@ class AppsFlyerEventsStep(beam.PTransform):
             beam.ParDo(AppsFlyerS2SUploaderDoFn(self.params.dataflow_options.appsflyer_dev_key,
                                                 ErrorHandler(DestinationType.APPSFLYER_S2S_EVENTS,
                                                              self.params.error_notifier)))
-            | 'Persist results - AppsFlyer S2S events' >> beam.ParDo(
-                            TransactionalEventsResultsWriter(
+            | 'Persist results - AppsFlyer S2S events' >> TransactionalEventsResultsWriter(
                               self.params.dataflow_options,
                               TransactionalType.UUID,
-                              ErrorHandler(DestinationType.APPSFLYER_S2S_EVENTS, self.params.error_notifier)))
+                              ErrorHandler(DestinationType.APPSFLYER_S2S_EVENTS, self.params.error_notifier))
         )

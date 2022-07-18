@@ -21,7 +21,7 @@ from google.cloud import bigquery
 from google.cloud.bigquery import SchemaField, Client
 from apache_beam.io.gcp.bigquery import ReadFromBigQueryRequest
 
-from models.execution import Execution, SourceType, DestinationType
+from models.execution import Execution, SourceType, DestinationType, DataRowsGroupedBySource
 
 from data_sources.base_data_source import BaseDataSource
 
@@ -46,22 +46,25 @@ class BigQueryDataSource(BaseDataSource):
                 raise Exception(f'Missing bq_ops_dataset for this uploader. Source="{self._source_name}". Destination="{self._destination_name}"')
 
     
-    def retrieve_data(self, executions: ExecutionsGroupedBySource) -> Iterable[Tuple[ExecutionsGroupedBySource, Dict[str, Any]]]:
+    def retrieve_data(self, executions: ExecutionsGroupedBySource) -> List[DataRowsGroupedBySource]:
         if self._transactional_type == TransactionalType.NOT_TRANSACTIONAL:
             return self._retrieve_data_non_transactional(executions)
         else:
             return self._retrieve_data_transactional(executions)
     
-    def _retrieve_data_non_transactional(self, executions: ExecutionsGroupedBySource) -> Iterable[Tuple[ExecutionsGroupedBySource, Dict[str, Any]]]:
+    def _retrieve_data_non_transactional(self, executions: ExecutionsGroupedBySource) -> List[DataRowsGroupedBySource]:
         client = self._get_bq_client()
 
         table_name = self._get_table_name(executions.source.source_metadata, False)
         query = f"SELECT data.* FROM `{table_name}` AS data"
         logging.getLogger(_LOGGER_NAME).info(f'Reading from table {table_name} for Executions {executions}')
+        elements = []
         for row in client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE):
-            yield executions, _convert_row_to_dict(row)
+            elements.append(_convert_row_to_dict(row))
+        logging.getLogger(_LOGGER_NAME).info(f'Data source ({self._source_name}): using {len(elements)} rows')
+        return [DataRowsGroupedBySource(executions, elements)]
     
-    def _retrieve_data_transactional(self, executions: ExecutionsGroupedBySource) -> Iterable[Tuple[ExecutionsGroupedBySource, Dict[str, Any]]]:
+    def _retrieve_data_transactional(self, executions: ExecutionsGroupedBySource) -> List[DataRowsGroupedBySource]:
         table_name = self._get_table_name(executions.source.source_metadata, False)
         uploaded_table_name = self._get_table_name(executions.source.source_metadata, True)
         client = self._get_bq_client()
@@ -83,9 +86,12 @@ class BigQueryDataSource(BaseDataSource):
         query = Template(template).substitute(table_name=table_name, uploaded_table_name=uploaded_table_name)
         logging.getLogger(_LOGGER_NAME).info(
             f'Reading from table `{table_name}` for Executions {executions}')
+        elements = []
         for row in client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE):
-            yield executions, _convert_row_to_dict(row)
-  
+            elements.append(_convert_row_to_dict(row))
+        logging.getLogger(_LOGGER_NAME).info(f'Data source ({self._source_name}): using {len(elements)} rows')
+        return [DataRowsGroupedBySource(executions, elements)]
+        
     def _ensure_control_table_exists(self, client: Client, uploaded_table_name: str):
         template = None
         if self._transactional_type == TransactionalType.UUID:
