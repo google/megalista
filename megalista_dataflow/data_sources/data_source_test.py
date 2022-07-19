@@ -15,9 +15,26 @@
 from data_sources.data_source import DataSource
 from data_sources.big_query.big_query_data_source import BigQueryDataSource
 from data_sources.file.file_data_source import FileDataSource
-from models.execution import SourceType, DestinationType, TransactionalType
+from models.execution import SourceType, DestinationType, TransactionalType, Execution, Source, Destination, ExecutionsGroupedBySource
 from models.options import DataflowOptions
 
+def _get_executions(source_type, source_name, destination_type, destination_name):
+    return ExecutionsGroupedBySource(
+        source_name,
+        [Execution(
+        None,
+        Source(
+            source_name,
+            source_type,
+            []
+        ),
+        Destination(
+            destination_name,
+            destination_type,
+            []
+        )
+        )]
+    )
 
 def test_get_big_query_data_source(mocker):
     source_type = SourceType.BIG_QUERY
@@ -27,7 +44,7 @@ def test_get_big_query_data_source(mocker):
     transactional_type = TransactionalType.NOT_TRANSACTIONAL
     dataflow_options = mocker.MagicMock()
     
-    data_source = DataSource.get_data_source(source_type, source_name, destination_type, destination_name, transactional_type, dataflow_options)
+    data_source = DataSource.get_data_source(_get_executions(source_type, source_name, destination_type, destination_name), transactional_type, dataflow_options)
 
     assert type(data_source) is BigQueryDataSource
     
@@ -39,7 +56,7 @@ def test_get_file_data_source(mocker):
     transactional_type = TransactionalType.NOT_TRANSACTIONAL
     dataflow_options = mocker.MagicMock()
     
-    data_source = DataSource.get_data_source(source_type, source_name, destination_type, destination_name, transactional_type, dataflow_options)
+    data_source = DataSource.get_data_source(_get_executions(source_type, source_name, destination_type, destination_name), transactional_type, dataflow_options)
 
     assert type(data_source) is FileDataSource
     
