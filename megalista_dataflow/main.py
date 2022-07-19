@@ -394,6 +394,18 @@ class DisplayVideoCustomerMatchContactInfoStep(MegalistaStep):
             )
         )
 
+class LoadExecutionsStep(MegalistaStep):
+    def __init__(self, params, execution_source):
+        super().__init__(params)
+        self._execution_source = execution_source
+
+    def expand(self, pipeline):
+        return (pipeline 
+            | "Read config" >> beam.io.Read(self._execution_source)
+            | "Group by source name" >> beam.GroupBy(lambda execution: execution.source.source_name)
+            | "Ecapsulate into an object" >> beam.Map(lambda el: ExecutionsGroupedBySource(el[0], el[1]))
+        )
+
 def run(argv=None):
     pipeline_options = PipelineOptions()
     dataflow_options = pipeline_options.view_as(DataflowOptions)
@@ -424,24 +436,22 @@ def run(argv=None):
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
         executions = (pipeline 
-            | "Load executions" >> beam.io.Read(execution_source)
-            | beam.GroupBy(lambda execution: execution.source.source_name)
-            | beam.Map(lambda el: ExecutionsGroupedBySource(el[0], el[1]))
+            | "Load executions" >> LoadExecutionsStep(params, execution_source)
         )
 
-        executions | GoogleAdsSSDStep(params)
-        executions | GoogleAdsCustomerMatchMobileDeviceIdStep(params)
-        executions | GoogleAdsCustomerMatchContactInfoStep(params)
-        executions | GoogleAdsCustomerMatchUserIdStep(params)
-        executions | GoogleAdsOfflineConversionsStep(params)
-        executions | GoogleAdsOfflineConversionsCallsStep(params)
-        executions | GoogleAnalyticsUserListStep(params)
-        executions | GoogleAnalyticsDataImportStep(params)
-        executions | GoogleAnalyticsMeasurementProtocolStep(params)
-        executions | GoogleAnalytics4MeasurementProtocolStep(params)
-        executions | CampaignManagerConversionStep(params)
-        executions | DisplayVideoCustomerMatchDeviceIdStep(params)
-        executions | DisplayVideoCustomerMatchContactInfoStep(params)
+        executions | "Ads SSD" >> GoogleAdsSSDStep(params)
+        executions | "Ads Cust. Match (Device ID)" >> GoogleAdsCustomerMatchMobileDeviceIdStep(params)
+        executions | "Ads Cust. Match (Contact)" >> GoogleAdsCustomerMatchContactInfoStep(params)
+        executions | "Ads Cust. Match (User ID)" >> GoogleAdsCustomerMatchUserIdStep(params)
+        executions | "Ads OCI (Click)" >> GoogleAdsOfflineConversionsStep(params)
+        executions | "Ads OCI (Calls)" >> GoogleAdsOfflineConversionsCallsStep(params)
+        executions | "GA 360 User List" >> GoogleAnalyticsUserListStep(params)
+        executions | "GA 360 Data Import" >> GoogleAnalyticsDataImportStep(params)
+        executions | "GA 360 MP" >> GoogleAnalyticsMeasurementProtocolStep(params)
+        executions | "GA4 MP" >> GoogleAnalytics4MeasurementProtocolStep(params)
+        executions | "CM OCI" >> CampaignManagerConversionStep(params)
+        executions | "DV360 Cust. Match (Device ID)" >> DisplayVideoCustomerMatchDeviceIdStep(params)
+        executions | "DV360 Cust. Match (Contact)" >> DisplayVideoCustomerMatchContactInfoStep(params)
 
         # Add third party steps
         for step in THIRD_PARTY_STEPS:
