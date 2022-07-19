@@ -13,6 +13,8 @@
 # limitations under the License.
 
 
+from configparser import MissingSectionHeaderError
+from typing import List
 from models.execution import Destination, DestinationType, Execution, Batch
 
 import functools
@@ -193,45 +195,67 @@ _dtypes = {
     }
 }
 
-# Validade data columns
-def validate_data_columns(data_cols: list, destination_type: DestinationType) -> bool:
+# checks if every column marked as required exists in dataframe columns
+def _validate_required_columns(data_cols: List[str], destination_type: DestinationType) -> List[str]:
     data_type = _dtypes[destination_type.name]
     data_type_cols = data_type['columns']
-    data_type_groups = data_type['groups']
     data_type_colnames = [col['name'] for col in data_type_cols if col['required'] == True]
-    
-    # checks if every column marked as required exists in dataframe columns
-    # required_cols = functools.reduce(lambda a, b: a and b, [col in data_cols for col in data_type_colnames], True)
-    required_cols = True
+
+    missing_cols = []
     for data_type_col in data_type_colnames:
         found = False
         for col in data_cols:
-            if re.match(data_type_col, col) is not None:
+            if re.match(f'^{data_type_col}$', col) is not None:
                 found = True
                 break
         if not found:
-            required_cols = False
-            break
+            missing_cols.append(data_type_col)
+    
+    return missing_cols
 
-    # checks if every column group is verified
-    groups_validated = True
+# checks if every column group is verified
+def _validade_group_columns(data_cols: List[str], destination_type: DestinationType) -> List[List[str]]:
+    data_type = _dtypes[destination_type.name]
+    data_type_groups = data_type['groups']
+
+    missing_groups = []
     for group in data_type_groups:
-        # group_validated = functools.reduce(lambda a, b: a or b, [col in data_cols for col in group], False)
-        # groups_validated = groups_validated and group_validated
         group_validated = False
         for data_type_col in group:
             found = False
             for col in data_cols:
-                if re.match(data_type_col, col) is not None:
+                if re.match(f'^{data_type_col}$', col) is not None:
                     found = True
                     break
             if found:
                 group_validated = True
-                break
-        groups_validated = groups_validated and group_validated
+        if not group_validated:
+            missing_groups.append(group)
 
-    return required_cols and groups_validated
-    
+    return missing_groups
+
+
+# Validade data columns
+def validate_data_columns(data_cols: List[str], destination_type: DestinationType) -> bool:
+    # checks if every column marked as required exists in dataframe columns
+    missing_cols = _validate_required_columns(data_cols, destination_type)
+
+    # checks if every column group is verified
+    missing_groups = _validade_group_columns(data_cols, destination_type)
+
+    return len(missing_cols) == 0 and len(missing_groups) == 0
+
+def get_error_message(data_cols: List[str], destination_type: DestinationType) -> str:
+    message = []
+    missing_cols = _validate_required_columns(data_cols, destination_type)
+    if len(missing_cols) > 0:
+        message.append(f'Required: [{",".join(missing_cols)}]')
+    missing_groups = _validade_group_columns(data_cols, destination_type)
+    if len(missing_groups) > 0:
+        [message.append(f'One of [{",".join(group)}]') for group in missing_groups]
+
+    return f'Some columns were missing: {"; ".join(message)}.'
+
 # Get columns (names) that will be considered
 def get_cols_names(data_cols: list, destination_type: DestinationType) -> list:
     data_type = _dtypes[destination_type.name]
@@ -241,7 +265,7 @@ def get_cols_names(data_cols: list, destination_type: DestinationType) -> list:
     for col in data_cols:
         found = False
         for data_type_col in data_type_cols:
-            if re.match(data_type_col, col) is not None:
+            if re.match(f'^{data_type_col}$', col) is not None:
                 filtered_cols.append(col)
     
     return filtered_cols

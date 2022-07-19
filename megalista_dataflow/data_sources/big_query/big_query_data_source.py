@@ -66,7 +66,7 @@ class BigQueryDataSource(BaseDataSource):
             for row in client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE):
                 yield execution, _convert_row_to_dict(row)
         else:
-            raise ValueError(f'Data source incomplete, columns missing. Source="{self._source_name}". Destination="{self._destination_name}"')
+            raise ValueError(f'Data source incomplete. {DataSchemas.get_error_message(cols, self._destination_type)} Source="{self._source_name}". Destination="{self._destination_name}"')
     
     def _retrieve_data_transactional(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
         table_name = self._get_table_name(execution.source.source_metadata, False)
@@ -97,6 +97,9 @@ class BigQueryDataSource(BaseDataSource):
                 f'Reading from table `{table_name}` for Execution {execution}')
             for row in client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE):
                 yield execution, _convert_row_to_dict(row)
+        else:
+            raise ValueError(f'Data source incomplete. {DataSchemas.get_error_message(cols, self._destination_type)} Source="{self._source_name}". Destination="{self._destination_name}"')
+
   
     def _ensure_control_table_exists(self, client: Client, uploaded_table_name: str):
         template = None

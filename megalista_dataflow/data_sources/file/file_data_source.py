@@ -178,7 +178,7 @@ class ParquetDataSource(FileDataSource):
             df = DataSchemas.process_by_destination_type(df, destination_type)
             return df
         else:
-            raise ValueError(f'Data source incomplete, columns missing. Source="{self._source_name}". Destination="{self._destination_name}"')
+            raise ValueError(f'Data source incomplete. {DataSchemas.get_error_message(cols, self._destination_type)} Source="{self._source_name}". Destination="{self._destination_name}"')
 
     def _get_file_from_data_frame(self, df: pd.DataFrame) -> io.BytesIO:
         to_write = io.BytesIO()
@@ -200,7 +200,7 @@ class CSVDataSource(FileDataSource):
             DataSchemas.process_by_destination_type(df, destination_type)
             return df
         else:
-            raise ValueError(f'Data source incomplete, columns missing. Source="{self._source_name}". Destination="{self._destination_name}"')
+            raise ValueError(f'Data source incomplete. {DataSchemas.get_error_message(cols, self._destination_type)} Source="{self._source_name}". Destination="{self._destination_name}"')
         
     def _get_file_from_data_frame(self, df: pd.DataFrame) -> io.BytesIO:
         to_write = io.BytesIO()
