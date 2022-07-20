@@ -403,7 +403,7 @@ class LoadExecutionsStep(MegalistaStep):
         return (pipeline 
             | "Read config" >> beam.io.Read(self._execution_source)
             | "Group by source name" >> beam.GroupBy(lambda execution: execution.source.source_name)
-            | "Ecapsulate into an object" >> beam.Map(lambda el: ExecutionsGroupedBySource(el[0], el[1]))
+            | "Ecapsulate into object" >> beam.Map(lambda el: ExecutionsGroupedBySource(el[0], el[1]))
         )
 
 def run(argv=None):
