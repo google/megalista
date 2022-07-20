@@ -129,16 +129,8 @@ class FileProvider:
       self._bucket_name = bucket_name
       self._file_path = file_path
       logging.getLogger(_LOGGER_NAME).info(f'GCP Storage File Provider initiated. Bucket: "{bucket_name}". Path="{file_path}"')
-
-      credentials = Credentials(
-        token=dataflow_options.access_token.get(),
-        refresh_token=dataflow_options.refresh_token.get(),
-        client_id=dataflow_options.client_id.get(),
-        client_secret=dataflow_options.client_secret.get(),
-        token_uri='https://accounts.google.com/o/oauth2/token',
-        scopes=['https://www.googleapis.com/auth/devstorage.read_write'])
       
-      self._gcs_client = storage.Client(credentials=credentials)
+      self._gcs_client = storage.Client()
 
     def read(self):
       bucket = self._gcs_client.get_bucket(self._bucket_name)
