@@ -24,6 +24,7 @@ class DestinationType(Enum):
         ADS_OFFLINE_CONVERSION_CALLS,
         ADS_SSD_UPLOAD,
         ADS_ENHANCED_CONVERSION,
+        ADS_ENHANCED_CONVERSION_LEADS,  # jraucci
         ADS_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD,
         ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD,
         ADS_CUSTOMER_MATCH_USER_ID_UPLOAD,
@@ -100,7 +101,7 @@ class AccountConfig:
 
     def to_dict(self):
         return {
-            'google_ads_account_id' : self.google_ads_account_id,
+            'google_ads_account_id': self.google_ads_account_id,
             'mcc': self.mcc,
             'google_analytics_account_id': self.google_analytics_account_id,
             'campaign_manager_profile_id': self.campaign_manager_profile_id,
@@ -169,7 +170,7 @@ class Source:
     def to_dict(self):
         return {
             'source_name': self.source_name,
-            'source_type' : self.source_type.name,
+            'source_type': self.source_type.name,
             'source_metadata': self.source_metadata,
         }
 
@@ -271,7 +272,7 @@ class Execution:
 
     @property
     def account_config(self) -> AccountConfig:
-        return self._account_config 
+        return self._account_config
 
     def to_dict(self):
         return {
