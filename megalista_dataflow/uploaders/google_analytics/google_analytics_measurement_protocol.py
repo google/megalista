@@ -54,7 +54,7 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
       **{'cid': row[key] for key in row.keys() if key.startswith("client_id")},
       **{'uid': row[key] for key in row.keys() if key.startswith("user_id")},
       "ua": self.UA,
-      **{key: row[key] for key in row.keys() if re.match('c[dm]\d+', key)},
+      **{key: row[key] for key in row.keys() if re.match('c[dm]\d+', key)}, # custom dimensions and custom metrics
       **{'cs': row[key] for key in row.keys() if key.startswith("campaign_source")},
       **{'cm': row[key] for key in row.keys() if key.startswith("campaign_medium")}
     }
@@ -64,6 +64,15 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
       payload["ec"] = row['event_category']
       payload["ev"] = row.get('event_value')
       payload["el"] = row.get('event_label')
+
+      # enhanced ecommerce parameters for events
+      for key in row.keys():
+        if (re.match('p([a]|[r]\d*[a-z]+)', key) # product details
+           or re.match('t([irast])', key) # transaction details
+           or re.match('cu', key) # currency code
+           ):
+          payload[key] = row[key] #
+
     elif hit_type == "transaction":
       payload["ti"] = row['transaction_id']   # Transaction ID. Required.
       payload["ta"] = row.get('transaction_affiliation')   # Transaction affiliation.
