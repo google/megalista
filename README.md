@@ -101,15 +101,17 @@ In order to create it, follow these steps:
    -  The user who opened the generated link and clicked on *Allow* must have access to the platforms that Megalista will integrate, including the configuration Sheet, if this is the chosen method for configuration.
 
 ### Deploying Pipeline
-To deploy the full Megalista pipeline, use the following command from the root folder:
-`./terraform_deploy.sh`
-The script will require some parameters, between them:
+To deploy the full Megalista pipeline, use the following command from the deployment folder:
+`./deploy.sh`
+The script will require some parameters, please add them to the config.json file. Some parameters have default values and can be
+changed.
 - Auxliary bigquery dataset for Megalista operations to create
   - This dataset will be used for storing operational data and will be created by Terraform
 - Google Cloud Storage Bucket to create
   - This Cloud Storage Bucket will be used to store Megalista compiled binary, metadata, and temp files and will be created by Terraform.
 - *Setup Firestore collection*, *URL for JSON configuration* and *Setup Sheet Id*
   - Only one of these three should be filled and the other should be left black accordingly to the chosen configuration method.
+- Client ID, Client Secret, Access Token and Refresh Token from the previous step.
 
 ### Updating the Binary
 to update the binary whitouth redoing the whole deployment process, run:

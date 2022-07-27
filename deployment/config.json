@@ -1,0 +1,15 @@
+{
+    "service_account_name": "megalista-runner",
+    "scheduler_name": "megalista-job",
+    "location": "us-central1",
+    "bq_ops_dataset": "",
+    "bucket_name" : "",
+    "developer_token": "",
+    "client_id": "",
+    "client_secret": "",
+    "access_token": "",
+    "refresh_token": "",
+    "setup_sheet_id": "",
+    "setup_json_url": "",
+    "setup_firestore_collection": ""
+}
