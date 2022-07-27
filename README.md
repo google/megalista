@@ -113,17 +113,19 @@ changed.
   - Only one of these three should be filled and the other should be left black accordingly to the chosen configuration method.
 - Client ID, Client Secret, Access Token and Refresh Token from the previous step.
 
+  **Disclaimer:** Please store your config.json file in a secure place or delete it after the deployment.
+
 ### Updating the Binary
-to update the binary whitouth redoing the whole deployment process, run:
-- ./terraform/scripts/deploy_cloud.sh *gcp_project_id* *bucket_name* *region*
+To update the binary without redoing the whole deployment process, run:
+- ./deployment/deploy_cloud.sh *gcp_project_id* *bucket_name* *region* *service_account_email*
 
 ## Usage
 Every upload method expects as source a BigQuery data with specific fields, in addition to specific configuration metadata. For details on how to setup your upload routines, refer to the [Megalista Wiki](https://github.com/google/megalista/wiki).
 
 ## Errors notifications by email
-To have uploaders errors captured and sent by email, do the following:  
-In Cloud Scheduler, in the `parameters` section of the request body, add `notify_errors_by_email` parameter as `true` and `errors_destination_emails` with a list of emails divided by comma (`a@gmail.com,b@gmail.com` etc).  
-These parameters should be added to the same list of pre-configured ones, such as `client_id`, `client_secret` etc.  
+To have uploaders errors captured and sent by email, do the following:
+In Cloud Scheduler, in the `parameters` section of the request body, add `notify_errors_by_email` parameter as `true` and `errors_destination_emails` with a list of emails divided by comma (`a@gmail.com,b@gmail.com` etc).
+These parameters should be added to the same list of pre-configured ones, such as `client_id`, `client_secret` etc.
 
 If the access tokens being used were generated prior to version `v4.4`, new access and refresh tokens must be generated to activate this feature. This is necessary because old tokens don't have the `gmail.send` scope.
 
