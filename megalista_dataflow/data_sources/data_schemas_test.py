@@ -69,3 +69,26 @@ customVariables.type,customVariables.value\n\
 
     assert df.loc[0, 'customVariables'] == [{ "type": "U1", "value": "123" },{ "type": "U2", "value": "456" }]
     
+
+def test_validate_data_columns(mocker):
+    destination_type = DestinationType.CM_OFFLINE_CONVERSION
+    cols_ok_1 = ['uuid', 'gclid']
+    cols_ok_2 = ['uuid', 'gclid', 'aaa']
+    cols_error_1 = ['uuid']
+    cols_error_2 = ['gclid']
+
+    assert DataSchemas.validate_data_columns(cols_ok_1, destination_type)
+    assert DataSchemas.validate_data_columns(cols_ok_2, destination_type)
+    assert DataSchemas.validate_data_columns(cols_error_1, destination_type) == False
+    assert DataSchemas.validate_data_columns(cols_error_2, destination_type) == False
+
+def test_get_cols_names(mocker):
+    destination_type = DestinationType.CM_OFFLINE_CONVERSION
+    cols_1 = ['uuid', 'gclid']
+    cols_1_filtered = ['uuid', 'gclid']
+    cols_2 = ['uuid', 'gclid', 'aaa']
+    cols_2_filtered = ['uuid', 'gclid']
+    
+    assert DataSchemas.get_cols_names(cols_1, destination_type) == cols_1_filtered
+    assert DataSchemas.get_cols_names(cols_2, destination_type) == cols_2_filtered
+    

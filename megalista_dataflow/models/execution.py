@@ -35,7 +35,9 @@ class DestinationType(Enum):
         GA_4_MEASUREMENT_PROTOCOL,
         DV_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD,
         DV_CUSTOMER_MATCH_DEVICE_ID_UPLOAD,
-    ) = range(15)
+        UPLOADED_UUID, # schema verification purposes
+        UPLOADED_GCLID_TIME # schema verification purposes
+    ) = range(17)
 
     def __eq__(self, other):
         if other is None:
