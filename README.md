@@ -101,27 +101,31 @@ In order to create it, follow these steps:
    -  The user who opened the generated link and clicked on *Allow* must have access to the platforms that Megalista will integrate, including the configuration Sheet, if this is the chosen method for configuration.
 
 ### Deploying Pipeline
-To deploy the full Megalista pipeline, use the following command from the root folder:
-`./terraform_deploy.sh`
-The script will require some parameters, between them:
+To deploy the full Megalista pipeline, use the following command from the deployment folder:
+`./deploy.sh`
+The script will require some parameters, please add them to the config.json file. Some parameters have default values and can be
+changed.
 - Auxliary bigquery dataset for Megalista operations to create
-  - This dataset will be used for storing operational data and will be created by Terraform
+  - This dataset will be used for storing operational data and will be created by the deployment script
 - Google Cloud Storage Bucket to create
-  - This Cloud Storage Bucket will be used to store Megalista compiled binary, metadata, and temp files and will be created by Terraform.
+  - This Cloud Storage Bucket will be used to store Megalista compiled binary, metadata, and temp files and will be created by the deployment script.
 - *Setup Firestore collection*, *URL for JSON configuration* and *Setup Sheet Id*
   - Only one of these three should be filled and the other should be left black accordingly to the chosen configuration method.
+- Client ID, Client Secret, Access Token and Refresh Token from the previous step.
+
+  **Disclaimer:** Please store your config.json file in a secure place or delete it after the deployment.
 
 ### Updating the Binary
-to update the binary whitouth redoing the whole deployment process, run:
-- ./terraform/scripts/deploy_cloud.sh *gcp_project_id* *bucket_name* *region*
+To update the binary without redoing the whole deployment process, run:
+- ./deployment/deploy_cloud.sh *gcp_project_id* *bucket_name* *region* *service_account_email*
 
 ## Usage
 Every upload method expects as source a BigQuery data with specific fields, in addition to specific configuration metadata. For details on how to setup your upload routines, refer to the [Megalista Wiki](https://github.com/google/megalista/wiki).
 
 ## Errors notifications by email
-To have uploaders errors captured and sent by email, do the following:  
-In Cloud Scheduler, in the `parameters` section of the request body, add `notify_errors_by_email` parameter as `true` and `errors_destination_emails` with a list of emails divided by comma (`a@gmail.com,b@gmail.com` etc).  
-These parameters should be added to the same list of pre-configured ones, such as `client_id`, `client_secret` etc.  
+To have uploaders errors captured and sent by email, do the following:
+In Cloud Scheduler, in the `parameters` section of the request body, add `notify_errors_by_email` parameter as `true` and `errors_destination_emails` with a list of emails divided by comma (`a@gmail.com,b@gmail.com` etc).
+These parameters should be added to the same list of pre-configured ones, such as `client_id`, `client_secret` etc.
 
 If the access tokens being used were generated prior to version `v4.4`, new access and refresh tokens must be generated to activate this feature. This is necessary because old tokens don't have the `gmail.send` scope.
 
