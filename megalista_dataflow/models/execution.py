@@ -342,8 +342,8 @@ class ExecutionsGroupedBySource:
 
     @staticmethod
     def from_dict(dict_executions):
-        executions = [Execution.from_dict(exec_json) for exec_json in dict_executions['executions']]
-
+        executions = list([Execution.from_dict(exec_json) for exec_json in dict_executions['executions']])
+        
         return ExecutionsGroupedBySource(
             dict_executions['source_name'],
             executions

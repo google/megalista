@@ -16,6 +16,7 @@ import logging
 from datetime import datetime
 
 import apache_beam as beam
+from mappers.batches_grouped_by_source_mapper import BatchesGroupedBySourceCombineFn, BatchesGroupedBySourceMapper
 
 from uploaders import utils
 from models.execution import Batch, BatchesGroupedBySource, ExecutionsGroupedBySource
@@ -70,8 +71,11 @@ class TransactionalEventsResultsWriter(beam.PTransform):
   def expand(self, executions):
     return (
         executions
-        | beam.GroupBy(lambda batch: batch.execution.source.source_name)
-        | beam.Map(lambda el: BatchesGroupedBySource(el[0], el[1]))
+        # | beam.GroupBy(lambda batch: batch.execution.source.source_name)
+        # | beam.Map(lambda el: BatchesGroupedBySource(el[0], el[1]))
+        | "Transform into tuples" >> beam.Map(lambda batch: (batch.execution.source.source_name, batch))
+        | "Group by source name" >> beam.CombinePerKey(BatchesGroupedBySourceCombineFn())
+        | "Encapsulate into object" >> beam.Map(BatchesGroupedBySourceMapper().encapsulate)
         | beam.ParDo(self._ElementsProcessor(self._error_handler))
         | beam.ParDo(self._UploadData(self._dataflow_options, self._transactional_type, self._error_handler))
     )

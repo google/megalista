@@ -24,7 +24,7 @@ from mappers.ads_user_list_pii_hashing_mapper import \
   AdsUserListPIIHashingMapper
 from mappers.dv_user_list_pii_hashing_mapper import \
   DVUserListPIIHashingMapper
-from mappers.executions_grouped_by_source_mapper import ExecutionsGroupedBySourceMapper
+from mappers.executions_grouped_by_source_mapper import ExecutionsGroupedBySourceMapper, ExecutionsGroupedBySourceCombineFn
 from models.execution import DataRowsGroupedBySource, DestinationType, Execution, ExecutionsGroupedBySource
 from models.json_config import JsonConfig
 from models.oauth_credentials import OAuthCredentials
@@ -58,7 +58,6 @@ warnings.filterwarnings(
 
 ADS_CM_HASHER = AdsUserListPIIHashingMapper()
 DV_CM_HASHER = DVUserListPIIHashingMapper()
-EXECUTIONS_MAPPER = ExecutionsGroupedBySourceMapper()
 
 def filter_by_action(execution: Execution, destination_type: DestinationType):
     return execution.destination.destination_type is destination_type
@@ -404,8 +403,9 @@ class LoadExecutionsStep(MegalistaStep):
     def expand(self, pipeline):
         return (pipeline 
             | "Read config" >> beam.io.Read(self._execution_source)
-            | "Group by source name" >> beam.GroupBy(lambda execution: execution.source.source_name)
-            | "Encapsulate into object" >> beam.Map(EXECUTIONS_MAPPER.encapsulate)
+            | "Transform into tuples" >> beam.Map(lambda execution: (execution.source.source_name, execution))
+            | "Group by source name" >> beam.CombinePerKey(ExecutionsGroupedBySourceCombineFn())
+            | "Encapsulate into object" >> beam.Map(ExecutionsGroupedBySourceMapper().encapsulate)
         )
 
 def run(argv=None):
@@ -442,9 +442,9 @@ def run(argv=None):
         )
 
         executions | "Ads SSD" >> GoogleAdsSSDStep(params)
-        executions | "Ads Cust. Match (Device ID)" >> GoogleAdsCustomerMatchMobileDeviceIdStep(params)
-        executions | "Ads Cust. Match (Contact)" >> GoogleAdsCustomerMatchContactInfoStep(params)
-        executions | "Ads Cust. Match (User ID)" >> GoogleAdsCustomerMatchUserIdStep(params)
+        executions | "Ads Audiences Device" >> GoogleAdsCustomerMatchMobileDeviceIdStep(params)
+        executions | "Ads Audiences Contact" >> GoogleAdsCustomerMatchContactInfoStep(params)
+        executions | "Ads Audiences User ID" >> GoogleAdsCustomerMatchUserIdStep(params)
         executions | "Ads OCI (Click)" >> GoogleAdsOfflineConversionsStep(params)
         executions | "Ads OCI (Calls)" >> GoogleAdsOfflineConversionsCallsStep(params)
         executions | "GA 360 User List" >> GoogleAnalyticsUserListStep(params)
@@ -452,8 +452,8 @@ def run(argv=None):
         executions | "GA 360 MP" >> GoogleAnalyticsMeasurementProtocolStep(params)
         executions | "GA4 MP" >> GoogleAnalytics4MeasurementProtocolStep(params)
         executions | "CM OCI" >> CampaignManagerConversionStep(params)
-        executions | "DV360 Cust. Match (Device ID)" >> DisplayVideoCustomerMatchDeviceIdStep(params)
-        executions | "DV360 Cust. Match (Contact)" >> DisplayVideoCustomerMatchContactInfoStep(params)
+        executions | "DV360 Audiences Device" >> DisplayVideoCustomerMatchDeviceIdStep(params)
+        executions | "DV360 Audiences Contact" >> DisplayVideoCustomerMatchContactInfoStep(params)
 
         # Add third party steps
         for step in THIRD_PARTY_STEPS:
