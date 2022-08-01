@@ -24,7 +24,7 @@ from mappers.ads_user_list_pii_hashing_mapper import \
   AdsUserListPIIHashingMapper
 from mappers.dv_user_list_pii_hashing_mapper import \
   DVUserListPIIHashingMapper
-from mappers.executions_grouped_by_source_mapper import ExecutionsGroupedBySourceMapper
+from mappers.executions_grouped_by_source_mapper import ExecutionsGroupedBySourceMapper, ExecutionsGroupedBySourceCombineFn
 from models.execution import DataRowsGroupedBySource, DestinationType, Execution, ExecutionsGroupedBySource
 from models.json_config import JsonConfig
 from models.oauth_credentials import OAuthCredentials
