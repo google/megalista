@@ -14,6 +14,8 @@
 
 import logging
 import warnings
+import errorhandler
+import sys
 
 import apache_beam as beam
 from apache_beam import coders
@@ -453,7 +455,14 @@ def run(argv=None):
 
 
 if __name__ == "__main__":
+    error_handler = errorhandler.ErrorHandler()
+    stream_handler = logging.StreamHandler(stream=sys.stderr)
     logging.getLogger().setLevel(logging.ERROR)
     logging.getLogger("megalista").setLevel(logging.INFO)
+    logging.getLogger().addHandler(stream_handler)
     run()
+    if error_handler.fired:
+        logging.getLogger("megalista").critical('Completed with errors')
+        raise SystemExit(1)
+    
     logging.getLogger("megalista").info("Completed successfully!")
