@@ -19,6 +19,8 @@ import apache_beam as beam
 from apache_beam import coders
 from apache_beam.options.pipeline_options import PipelineOptions
 
+from version import  MEGALISTA_VERSION
+
 from error.error_handling import ErrorHandler, ErrorNotifier, GmailNotifier
 from mappers.ads_user_list_pii_hashing_mapper import \
   AdsUserListPIIHashingMapper
@@ -466,4 +468,4 @@ if __name__ == "__main__":
     logging.getLogger().setLevel(logging.ERROR)
     logging.getLogger("megalista").setLevel(logging.INFO)
     run()
-    logging.getLogger("megalista").info("Completed successfully!")
+    logging.getLogger("megalista").info(f"MEGALISTA build {MEGALISTA_VERSION}: Completed successfully!")
