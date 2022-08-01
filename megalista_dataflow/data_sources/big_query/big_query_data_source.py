@@ -62,11 +62,15 @@ class BigQueryDataSource(BaseDataSource):
             cols = DataSchemas.get_cols_names(cols, self._destination_type)
             query = f"SELECT {','.join(cols)} FROM `{table_name}` AS data"
             logging.getLogger(_LOGGER_NAME).info(f'Reading from table {table_name} for Execution {executions}')
+            elements = []
             for row in client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE):
-                yield executions, _convert_row_to_dict(row)
+                elements.append(_convert_row_to_dict(row))
+            logging.getLogger(_LOGGER_NAME).info(f'Data source ({self._source_name}): using {len(elements)} rows')
+            return [DataRowsGroupedBySource(executions, elements)]
+        
         else:
             raise ValueError(f'Data source incomplete. {DataSchemas.get_error_message(cols, self._destination_type)} Source="{self._source_name}". Destination="{self._destination_name}"')
-    
+        
     def _retrieve_data_transactional(self, executions: ExecutionsGroupedBySource) -> List[DataRowsGroupedBySource]:
         table_name = self._get_table_name(executions.source.source_metadata, False)
         uploaded_table_name = self._get_table_name(executions.source.source_metadata, True)

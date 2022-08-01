@@ -71,8 +71,6 @@ class TransactionalEventsResultsWriter(beam.PTransform):
   def expand(self, executions):
     return (
         executions
-        # | beam.GroupBy(lambda batch: batch.execution.source.source_name)
-        # | beam.Map(lambda el: BatchesGroupedBySource(el[0], el[1]))
         | "Transform into tuples" >> beam.Map(lambda batch: (batch.execution.source.source_name, batch))
         | "Group by source name" >> beam.CombinePerKey(BatchesGroupedBySourceCombineFn())
         | "Encapsulate into object" >> beam.Map(BatchesGroupedBySourceMapper().encapsulate)

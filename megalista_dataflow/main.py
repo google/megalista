@@ -24,7 +24,7 @@ from mappers.ads_user_list_pii_hashing_mapper import \
   AdsUserListPIIHashingMapper
 from mappers.dv_user_list_pii_hashing_mapper import \
   DVUserListPIIHashingMapper
-from mappers.executions_grouped_by_source_mapper import ExecutionsGroupedBySourceMapper, ExecutionsGroupedBySourceCombineFn
+from mappers.executions_grouped_by_source_mapper import ExecutionsGroupedBySourceMapper
 from models.execution import DataRowsGroupedBySource, DestinationType, Execution, ExecutionsGroupedBySource
 from models.json_config import JsonConfig
 from models.oauth_credentials import OAuthCredentials
@@ -58,6 +58,7 @@ warnings.filterwarnings(
 
 ADS_CM_HASHER = AdsUserListPIIHashingMapper()
 DV_CM_HASHER = DVUserListPIIHashingMapper()
+EXECUTIONS_MAPPER = ExecutionsGroupedBySourceMapper()
 
 def filter_by_action(execution: Execution, destination_type: DestinationType):
     return execution.destination.destination_type is destination_type
