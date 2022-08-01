@@ -383,15 +383,15 @@ class DataRowsGroupedBySource:
 
     @property
     def source(self) -> Source:
-        return self._executions[0].source
+        return self._executions.source
 
     @property
-    def source_name(self) -> Source:
-        return self._executions[0].source.source_name
+    def source_name(self) -> str:
+        return self._executions.source.source_name
     
     @property
     def destinations(self) -> List[Destination]:
-        return list([exec.destination for exec in self._executions])
+        return self._executions.destinations
 
     def to_dict(self):
         return {
