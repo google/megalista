@@ -77,7 +77,7 @@ def run(argv=None):
 
         # Add third party steps
         for name, step in THIRD_PARTY_STEPS:
-          executions | name >> step(params)
+            executions | name >> step(params)
         # todo: update trix at the end
 
 

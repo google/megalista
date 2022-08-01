@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import apache_beam as beam
+
 from error.error_handling import ErrorNotifier
 
 class MegalistaStepParams():
