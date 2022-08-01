@@ -132,17 +132,21 @@ class BigQueryDataSource(BaseDataSource):
         client.query(query).result()
 
     def write_transactional_info(self, rows, execution: Execution):
-        table_name = self._get_table_name(execution.source.source_metadata, True)
+        if len(rows) == 0:
+            logging.getLogger(_LOGGER_NAME).info(
+                "No rows to insert. Skipping...")
+        else:
+            table_name = self._get_table_name(execution.source.source_metadata, True)
 
-        client = self._get_bq_client()
-        table = client.get_table(table_name)
-        now = self._get_now()
-        results = client.insert_rows(table,
-            self._get_bq_rows(rows, now),
-            self._get_schema_fields())
+            client = self._get_bq_client()
+            table = client.get_table(table_name)
+            now = self._get_now()
+            results = client.insert_rows(table,
+                self._get_bq_rows(rows, now),
+                self._get_schema_fields())
 
-        for result in results:
-            logging.getLogger(_LOGGER_NAME).error(result['errors'])
+            for result in results:
+                logging.getLogger(_LOGGER_NAME).error(result['errors'])
     
     def _get_now(self):
         return datetime.now().timestamp()
