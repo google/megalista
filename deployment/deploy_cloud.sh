@@ -29,4 +29,8 @@ echo $4
 python3 -m main --runner DataflowRunner --project "$1" --gcp_project_id "$1" --temp_location "gs://$2/tmp/" --region "$3" --setup_file ./setup.py --template_location "gs://$2/templates/megalista" --num_workers 1 --autoscaling_algorithm=NONE --service_account_email "$4"
 echo "Copy megalista_medata to bucket $2"
 gsutil cp megalista_metadata "gs://$2/templates/megalista_metadata"
+echo "Get last commit hash and write into bucket $2"
+git rev-parse HEAD > last-commit.txt
+gsutil cp last-commit.txt "gs://$2/last-commit.txt"
+rm last-commit.txt
 cd ..
