@@ -24,10 +24,11 @@ import importlib
 _LOGGER_NAME = 'megalista.data_sources.DataSource'
 
 class DataSource:
+    @staticmethod
     def get_data_source(source_type: SourceType, source_name: str, destination_type: DestinationType, destination_name: str, transactional_type: TransactionalType, dataflow_options: DataflowOptions) -> BaseDataSource:
         data_source = None
         if source_type == SourceType.BIG_QUERY:
-            bq_ops_dataset = None
+            bq_ops_dataset = ''
             bq_location = None
             if dataflow_options.bq_ops_dataset:
                 bq_ops_dataset = dataflow_options.bq_ops_dataset.get()

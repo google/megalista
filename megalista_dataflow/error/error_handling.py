@@ -14,7 +14,7 @@
 import base64
 import logging
 from email.mime.text import MIMEText
-from typing import Iterable
+from typing import Iterable, Optional, Dict
 
 from apache_beam.options.value_provider import ValueProvider
 from google.oauth2.credentials import Credentials
@@ -70,7 +70,7 @@ class GmailNotifier(ErrorNotifier):
     self._oauth_credentials = oauth_credentials
     self._email_destinations = email_destinations
     self._should_notify_param = should_notify
-    self._parsed_emails = None
+    self._parsed_emails: Optional[list] = None
 
   def _get_gmail_service(self):
     credentials = Credentials(
@@ -121,7 +121,7 @@ class GmailNotifier(ErrorNotifier):
     if self._parsed_emails:
       return self._parsed_emails
 
-    self._parsed_emails = list(map(lambda email: email.strip(), self._email_destinations.get().split(',')))
+    self._parsed_emails = list(map(lambda email: email.strip(), str(self._email_destinations.get()).split(',')))
     return self._parsed_emails
 
   def _build_email_body(self, destination_type: DestinationType, errors: Iterable[Error]):
@@ -153,7 +153,7 @@ class ErrorHandler:
   def __init__(self, destination_type: DestinationType, error_notifier: ErrorNotifier):
     self._destination_type = destination_type
     self._error_notifier = error_notifier
-    self._errors = {}
+    self._errors: Dict[Execution, Error] = {}
 
   def add_error(self, execution: Execution, error_message: str):
     """

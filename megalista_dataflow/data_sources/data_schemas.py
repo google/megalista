@@ -14,7 +14,7 @@
 
 
 from configparser import MissingSectionHeaderError
-from typing import List
+from typing import List, Dict, Any
 from models.execution import Destination, DestinationType, Execution, Batch
 
 import functools
@@ -22,7 +22,7 @@ import pandas as pd
 import ast
 import re
 
-_dtypes = {
+_dtypes: Dict[str, Dict[str, Any]] = {
     'CM_OFFLINE_CONVERSION': {
         'columns' : [
             {'name': 'uuid', 'required': True, 'data_type': 'string'},
@@ -252,7 +252,8 @@ def get_error_message(data_cols: List[str], destination_type: DestinationType) -
         message.append(f'Required: [{",".join(missing_cols)}]')
     missing_groups = _validade_group_columns(data_cols, destination_type)
     if len(missing_groups) > 0:
-        [message.append(f'One of [{",".join(group)}]') for group in missing_groups]
+        for group in missing_groups:
+            message.append(f'One of [{",".join(group)}]')
 
     return f'Some columns were missing: {"; ".join(message)}.'
 
@@ -299,3 +300,7 @@ def _join_custom_variables(df) -> pd.DataFrame:
     df = df.drop(['index'], axis=1)
     df['customVariables'] = df['customVariables'].transform(lambda x: ast.literal_eval(x))
     return df
+
+# Get the data type from _dtypes  dict
+def get_data_type(data_type_name: str) -> Dict[str, Any]:
+    return _dtypes[data_type_name]

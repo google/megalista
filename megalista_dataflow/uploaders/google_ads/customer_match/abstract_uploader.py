@@ -175,7 +175,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
                                                                                        job=job_creation_payload).resource_name
         self._job_cache[cache_key] = {'job_resource_name': job_resource_name, 'login_customer_id': login_customer_id}
 
-        return job_resource_name
+        return str(job_resource_name)
 
     def _get_list_operator(self, operator: str) -> str:
         translation = {

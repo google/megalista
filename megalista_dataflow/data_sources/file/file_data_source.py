@@ -132,6 +132,7 @@ class FileDataSource(BaseDataSource):
                 df.drop(df[df.timestamp < cut_timestamp].index, inplace=True)
             return df
     
+    @staticmethod
     def _append_filename_uploaded(path: str) -> str:
         # Case where things might go wrong: Windows-based systems where path separator is '\' instead of '/'
         base_path = os.path.splitext(path)[0]
@@ -153,7 +154,7 @@ class FileDataSource(BaseDataSource):
         return dict
     
     def _update_dtypes(self, destination_type: DestinationType, col_names: list) -> dict:
-        types_dict = DataSchemas[destination_type.name]
+        types_dict = DataSchemas.get_data_type(destination_type.name)
         types_dict.update({col: "string" for col in col_names if col not in types_dict})
         return types_dict
 
