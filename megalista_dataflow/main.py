@@ -466,3 +466,4 @@ if __name__ == "__main__":
         raise SystemExit(1)
     
     logging.getLogger("megalista").info("Completed successfully!")
+    exit(0)
