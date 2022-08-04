@@ -14,7 +14,7 @@
 
 import datetime
 
-from models.execution import AccountConfig
+from models.execution import AccountConfig, ExecutionsGroupedBySource
 from models.execution import Destination
 from models.execution import DestinationType
 from models.execution import Execution
@@ -36,18 +36,35 @@ data_dataset = 'data_dataset'
 source_metadata = [data_dataset, table_name]
 table_name_uploaded = f'{table_name}_uploaded'
 
+def _get_executions():
+  return ExecutionsGroupedBySource(
+    'source_name',
+    [Execution(
+      None,
+      Source(
+        'source_name',
+        SourceType.BIG_QUERY,
+        []
+      ),
+      Destination(
+        'destination_name',
+        DestinationType.ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD,
+        []
+      )
+    )]
+  )
 
 @pytest.fixture
 def bq_data_source_uuid():
-  return BigQueryDataSource(TransactionalType.UUID, bq_ops_dataset, bq_location, SourceType.BIG_QUERY, 'source_name', DestinationType.ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD, 'destination_name')
+  return BigQueryDataSource(_get_executions(), TransactionalType.UUID, bq_ops_dataset, bq_location)
 
 @pytest.fixture
 def bq_data_source_gclid_time():
-  return BigQueryDataSource(TransactionalType.GCLID_TIME, bq_ops_dataset, bq_location, SourceType.BIG_QUERY, 'source_name', DestinationType.ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD, 'destination_name')
+  return BigQueryDataSource(_get_executions(), TransactionalType.GCLID_TIME, bq_ops_dataset, bq_location)
 
 @pytest.fixture
 def bq_data_source_non_transactional():
-  return BigQueryDataSource(TransactionalType.NOT_TRANSACTIONAL, bq_ops_dataset, bq_location, SourceType.BIG_QUERY, 'source_name', DestinationType.ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD, 'destination_name')
+  return BigQueryDataSource(_get_executions(), TransactionalType.NOT_TRANSACTIONAL, bq_ops_dataset, bq_location)
 
 def test_get_table_name(mocker, bq_data_source_uuid, bq_data_source_gclid_time, bq_data_source_non_transactional):
   result_transactional_uploaded = f'{bq_ops_dataset}.{table_name_uploaded}'

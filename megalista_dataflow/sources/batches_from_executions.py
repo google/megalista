@@ -16,13 +16,14 @@ from enum import Enum
 import apache_beam as beam
 import logging
 import json
+import functools
 
 from apache_beam.coders import coders
 from apache_beam.options.value_provider import ValueProvider
 from google.cloud import bigquery
 from error.error_handling import ErrorHandler
 from uploaders.uploaders import MegalistaUploader
-from models.execution import DestinationType, Execution, Batch, TransactionalType
+from models.execution import DestinationType, Execution, Batch, TransactionalType, ExecutionsGroupedBySource, DataRowsGroupedBySource
 from string import Template
 from typing import Any, List, Iterable, Tuple, Dict, Optional
 from models.options import DataflowOptions
@@ -52,6 +53,32 @@ class ExecutionCoder(coders.Coder):
     def is_deterministic(self):
         return True
 
+class ExecutionsGroupedBySourceCoder(coders.Coder):
+    """A custom coder for the Execution class."""
+
+    def encode(self, o):
+        return json.dumps(o.to_dict()).encode('utf-8')
+
+    def decode(self, s):
+        return ExecutionsGroupedBySource.from_dict(json.loads(s.decode('utf-8')))
+
+    def is_deterministic(self):
+        return True
+
+
+class DataRowsGroupedBySourceCoder(coders.Coder):
+    """A custom coder for the Execution class."""
+
+    def encode(self, o):
+        return json.dumps(o.to_dict()).encode('utf-8')
+
+    def decode(self, s):
+        return DataRowsGroupedBySource.from_dict(json.loads(s.decode('utf-8')))
+
+    def is_deterministic(self):
+        return True
+
+
 class BatchesFromExecutions(beam.PTransform):
     """
     Filter the received executions by the received action,
@@ -64,12 +91,10 @@ class BatchesFromExecutions(beam.PTransform):
             self._transactional_type = transactional_type
             self._dataflow_options = dataflow_options
 
-        def process(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
+        def process(self, executions: ExecutionsGroupedBySource) -> Iterable[DataRowsGroupedBySource]:
             data_source = DataSource.get_data_source(
-                execution.source.source_type, execution.source.source_name,
-                execution.destination.destination_type, execution.destination.destination_name,
-                self._transactional_type, self._dataflow_options)
-            return data_source.retrieve_data(execution)
+                executions, self._transactional_type, self._dataflow_options)
+            return data_source.retrieve_data(executions)
 
     class _BatchElements(MegalistaUploader):
         def __init__(self, batch_size: int, error_handler: ErrorHandler):
@@ -91,6 +116,11 @@ class BatchesFromExecutions(beam.PTransform):
                 batch.append(element)
             yield Batch(execution, batch, iteration)
 
+    class _BreakIntoExecutions(beam.DoFn):
+        def process(self, el):
+            for item in el:
+                yield item
+
     def __init__(
         self,
         error_handler: ErrorHandler,
@@ -110,8 +140,15 @@ class BatchesFromExecutions(beam.PTransform):
     def expand(self, executions):
         return (
             executions
-            | beam.Filter(lambda execution: execution.destination.destination_type == self._destination_type)
+            | beam.Filter(
+                lambda executionGroupedBySource: functools.reduce(
+                    lambda a, b: a or b,
+                    [execution.destination.destination_type == self._destination_type for execution in executionGroupedBySource.executions],
+                    False
+                )
+            )
             | beam.ParDo(self._ReadDataSource(self._transactional_type, self._dataflow_options, self._error_handler))
-            | beam.GroupByKey()
+            | beam.Map(lambda el: [(execution, el.rows) for execution in iter(el.executions.executions)])
+            | beam.ParDo(self._BreakIntoExecutions())
             | beam.ParDo(self._BatchElements(self._batch_size, self._error_handler))
         )
