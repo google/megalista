@@ -29,6 +29,7 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
   def __init__(self, error_handler: ErrorHandler):
     super().__init__(error_handler)
     self.API_URL = 'https://www.google-analytics.com/mp/collect'
+    self.reserved_keys = ['app_instance_id', 'client_id', 'uuid', 'user_id', 'timestamp_micros']
 
   def start_bundle(self):
     pass
@@ -88,11 +89,12 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
           'GA4 MP should be called either with an app_instance_id (for apps) or a client_id (for web)')
     
       if is_event:
-        params = {k: v for k, v in row.items() if k not in ('name', 'app_instance_id', 'client_id', 'uuid', 'user_id', 'timestamp_micros') and v is not None}
+        event_reserved_keys = self.reserved_keys + ['name']
+        params = {k: v for k, v in row.items() if k not in event_reserved_keys}
         payload['events'] = [{'name': row['name'], 'params': params}]
 
       if is_user_property: 
-        payload['userProperties'] = {k: {'value': v} for k, v in row.items() if k not in ('app_instance_id', 'client_id', 'uuid', 'user_id', 'timestamp_micros') and v is not None}
+        payload['userProperties'] = {k: {'value': v} for k, v in row.items() if k not in self.reserved_keys}
         payload['events'] = {'name': 'user_property_addition_event', 'params': {}}
 
       url_container = [f'{self.API_URL}?api_secret={api_secret}']
@@ -113,6 +115,9 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
 
       if user_id:
         payload['user_id'] = user_id
+
+      if timestamp_micros:
+        payload['timestamp_micros'] = timestamp_micros
 
       url = ''.join(url_container)
       response = requests.post(url,data=json.dumps(payload))

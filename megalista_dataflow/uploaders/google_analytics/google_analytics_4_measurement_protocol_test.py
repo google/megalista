@@ -281,3 +281,28 @@ def test_unsuccessful_api_call(uploader, error_notifier):
         uploader.finish_bundle()
 
         assert error_notifier.were_errors_sent
+
+def test_succesful_app_event_call_with_timestamp(uploader):
+    with requests_mock.Mocker() as m:
+        m.post(requests_mock.ANY, status_code=204)
+        destination = Destination(
+            'dest1', DestinationType.GA_4_MEASUREMENT_PROTOCOL, [
+                'api_secret',
+                'True',
+                'False',
+                '',
+                'some_id',
+                ''
+            ])
+        source = Source('orig1', SourceType.BIG_QUERY, [])
+        execution = Execution(_account_config, source, destination)
+        uploader.do_process(Batch(execution, [{
+            'app_instance_id': '123',
+            'name': 'event_name',
+            'value': '42',
+            'important_event': 'False',
+            'timestamp_micros': 123123123
+        }]))
+
+        assert m.call_count == 1
+        assert m.last_request.json()['timestamp_micros'] == 123123123
