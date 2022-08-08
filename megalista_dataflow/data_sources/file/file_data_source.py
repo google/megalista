@@ -174,8 +174,7 @@ class ParquetDataSource(FileDataSource):
         if DataSchemas.validate_data_columns(cols, destination_type):
             cols = DataSchemas.get_cols_names(cols, destination_type)
             file.seek(0)
-            df = pd.read_parquet(file, dtype='string', columns=cols)
-            df = DataSchemas.update_data_types_not_string(df, destination_type)
+            df = pd.read_parquet(file, columns=cols)
             df = DataSchemas.process_by_destination_type(df, destination_type)
             return df
         else:
