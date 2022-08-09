@@ -19,7 +19,7 @@ import apache_beam as beam
 from apache_beam import coders
 from apache_beam.options.pipeline_options import PipelineOptions
 
-from version import  MEGALISTA_VERSION
+from config.version import MEGALISTA_VERSION
 
 from error.error_handling import ErrorHandler, ErrorNotifier, GmailNotifier
 from mappers.ads_user_list_pii_hashing_mapper import \
