@@ -29,6 +29,8 @@ echo $4
 echo "Update commit info inside code"
 sed -i "s/\[megalista_version\]/$(git rev-parse HEAD)/" ./config/version.py
 python3 -m main --runner DataflowRunner --project "$1" --gcp_project_id "$1" --temp_location "gs://$2/tmp/" --region "$3" --setup_file ./setup.py --template_location "gs://$2/templates/megalista" --num_workers 1 --autoscaling_algorithm=NONE --service_account_email "$4"
+echo "Update commit info inside code"
+sed -i "s/\[megalista_version\]/$(git rev-parse HEAD)/" version.py
 echo "Copy megalista_medata to bucket $2"
 gsutil cp megalista_metadata "gs://$2/templates/megalista_metadata"
 echo "Cleanup"
