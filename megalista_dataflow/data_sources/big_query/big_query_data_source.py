@@ -21,56 +21,59 @@ from google.cloud import bigquery
 from google.cloud.bigquery import SchemaField, Client
 from apache_beam.io.gcp.bigquery import ReadFromBigQueryRequest
 
-from models.execution import Execution, SourceType, DestinationType
+from models.execution import Execution, SourceType, DestinationType, DataRowsGroupedBySource
 
 from data_sources.base_data_source import BaseDataSource
 import data_sources.data_schemas as DataSchemas
 
-from models.execution import TransactionalType
+from models.execution import TransactionalType, ExecutionsGroupedBySource
 
 _BIGQUERY_PAGE_SIZE = 20000
 
 _LOGGER_NAME = 'megalista.data_sources.BigQuery'
 
 class BigQueryDataSource(BaseDataSource):
-    def __init__(self, transactional_type: TransactionalType, bq_ops_dataset: str, bq_location: Optional[str], source_type: SourceType, source_name: str, destination_type: DestinationType, destination_name: str):
-        self._transactional_type = transactional_type
+
+    def __init__(self, 
+        executions: ExecutionsGroupedBySource, transactional_type: TransactionalType, 
+        bq_ops_dataset: str, bq_location: str):
+        super().__init__(executions, transactional_type)
         self._bq_ops_dataset = bq_ops_dataset
         self._bq_location = bq_location
         
-        self._source_type = source_type
-        self._source_name = source_name
-        self._destination_type = destination_type
-        self._destination_name = destination_name
   
         if transactional_type is not TransactionalType.NOT_TRANSACTIONAL:
             if not bq_ops_dataset or bq_ops_dataset == '':
                 raise Exception(f'Missing bq_ops_dataset for this uploader. Source="{self._source_name}". Destination="{self._destination_name}"')
 
     
-    def retrieve_data(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
+    def retrieve_data(self, executions: ExecutionsGroupedBySource) -> List[DataRowsGroupedBySource]:
         if self._transactional_type == TransactionalType.NOT_TRANSACTIONAL:
-            return self._retrieve_data_non_transactional(execution)
+            return self._retrieve_data_non_transactional(executions)
         else:
-            return self._retrieve_data_transactional(execution)
+            return self._retrieve_data_transactional(executions)
     
-    def _retrieve_data_non_transactional(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
+    def _retrieve_data_non_transactional(self, executions: ExecutionsGroupedBySource) -> List[DataRowsGroupedBySource]:
         client = self._get_bq_client()
 
-        table_name = self._get_table_name(execution.source.source_metadata, False)
+        table_name = self._get_table_name(executions.source.source_metadata, False)
         cols = self._get_table_columns(client, table_name)
         if DataSchemas.validate_data_columns(cols, self._destination_type):
             cols = DataSchemas.get_cols_names(cols, self._destination_type)
             query = f"SELECT {','.join(cols)} FROM `{table_name}` AS data"
-            logging.getLogger(_LOGGER_NAME).info(f'Reading from table {table_name} for Execution {execution}')
+            logging.getLogger(_LOGGER_NAME).info(f'Reading from table {table_name} for Execution {executions}')
+            elements = []
             for row in client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE):
-                yield execution, _convert_row_to_dict(row)
+                elements.append(_convert_row_to_dict(row))
+            logging.getLogger(_LOGGER_NAME).info(f'Data source ({self._source_name}): using {len(elements)} rows')
+            return [DataRowsGroupedBySource(executions, elements)]
+        
         else:
             raise ValueError(f'Data source incomplete. {DataSchemas.get_error_message(cols, self._destination_type)} Source="{self._source_name}". Destination="{self._destination_name}"')
-    
-    def _retrieve_data_transactional(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
-        table_name = self._get_table_name(execution.source.source_metadata, False)
-        uploaded_table_name = self._get_table_name(execution.source.source_metadata, True)
+        
+    def _retrieve_data_transactional(self, executions: ExecutionsGroupedBySource) -> List[DataRowsGroupedBySource]:
+        table_name = self._get_table_name(executions.source.source_metadata, False)
+        uploaded_table_name = self._get_table_name(executions.source.source_metadata, True)
         client = self._get_bq_client()
 
         self._ensure_control_table_exists(client, uploaded_table_name)
@@ -94,13 +97,15 @@ class BigQueryDataSource(BaseDataSource):
 
             query = Template(template).substitute(table_name=table_name, uploaded_table_name=uploaded_table_name, query_cols=query_cols)
             logging.getLogger(_LOGGER_NAME).info(
-                f'Reading from table `{table_name}` for Execution {execution}')
+                f'Reading from table `{table_name}` for Execution {executions}')
+            elements = []
             for row in client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE):
-                yield execution, _convert_row_to_dict(row)
+                elements.append(_convert_row_to_dict(row))
+            logging.getLogger(_LOGGER_NAME).info(f'Data source ({self._source_name}): using {len(elements)} rows')
+            return [DataRowsGroupedBySource(executions, elements)]
         else:
             raise ValueError(f'Data source incomplete. {DataSchemas.get_error_message(cols, self._destination_type)} Source="{self._source_name}". Destination="{self._destination_name}"')
 
-  
     def _ensure_control_table_exists(self, client: Client, uploaded_table_name: str):
         template = None
         if self._transactional_type == TransactionalType.UUID:
@@ -127,17 +132,21 @@ class BigQueryDataSource(BaseDataSource):
         client.query(query).result()
 
     def write_transactional_info(self, rows, execution: Execution):
-        table_name = self._get_table_name(execution.source.source_metadata, True)
+        if len(rows) == 0:
+            logging.getLogger(_LOGGER_NAME).info(
+                "No rows to insert. Skipping...")
+        else:
+            table_name = self._get_table_name(execution.source.source_metadata, True)
 
-        client = self._get_bq_client()
-        table = client.get_table(table_name)
-        now = self._get_now()
-        results = client.insert_rows(table,
-            self._get_bq_rows(rows, now),
-            self._get_schema_fields())
+            client = self._get_bq_client()
+            table = client.get_table(table_name)
+            now = self._get_now()
+            results = client.insert_rows(table,
+                self._get_bq_rows(rows, now),
+                self._get_schema_fields())
 
-        for result in results:
-            logging.getLogger(_LOGGER_NAME).error(result['errors'])
+            for result in results:
+                logging.getLogger(_LOGGER_NAME).error(result['errors'])
     
     def _get_now(self):
         return datetime.now().timestamp()

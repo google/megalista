@@ -22,10 +22,12 @@ import io
 import os
 from datetime import datetime, timedelta
 from typing import Any, List, Iterable, Tuple, Dict
+from apache_beam.typehints.decorators import with_output_types
+import numpy as np
 
 import logging
 
-from models.execution import SourceType, DestinationType, Execution, Batch, TransactionalType
+from models.execution import SourceType, DestinationType, Execution, Batch, TransactionalType, ExecutionsGroupedBySource, DataRowsGroupedBySource
 from models.options import DataflowOptions
 
 
@@ -37,47 +39,57 @@ _LOGGER_NAME = 'megalista.data_sources.File'
 
 
 class FileDataSource(BaseDataSource):
-    def __init__(self, transactional_type: TransactionalType, dataflow_options: DataflowOptions, source_type: SourceType, source_name: str, destination_type: DestinationType, destination_name: str):
-        self._transactional_type = transactional_type
+    def __init__(self, 
+        executions: ExecutionsGroupedBySource, transactional_type: TransactionalType, 
+        dataflow_options: DataflowOptions):
+        super().__init__(executions, transactional_type)
         self._dataflow_options = dataflow_options
-        self._source_type = source_type
-        self._source_name = source_name
-        self._destination_type = destination_type
-        self._destination_name = destination_name
   
-    def retrieve_data(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
+    def retrieve_data(self, executions: ExecutionsGroupedBySource) -> List[Any]:
         if self._transactional_type == TransactionalType.NOT_TRANSACTIONAL:
-            return self._retrieve_data_non_transactional(execution)
+            return self._retrieve_data_non_transactional(executions)
         else:
-            return self._retrieve_data_transactional(execution)
+            data = self._retrieve_data_transactional(executions)
+            return data
   
-    def _retrieve_data_non_transactional(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
+    def _retrieve_data_non_transactional(self, executions: ExecutionsGroupedBySource) -> List[DataRowsGroupedBySource]:
+        source = executions.source
         # Get Data Source
-        data_source = self._get_data_source(execution.source.source_name, execution.source.source_metadata[0])
+        data_source = self._get_data_source(source.source_name, source.source_metadata[0])
         # Get Data Frame
-        df = data_source.get_data_frame(execution.source.source_name, execution.source.source_metadata[1])
+        df = data_source.get_data_frame(source.source_name, source.source_metadata[1])
+        logging.getLogger(_LOGGER_NAME).info(f'Data source ({self._source_name}): using {len(df.index)} rows')
         if df is not None:
+            df = df.fillna(np.nan).replace([np.nan], [None])
             # Process Data Frame
-            for _, row in df.iterrows():
-                yield execution, FileDataSource._convert_row_to_dict(row)
+            elements = []
+            for index, row in df.iterrows():
+                elements.append(FileDataSource._convert_row_to_dict(row))
+            return [DataRowsGroupedBySource(executions, elements)]
         else:
-            raise Exception(f'Unable to read from data source. Source="{execution.source.source_name}".')
-  
-    def _retrieve_data_transactional(self, execution: Execution) -> Iterable[Tuple[Execution, Dict[str, Any]]]:
+            raise Exception(f'Unable to read from data source. Source="{source.source_name}".')
+    
+    @with_output_types(DataRowsGroupedBySource)
+    def _retrieve_data_transactional(self, executions: ExecutionsGroupedBySource) -> List[DataRowsGroupedBySource]:
+        source = executions.source
         # Get Data Source
-        data_source = self._get_data_source(execution.source.source_name, execution.source.source_metadata[0])
+        data_source = self._get_data_source(source.source_name, source.source_metadata[0])
         # Get Data Frame
-        df = data_source.get_data_frame(execution.source.source_name, execution.source.source_metadata[1])
+        df = data_source.get_data_frame(source.source_name, source.source_metadata[1])
         # Get Uploaded Data Frame
-        df_uploaded = data_source.get_data_frame(execution.source.source_name, execution.source.source_metadata[1], is_uploaded=True)
+        df_uploaded = data_source.get_data_frame(source.source_name, source.source_metadata[1], is_uploaded=True)
         
         if df is not None:
             # Get items that haven't been processed yet
             df_merged = df.merge(df_uploaded, how='outer')
             df_distinct = df_merged.drop(df_merged[df_merged.timestamp.notnull()].index)
             # Process Data Frame
+            df_distinct = df_distinct.fillna(np.nan).replace([np.nan], [None])
+            logging.getLogger(_LOGGER_NAME).info(f'Data source ({self._source_name}): using {len(df_distinct.index)} rows')
+            elements = []
             for index, row in df_distinct.iterrows():
-                yield execution, FileDataSource._convert_row_to_dict(row)
+                elements.append(FileDataSource._convert_row_to_dict(row))
+            return [DataRowsGroupedBySource(executions, elements)]
         else:
             raise Exception(f'Unable to read from data source. Source="{self._source_name}". Destination="{self._destination_name}"')
 
@@ -142,9 +154,9 @@ class FileDataSource(BaseDataSource):
     def _get_data_source(self, source_name: str, file_type: str):
         file_type = file_type.upper()
         if file_type == 'PARQUET':
-            return ParquetDataSource(self._transactional_type, self._dataflow_options, self._source_type, self._source_name, self._destination_type, self._destination_name)
+            return ParquetDataSource(self._executions, self._transactional_type, self._dataflow_options)
         elif file_type == 'CSV':
-            return CSVDataSource(self._transactional_type, self._dataflow_options, self._source_type, self._source_name, self._destination_type, self._destination_name)
+            return CSVDataSource(self._executions, self._transactional_type, self._dataflow_options)
         raise ValueError(f'Data source not found. Please check your source in config (value={file_type}). Source="{self._source_name}". Destination="{self._destination_name}"')
         
     def _convert_row_to_dict(row):
@@ -203,6 +215,4 @@ class CSVDataSource(FileDataSource):
             raise ValueError(f'Data source incomplete. {DataSchemas.get_error_message(cols, self._destination_type)} Source="{self._source_name}". Destination="{self._destination_name}"')
         
     def _get_file_from_data_frame(self, df: pd.DataFrame) -> io.BytesIO:
-        to_write = io.BytesIO()
-        to_write.write(df.to_csv(index=False).encode())
-        return to_write
+        return io.BytesIO(df.to_csv(index=False).encode())
