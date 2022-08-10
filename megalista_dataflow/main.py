@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-<<<<<<< HEAD
-from concurrent.futures import process
-from distutils.log import error
-=======
->>>>>>> parent of bf83453 (Logging Handler - initial)
 import logging
 import warnings
 import errorhandler
