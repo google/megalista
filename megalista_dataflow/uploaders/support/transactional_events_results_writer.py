@@ -41,6 +41,7 @@ class TransactionalEventsResultsWriter(beam.PTransform):
     @utils.safe_process(logger=logging.getLogger("megalista.TransactionalEventsResultsWriter"))
     def process(self, batch: Batch, *args, **kwargs):
       self._do_process(batch)
+      return [batch.execution]
 
     def _do_process(self, batch: Batch):
       executions = ExecutionsGroupedBySource(batch.execution.source.source_name, [batch.execution])

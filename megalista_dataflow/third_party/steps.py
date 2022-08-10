@@ -10,12 +10,9 @@ from third_party.uploaders.appsflyer.appsflyer_s2s_uploader_async import AppsFly
 from models.execution import DestinationType
 from uploaders.support.transactional_events_results_writer import TransactionalEventsResultsWriter
 from sources.batches_from_executions import BatchesFromExecutions, TransactionalType
+from steps.megalista_step import MegalistaStep
 
-
-class AppsFlyerEventsStep(beam.PTransform):
-    def __init__(self, params):
-        self.params = params
-
+class AppsFlyerEventsStep(MegalistaStep):
     def expand(self, executions):
         return (
             executions

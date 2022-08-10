@@ -20,6 +20,7 @@ from .error_handling import ErrorNotifier
 class LoggingHandler(logging.Handler):
     def __init__(self, log_name: str=None, level=logging.INFO, error_notifier: ErrorNotifier=None):
         self.level = level
+        self.log_name = log_name
         self.filters = []
         self.lock = None
         self._error_notifier: error_notifier
