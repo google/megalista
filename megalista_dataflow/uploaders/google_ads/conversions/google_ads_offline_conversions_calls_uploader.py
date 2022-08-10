@@ -99,7 +99,7 @@ class GoogleAdsOfflineUploaderCallsDoFn(MegalistaUploader):
           'caller_id': conversion['caller_id'],
           'call_start_date_time': utils.format_date(conversion['call_time']),
           'conversion_date_time': utils.format_date(conversion['time']),
-          'conversion_value': int(conversion['amount'])
+          'conversion_value': float(str(conversion['amount']))
     } for conversion in rows]
 
     upload_data = {
