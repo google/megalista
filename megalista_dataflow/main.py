@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from distutils.log import error
 import logging
 import warnings
 import errorhandler
@@ -21,6 +22,7 @@ import apache_beam as beam
 from apache_beam import coders
 from apache_beam.options.pipeline_options import PipelineOptions
 
+from error.logging_handler import LoggingHandler
 from error.error_handling import ErrorHandler, ErrorNotifier, GmailNotifier
 from mappers.ads_user_list_pii_hashing_mapper import \
   AdsUserListPIIHashingMapper
@@ -465,13 +467,13 @@ def run(argv=None):
 
 
 if __name__ == "__main__":
-    error_handler = errorhandler.ErrorHandler()
     stream_handler = logging.StreamHandler(stream=sys.stderr)
+    logging_handler = LoggingHandler(log_name=None, error_notifier=None, level=logging.INFO)
     logging.getLogger().setLevel(logging.ERROR)
     logging.getLogger("megalista").setLevel(logging.INFO)
     logging.getLogger().addHandler(stream_handler)
     run()
-    if error_handler.fired:
+    if logging_handler.has_errors:
         logging.getLogger("megalista").critical('Completed with errors')
         raise SystemExit(1)
     
