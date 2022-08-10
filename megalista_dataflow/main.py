@@ -12,8 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+<<<<<<< HEAD
 from concurrent.futures import process
 from distutils.log import error
+=======
+>>>>>>> parent of bf83453 (Logging Handler - initial)
 import logging
 import warnings
 import errorhandler
@@ -23,7 +26,6 @@ import apache_beam as beam
 from apache_beam import coders
 from apache_beam.options.pipeline_options import PipelineOptions
 
-from error.logging_handler import LoggingHandler
 from error.error_handling import ErrorHandler, ErrorNotifier, GmailNotifier
 
 from models.execution import DataRowsGroupedBySource, Execution, ExecutionsGroupedBySource
@@ -92,8 +94,8 @@ def run(argv=None):
         tuple(processing_results) | LastStep(params)
 
 if __name__ == "__main__":
+    error_handler = errorhandler.ErrorHandler()
     stream_handler = logging.StreamHandler(stream=sys.stderr)
-    logging_handler = LoggingHandler(log_name=None, error_notifier=None, level=logging.INFO)
     logging.getLogger().setLevel(logging.ERROR)
     logging.getLogger("megalista").setLevel(logging.INFO)
     logging.getLogger().addHandler(stream_handler)
