@@ -65,6 +65,8 @@ class GoogleAdsSSDUploaderDoFn(MegalistaUploader):
                         conversion_action_resource_name,
                         execution.destination.destination_metadata[1], batch.elements)
 
+        return [execution]
+
     def _do_upload(self, execution, offline_user_data_job_service, customer_id, currency_code, conversion_action_resource_name,
                    ssd_external_upload_id, rows):
         logger = logging.getLogger('megalista.GoogleAdsSSDUploader')

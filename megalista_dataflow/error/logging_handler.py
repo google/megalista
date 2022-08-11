@@ -18,15 +18,14 @@ from typing import Optional, List
 from .error_handling import ErrorNotifier
 
 class LoggingHandler(logging.Handler):
-    def __init__(self, level=logging.INFO, error_notifier: ErrorNotifier=None):
+    def __init__(self, level=logging.INFO):
         self.level = level
         self.filters = []
         self.lock = None
-        self._error_notifier: error_notifier
         self._has_errors = False
         self._records: List[logging.LogRecord] = []
 
-    def emit(self, record):
+    def emit(self, record: logging.LogRecord):
         if record.levelno >= logging.ERROR:
             self._has_errors = True
         self._records.append(record)
@@ -46,6 +45,10 @@ class LoggingHandler(logging.Handler):
     @staticmethod
     def format_records(records: List[logging.LogRecord]) -> str:
         if records is not None and len(records) > 0:
-            return '- ' + '\n- '.join([str(rec.msg) for rec in records])
+            message = ''
+            for i in range(len(records)):
+                rec = records[i]
+                message += f'{i+1}. {rec.msg}\n  in {rec.pathname}:{rec.lineno}\n'
+            return message
         else:
             return None

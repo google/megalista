@@ -130,6 +130,8 @@ class GoogleAnalyticsUserListUploaderDoFn(MegalistaUploader):
                              buyer_custom_dim, custom_dim_field, ga_account_id, ads_customer_id, mcc,
                              batch.elements)
 
+        return [execution]
+
     def _do_upload_data(self, execution, web_property_id, view_id, data_import_name, user_id_list_name, user_id_custom_dim,
                         buyer_custom_dim, custom_dim_field, ga_account_id, ads_customer_id, mcc, rows):
 

@@ -86,11 +86,11 @@ if __name__ == "__main__":
 
     logging_handler = LoggingConfig.get_logging_handler()
     if logging_handler is None:
-        logging.getLogger("megalista").info("Clould not find error interception handler.")
+        logging.getLogger("megalista").info(f"MEGALISTA build {MEGALISTA_VERSION}: Clould not find error interception handler. Skipping error intereception.")
     else:
         if logging_handler.has_errors:
             logging.getLogger("megalista").critical(f'MEGALISTA build {MEGALISTA_VERSION}: Completed with errors')
             raise SystemExit(1)
-        
-    logging.getLogger("megalista").info(f"MEGALISTA build {MEGALISTA_VERSION}: Completed successfully!")
+        else:
+            logging.getLogger("megalista").info(f"MEGALISTA build {MEGALISTA_VERSION}: Completed successfully!")
     exit(0)

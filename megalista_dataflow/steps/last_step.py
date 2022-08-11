@@ -49,19 +49,11 @@ class CombineExecutionsFn(beam.CombineFn):
     return merged
 
   def extract_output(self, accumulator):
-    # force error
-    logging.getLogger("megalista.LOG").error("Forced error")
     return accumulator
 
 class PrintResultsDoFn(beam.DoFn):
     def process(self, executions):
         logging_handler = LoggingConfig.get_logging_handler()
-        log_messages = LoggingHandler.format_records(logging_handler.all_records)
-
-        logging.getLogger("megalista.LOG").info("RESULTS:")
-        logging.getLogger("megalista.LOG").info(log_messages)
-        logging.getLogger("megalista.LOG").info(executions)
+        
         if logging_handler.has_errors:
-            logging.getLogger("megalista.LOG").info("SUMMARY OF ERRORS:")
-            logging.getLogger("megalista.LOG").info(LoggingHandler.format_records(logging_handler.error_records))
-            
+            logging.getLogger("megalista.LOG").error(f"SUMMARY OF ERRORS:\n{LoggingHandler.format_records(logging_handler.error_records)}")
