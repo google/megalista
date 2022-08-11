@@ -25,7 +25,8 @@ from models.execution import Execution, AccountConfig
 from models.execution import Source, SourceType
 from models.json_config import JsonConfig
 from models.sheets_config import SheetsConfig
-
+from config.version import MEGALISTA_VERSION
+from config.logging import LoggingConfig
 
 class PrimaryExecutionSource(BaseBoundedSource):
   """
@@ -38,7 +39,8 @@ class PrimaryExecutionSource(BaseBoundedSource):
         json_config: JsonConfig,
         setup_sheet_id: ValueProvider,
         setup_json_url: ValueProvider,
-        setup_firestore_collection: ValueProvider):
+        setup_firestore_collection: ValueProvider,
+        show_code_lines_in_log: ValueProvider):
     super().__init__()
     self._setup_sheet_id = setup_sheet_id
     self._setup_json_url = setup_json_url
@@ -48,6 +50,7 @@ class PrimaryExecutionSource(BaseBoundedSource):
     self._json_execution_source = JsonExecutionSource(json_config,
                                                       setup_json_url)
     self._firestore_execution_source = FirestoreExecutionSource(setup_firestore_collection)
+    self._show_code_lines_in_log = show_code_lines_in_log
 
   def _do_count(self):
     if self._setup_sheet_id.get():
@@ -61,6 +64,11 @@ class PrimaryExecutionSource(BaseBoundedSource):
       return self._json_execution_source._do_count()
 
   def read(self, range_tracker):
+    # config logging. has to be done inside a processing step due to Dataflow, since it removes
+    # all log handlers in the beginning of the pipeline
+    LoggingConfig.config_logging(self._show_code_lines_in_log.get())
+    logging.getLogger("megalista").info(f"MEGALISTA build {MEGALISTA_VERSION}: Init.")
+    
     if self._setup_sheet_id.get():
       logging.getLogger("megalista").info("Reading Sheets configuration")
       return self._sheets_execution_source.read(range_tracker)

@@ -17,8 +17,6 @@ import apache_beam as beam
 from .megalista_step import MegalistaStep
 from mappers.executions_grouped_by_source_mapper import ExecutionsGroupedBySourceMapper, ExecutionsGroupedBySourceCombineFn
 
-EXECUTIONS_MAPPER = ExecutionsGroupedBySourceMapper()
-
 class LoadExecutionsStep(MegalistaStep):
     def __init__(self, params, execution_source):
         super().__init__(params)

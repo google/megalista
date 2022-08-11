@@ -18,17 +18,13 @@ from typing import Optional, List
 from .error_handling import ErrorNotifier
 
 class LoggingHandler(logging.Handler):
-    def __init__(self, log_name: str=None, level=logging.INFO, error_notifier: ErrorNotifier=None):
+    def __init__(self, level=logging.INFO, error_notifier: ErrorNotifier=None):
         self.level = level
-        self.log_name = log_name
         self.filters = []
         self.lock = None
         self._error_notifier: error_notifier
         self._has_errors = False
         self._records: List[logging.LogRecord] = []
-
-        logging.getLogger(log_name).addHandler(self)
-
 
     def emit(self, record):
         if record.levelno >= logging.ERROR:

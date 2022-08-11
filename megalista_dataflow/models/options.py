@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from email.policy import default
 from apache_beam.options.pipeline_options import PipelineOptions
 
 
@@ -59,3 +60,8 @@ class DataflowOptions(PipelineOptions):
       '--notify_errors_by_email', help='Should send errors by email. True or False')
     parser.add_value_provider_argument(
       '--errors_destination_emails', help='Emails for sending errors separated by comma')
+    # DEBUG
+    parser.add_value_provider_argument(
+      '--show_code_lines_in_log', 
+      default=False,
+      help='Should show code lines in log messages. True or False')

@@ -18,6 +18,7 @@ import logging
 from error.logging_handler import LoggingHandler
 from models.execution import Execution
 from .megalista_step import MegalistaStep
+from config.logging import LoggingConfig
 
 class LastStep(MegalistaStep):
     def expand(self, executions):
@@ -48,15 +49,13 @@ class CombineExecutionsFn(beam.CombineFn):
     return merged
 
   def extract_output(self, accumulator):
+    # force error
+    logging.getLogger("megalista.LOG").error("Forced error")
     return accumulator
 
 class PrintResultsDoFn(beam.DoFn):
     def process(self, executions):
-        logging_handler = None
-        for handler in logging.getLogger().handlers:
-            if isinstance(handler, LoggingHandler):
-                logging_handler = handler
-
+        logging_handler = LoggingConfig.get_logging_handler()
         log_messages = LoggingHandler.format_records(logging_handler.all_records)
 
         logging.getLogger("megalista.LOG").info("RESULTS:")

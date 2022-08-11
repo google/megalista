@@ -12,3 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Megalista version TBD during deployment (deployment/deploy_cloud.sh)
+MEGALISTA_VERSION = '5e0231f3018a28219726c433b5196b861e8a2c7a'

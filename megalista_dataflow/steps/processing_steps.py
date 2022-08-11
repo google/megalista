@@ -42,6 +42,8 @@ from mappers.ads_user_list_pii_hashing_mapper import \
 from mappers.dv_user_list_pii_hashing_mapper import \
   DVUserListPIIHashingMapper
 
+from third_party import THIRD_PARTY_STEPS
+
 ADS_CM_HASHER = AdsUserListPIIHashingMapper()
 DV_CM_HASHER = DVUserListPIIHashingMapper()
 
@@ -345,3 +347,33 @@ class DisplayVideoCustomerMatchContactInfoStep(MegalistaStep):
                 )
             )
         )
+
+PROCESSING_STEPS = [
+    ["Ads SSD", GoogleAdsSSDStep],
+    ["Ads Audiences Device", GoogleAdsCustomerMatchMobileDeviceIdStep],
+    ["Ads Audiences Contact", GoogleAdsCustomerMatchContactInfoStep],
+    ["Ads Audiences User ID", GoogleAdsCustomerMatchUserIdStep],
+    ["Ads OCI (Click)", GoogleAdsOfflineConversionsStep],
+    ["Ads OCI (Calls)", GoogleAdsOfflineConversionsCallsStep],
+    ["GA 360 User List", GoogleAnalyticsUserListStep],
+    ["GA 360 Data Import", GoogleAnalyticsDataImportStep],
+    ["GA 360 MP", GoogleAnalyticsMeasurementProtocolStep],
+    ["GA4 MP", GoogleAnalytics4MeasurementProtocolStep],
+    ["CM OCI", CampaignManagerConversionStep],
+    ["DV360 Audiences Device", DisplayVideoCustomerMatchDeviceIdStep],
+    ["DV360 Audiences Contact", DisplayVideoCustomerMatchContactInfoStep]
+]
+
+class ProcessingStep(MegalistaStep):
+    def expand(self, executions):
+        processing_results = []
+
+        # Add execution steps
+        for name, step in PROCESSING_STEPS:
+            processing_results.append(executions | name >> step(self._params))
+
+        # Add third party steps
+        for name, step in THIRD_PARTY_STEPS:
+            processing_results.append(executions | name >> step(self._params))
+
+        return processing_results

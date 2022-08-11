@@ -81,6 +81,12 @@
             "label": "Location/Region of the BQ source",
             "help_text": "Location of Megalista operations (E.g. us-central1)",
             "is_optional": "true"
+        },
+        {
+            "name": "show_code_lines_in_log",
+            "label": "Should show code lines in log messages?",
+            "help_text": "Should show code lines in log messages? True or False",
+            "is_optional": "true"
         }
     ]
 }

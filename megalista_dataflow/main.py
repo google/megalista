@@ -21,7 +21,10 @@ import apache_beam as beam
 from apache_beam import coders
 from apache_beam.options.pipeline_options import PipelineOptions
 
-from error.error_handling import ErrorHandler, ErrorNotifier, GmailNotifier
+from config.version import MEGALISTA_VERSION
+
+from error.error_handling import GmailNotifier
+from config.logging import LoggingConfig
 
 from models.execution import DataRowsGroupedBySource, Execution, ExecutionsGroupedBySource
 from sources.batches_from_executions import ExecutionsGroupedBySourceCoder, DataRowsGroupedBySourceCoder, ExecutionCoder
@@ -30,8 +33,9 @@ from models.oauth_credentials import OAuthCredentials
 from models.options import DataflowOptions
 from models.sheets_config import SheetsConfig
 from sources.primary_execution_source import PrimaryExecutionSource
-from third_party import THIRD_PARTY_STEPS
-from steps import PROCESSING_STEPS
+# from third_party import THIRD_PARTY_STEPS
+# from steps import PROCESSING_STEPS
+from steps.processing_steps import ProcessingStep
 from steps.megalista_step import MegalistaStepParams
 from steps.load_executions_step import LoadExecutionsStep
 from steps.last_step import LastStep
@@ -59,8 +63,8 @@ def run(argv=None):
         dataflow_options.setup_sheet_id,
         dataflow_options.setup_json_url,
         dataflow_options.setup_firestore_collection,
+        dataflow_options.show_code_lines_in_log
     )
-
     error_notifier = GmailNotifier(dataflow_options.notify_errors_by_email, oauth_credentials,
                                    dataflow_options.errors_destination_emails)
     params = MegalistaStepParams(oauth_credentials, dataflow_options, error_notifier)
@@ -75,30 +79,32 @@ def run(argv=None):
             | "Load executions" >> LoadExecutionsStep(params, execution_source)
         )
 
-        processing_results = []
+        # processing_results = []
 
-        # Add execution steps
-        for name, step in PROCESSING_STEPS:
-            processing_results.append(executions | name >> step(params))
+        # # Add execution steps
+        # for name, step in PROCESSING_STEPS:
+        #     processing_results.append(executions | name >> step(params))
 
-        # Add third party steps
-        for name, step in THIRD_PARTY_STEPS:
-            processing_results.append(executions | name >> step(params))
+        # # Add third party steps
+        # for name, step in THIRD_PARTY_STEPS:
+        #     processing_results.append(executions | name >> step(params))
+
+        processing_results = executions | "Execute integrations" >> ProcessingStep(params)
+
         # todo: update trix at the end
 
-        tuple(processing_results) | LastStep(params)
+        tuple(processing_results) | "Consolidate results" >> LastStep(params)
 
 if __name__ == "__main__":
-    error_handler = errorhandler.ErrorHandler()
-    stream_handler = logging.StreamHandler(stream=sys.stderr)
-    logging.getLogger().setLevel(logging.ERROR)
-    logging.getLogger("megalista").setLevel(logging.INFO)
-    logging.getLogger().addHandler(stream_handler)
     run()
 
-    if logging_handler.has_errors:
-        logging.getLogger("megalista").critical('Completed with errors')
-        raise SystemExit(1)
-    
-    logging.getLogger("megalista").info("Completed successfully!")
+    logging_handler = LoggingConfig.get_logging_handler()
+    if logging_handler is None:
+        logging.getLogger("megalista").info("Clould not find error interception handler.")
+    else:
+        if logging_handler.has_errors:
+            logging.getLogger("megalista").critical(f'MEGALISTA build {MEGALISTA_VERSION}: Completed with errors')
+            raise SystemExit(1)
+        
+    logging.getLogger("megalista").info(f"MEGALISTA build {MEGALISTA_VERSION}: Completed successfully!")
     exit(0)
