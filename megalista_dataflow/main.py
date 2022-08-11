@@ -14,8 +14,6 @@
 
 import logging
 import warnings
-import errorhandler
-import sys
 
 import apache_beam as beam
 from apache_beam import coders
@@ -33,8 +31,6 @@ from models.oauth_credentials import OAuthCredentials
 from models.options import DataflowOptions
 from models.sheets_config import SheetsConfig
 from sources.primary_execution_source import PrimaryExecutionSource
-# from third_party import THIRD_PARTY_STEPS
-# from steps import PROCESSING_STEPS
 from steps.processing_steps import ProcessingStep
 from steps.megalista_step import MegalistaStepParams
 from steps.load_executions_step import LoadExecutionsStep
@@ -78,16 +74,6 @@ def run(argv=None):
         executions = (pipeline 
             | "Load executions" >> LoadExecutionsStep(params, execution_source)
         )
-
-        # processing_results = []
-
-        # # Add execution steps
-        # for name, step in PROCESSING_STEPS:
-        #     processing_results.append(executions | name >> step(params))
-
-        # # Add third party steps
-        # for name, step in THIRD_PARTY_STEPS:
-        #     processing_results.append(executions | name >> step(params))
 
         processing_results = executions | "Execute integrations" >> ProcessingStep(params)
 

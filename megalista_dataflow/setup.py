@@ -24,7 +24,6 @@ setuptools.setup(
                       'google-cloud-bigquery==2.34.3','aiohttp==3.6.2',
                       'google-cloud-storage==2.2.1', 'google-cloud-firestore==2.4.0',
                       'pyparsing==2.4.7', 'proto-plus==1.19.6', 'protobuf==3.20.0',
-                      'pandas==1.1.5', 'boto3==1.21.4',
-                      'errorhandler==2.0.1'],
+                      'pandas==1.1.5', 'boto3==1.21.4'],
     packages=setuptools.find_packages(),
 )
