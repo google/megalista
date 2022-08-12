@@ -81,6 +81,10 @@ class ListPIIHashingMapper:
             [element for element in hashed_elements if element],
             batch.iteration
         )
+    
+    def _hash_user(self, user, hasher):
+        raise NotImplementedError("PII Hashing mapper not implemented.")
+
 
     def normalize_email(self, email_address):
         """Returns the result of normalizing and hashing an email address.

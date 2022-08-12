@@ -25,7 +25,7 @@ from models.execution import Execution, AccountConfig
 from models.execution import Source, SourceType
 from models.json_config import JsonConfig
 from models.sheets_config import SheetsConfig
-
+from config.version import MEGALISTA_VERSION
 
 class PrimaryExecutionSource(BaseBoundedSource):
   """
@@ -61,6 +61,7 @@ class PrimaryExecutionSource(BaseBoundedSource):
       return self._json_execution_source._do_count()
 
   def read(self, range_tracker):
+    logging.getLogger("megalista").info(f"MEGALISTA build {MEGALISTA_VERSION}: Init.")
     if self._setup_sheet_id.get():
       logging.getLogger("megalista").info("Reading Sheets configuration")
       return self._sheets_execution_source.read(range_tracker)

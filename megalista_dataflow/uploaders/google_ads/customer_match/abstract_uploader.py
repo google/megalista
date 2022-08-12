@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Union
 
 from apache_beam.options.value_provider import StaticValueProvider
 
@@ -175,7 +175,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
                                                                                        job=job_creation_payload).resource_name
         self._job_cache[cache_key] = {'job_resource_name': job_resource_name, 'login_customer_id': login_customer_id}
 
-        return job_resource_name
+        return str(job_resource_name)
 
     def _get_list_operator(self, operator: str) -> str:
         translation = {
@@ -220,7 +220,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
 
         rows = self.get_filtered_rows(batch.elements, self.get_row_keys())
 
-        operations = []
+        operations: List[Dict[str, Union[bool, Dict[str, Any]]]] = []
         # Only removes all at the first interation. Otherwise, skip it
         if (self._get_remove_all(execution.destination.destination_metadata[1]) and batch.iteration == 1):
             operations.append({

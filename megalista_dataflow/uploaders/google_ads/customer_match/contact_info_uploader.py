@@ -30,7 +30,7 @@ class GoogleAdsCustomerMatchContactInfoUploaderDoFn(GoogleAdsCustomerMatchAbstra
 
     # Overwrites lifespan value if any
     if len(destination_metadata) >=6 and destination_metadata[5]:
-        life_span = destination_metadata[5]
+        life_span = int(destination_metadata[5])
 
     return {
       'membership_status': 'OPEN',

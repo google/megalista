@@ -19,17 +19,20 @@ import apache_beam as beam
 from apache_beam import coders
 from apache_beam.options.pipeline_options import PipelineOptions
 
+from config.version import MEGALISTA_VERSION
+
 from error.error_handling import ErrorHandler, ErrorNotifier, GmailNotifier
 from mappers.ads_user_list_pii_hashing_mapper import \
   AdsUserListPIIHashingMapper
 from mappers.dv_user_list_pii_hashing_mapper import \
   DVUserListPIIHashingMapper
-from models.execution import DestinationType, Execution
+from mappers.executions_grouped_by_source_mapper import ExecutionsGroupedBySourceMapper, ExecutionsGroupedBySourceCombineFn
+from models.execution import DataRowsGroupedBySource, DestinationType, Execution, ExecutionsGroupedBySource
 from models.json_config import JsonConfig
 from models.oauth_credentials import OAuthCredentials
 from models.options import DataflowOptions
 from models.sheets_config import SheetsConfig
-from sources.batches_from_executions import BatchesFromExecutions, ExecutionCoder, TransactionalType
+from sources.batches_from_executions import BatchesFromExecutions, ExecutionsGroupedBySourceCoder, TransactionalType, DataRowsGroupedBySourceCoder, ExecutionCoder
 from sources.primary_execution_source import PrimaryExecutionSource
 from third_party import THIRD_PARTY_STEPS
 from uploaders.support.transactional_events_results_writer import TransactionalEventsResultsWriter
@@ -50,12 +53,14 @@ from uploaders.google_analytics.google_analytics_user_list_uploader import Googl
 from uploaders.display_video.customer_match.contact_info_uploader import DisplayVideoCustomerMatchContactInfoUploaderDoFn
 from uploaders.display_video.customer_match.mobile_uploader import DisplayVideoCustomerMatchMobileUploaderDoFn
 
+
 warnings.filterwarnings(
     "ignore", "Your application has authenticated using end user credentials"
 )
 
 ADS_CM_HASHER = AdsUserListPIIHashingMapper()
 DV_CM_HASHER = DVUserListPIIHashingMapper()
+EXECUTIONS_MAPPER = ExecutionsGroupedBySourceMapper()
 
 def filter_by_action(execution: Execution, destination_type: DestinationType):
     return execution.destination.destination_type is destination_type
@@ -204,12 +209,10 @@ class GoogleAdsOfflineConversionsStep(MegalistaStep):
                 )
             )
             | "Persist results - GoogleAdsOfflineConversions"
-            >> beam.ParDo(
-              TransactionalEventsResultsWriter(
+            >> TransactionalEventsResultsWriter(
                 self.params._dataflow_options,
                 TransactionalType.GCLID_TIME,
                 ErrorHandler(DestinationType.ADS_OFFLINE_CONVERSION, self.params.error_notifier))
-            )
         )
 
 
@@ -233,12 +236,10 @@ class GoogleAdsOfflineConversionsCallsStep(MegalistaStep):
                 )
             )
             | "Persist results - GoogleAdsOfflineConversions"
-            >> beam.ParDo(
-              TransactionalEventsResultsWriter(
+            >> TransactionalEventsResultsWriter(
                 self.params._dataflow_options,
                 TransactionalType.GCLID_TIME,
                 ErrorHandler(DestinationType.ADS_OFFLINE_CONVERSION_CALLS, self.params.error_notifier))
-            )
         )
 
 
@@ -299,12 +300,10 @@ class GoogleAnalyticsMeasurementProtocolStep(MegalistaStep):
             >> beam.ParDo(GoogleAnalyticsMeasurementProtocolUploaderDoFn(
                 ErrorHandler(DestinationType.GA_MEASUREMENT_PROTOCOL, self.params.error_notifier)))
             | "Persist results - GA measurement protocol"
-            >> beam.ParDo(
-                TransactionalEventsResultsWriter(
-                  self.params._dataflow_options,
-                  TransactionalType.UUID,
-                  ErrorHandler(DestinationType.GA_MEASUREMENT_PROTOCOL, self.params.error_notifier))
-            )
+            >> TransactionalEventsResultsWriter(
+                self.params._dataflow_options,
+                TransactionalType.UUID,
+                ErrorHandler(DestinationType.GA_MEASUREMENT_PROTOCOL, self.params.error_notifier))
         )
 
 
@@ -323,12 +322,10 @@ class GoogleAnalytics4MeasurementProtocolStep(MegalistaStep):
             >> beam.ParDo(GoogleAnalytics4MeasurementProtocolUploaderDoFn(
                 ErrorHandler(DestinationType.GA_4_MEASUREMENT_PROTOCOL, self.params.error_notifier)))
             | "Persist results - GA 4 measurement protocol"
-            >> beam.ParDo(
-                TransactionalEventsResultsWriter(
-                  self.params._dataflow_options,
-                  TransactionalType.UUID,
-                  ErrorHandler(DestinationType.GA_4_MEASUREMENT_PROTOCOL, self.params.error_notifier))
-            )
+            >> TransactionalEventsResultsWriter(
+                self.params._dataflow_options,
+                TransactionalType.UUID,
+                ErrorHandler(DestinationType.GA_4_MEASUREMENT_PROTOCOL, self.params.error_notifier))
         )
 
 
@@ -350,12 +347,10 @@ class CampaignManagerConversionStep(MegalistaStep):
                                                                    self.params.error_notifier))
             )
             | "Persist results - CM conversion"
-            >> beam.ParDo(
-                TransactionalEventsResultsWriter(
-                  self.params._dataflow_options,
-                  TransactionalType.UUID,
-                  ErrorHandler(DestinationType.CM_OFFLINE_CONVERSION, self.params.error_notifier))
-            )
+            >> TransactionalEventsResultsWriter(
+                self.params._dataflow_options,
+                TransactionalType.UUID,
+                ErrorHandler(DestinationType.CM_OFFLINE_CONVERSION, self.params.error_notifier))
         )
 
 class DisplayVideoCustomerMatchDeviceIdStep(MegalistaStep):
@@ -403,6 +398,19 @@ class DisplayVideoCustomerMatchContactInfoStep(MegalistaStep):
             )
         )
 
+class LoadExecutionsStep(MegalistaStep):
+    def __init__(self, params, execution_source):
+        super().__init__(params)
+        self._execution_source = execution_source
+
+    def expand(self, pipeline):
+        return (pipeline 
+            | "Read config" >> beam.io.Read(self._execution_source)
+            | "Transform into tuples" >> beam.Map(lambda execution: (execution.source.source_name, execution))
+            | "Group by source name" >> beam.CombinePerKey(ExecutionsGroupedBySourceCombineFn())
+            | "Encapsulate into object" >> beam.Map(ExecutionsGroupedBySourceMapper().encapsulate)
+        )
+
 def run(argv=None):
     pipeline_options = PipelineOptions()
     dataflow_options = pipeline_options.view_as(DataflowOptions)
@@ -428,23 +436,27 @@ def run(argv=None):
     params = MegalistaStepParams(oauth_credentials, dataflow_options, error_notifier)
 
     coders.registry.register_coder(Execution, ExecutionCoder)
+    coders.registry.register_coder(ExecutionsGroupedBySource, ExecutionsGroupedBySourceCoder)
+    coders.registry.register_coder(DataRowsGroupedBySource, DataRowsGroupedBySourceCoder)
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
-        executions = pipeline | "Load executions" >> beam.io.Read(execution_source)
+        executions = (pipeline 
+            | "Load executions" >> LoadExecutionsStep(params, execution_source)
+        )
 
-        executions | GoogleAdsSSDStep(params)
-        executions | GoogleAdsCustomerMatchMobileDeviceIdStep(params)
-        executions | GoogleAdsCustomerMatchContactInfoStep(params)
-        executions | GoogleAdsCustomerMatchUserIdStep(params)
-        executions | GoogleAdsOfflineConversionsStep(params)
-        executions | GoogleAdsOfflineConversionsCallsStep(params)
-        executions | GoogleAnalyticsUserListStep(params)
-        executions | GoogleAnalyticsDataImportStep(params)
-        executions | GoogleAnalyticsMeasurementProtocolStep(params)
-        executions | GoogleAnalytics4MeasurementProtocolStep(params)
-        executions | CampaignManagerConversionStep(params)
-        executions | DisplayVideoCustomerMatchDeviceIdStep(params)
-        executions | DisplayVideoCustomerMatchContactInfoStep(params)
+        executions | "Ads SSD" >> GoogleAdsSSDStep(params)
+        executions | "Ads Audiences Device" >> GoogleAdsCustomerMatchMobileDeviceIdStep(params)
+        executions | "Ads Audiences Contact" >> GoogleAdsCustomerMatchContactInfoStep(params)
+        executions | "Ads Audiences User ID" >> GoogleAdsCustomerMatchUserIdStep(params)
+        executions | "Ads OCI (Click)" >> GoogleAdsOfflineConversionsStep(params)
+        executions | "Ads OCI (Calls)" >> GoogleAdsOfflineConversionsCallsStep(params)
+        executions | "GA 360 User List" >> GoogleAnalyticsUserListStep(params)
+        executions | "GA 360 Data Import" >> GoogleAnalyticsDataImportStep(params)
+        executions | "GA 360 MP" >> GoogleAnalyticsMeasurementProtocolStep(params)
+        executions | "GA4 MP" >> GoogleAnalytics4MeasurementProtocolStep(params)
+        executions | "CM OCI" >> CampaignManagerConversionStep(params)
+        executions | "DV360 Audiences Device" >> DisplayVideoCustomerMatchDeviceIdStep(params)
+        executions | "DV360 Audiences Contact" >> DisplayVideoCustomerMatchContactInfoStep(params)
 
         # Add third party steps
         for step in THIRD_PARTY_STEPS:
@@ -456,4 +468,4 @@ if __name__ == "__main__":
     logging.getLogger().setLevel(logging.ERROR)
     logging.getLogger("megalista").setLevel(logging.INFO)
     run()
-    logging.getLogger("megalista").info("Completed successfully!")
+    logging.getLogger("megalista").info(f"MEGALISTA build {MEGALISTA_VERSION}: Completed successfully!")
