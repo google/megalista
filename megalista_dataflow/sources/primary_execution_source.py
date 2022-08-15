@@ -59,9 +59,11 @@ class PrimaryExecutionSource(BaseBoundedSource):
     elif self._setup_firestore_collection.get():
       logging.getLogger("megalista").info("Using Firestore count")
       return self._firestore_execution_source._do_count()
-    else:
+    elif self._setup_json_url.get():
       logging.getLogger("megalista").info("Using JSON count")
       return self._json_execution_source._do_count()
+    else:
+      raise ValueError("Configuration file/sheet not informed. Please check and run Megalista again.")
 
   def read(self, range_tracker):
     # config logging. has to be done inside a processing step due to Dataflow, since it removes
