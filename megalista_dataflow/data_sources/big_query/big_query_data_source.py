@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Any, List, Iterable, Tuple, Dict
+from typing import Any, List, Iterable, Tuple, Dict, Optional
 from datetime import datetime
 from string import Template
 
@@ -33,17 +33,17 @@ _BIGQUERY_PAGE_SIZE = 20000
 _LOGGER_NAME = 'megalista.data_sources.BigQuery'
 
 class BigQueryDataSource(BaseDataSource):
+
     def __init__(self, 
         executions: ExecutionsGroupedBySource, transactional_type: TransactionalType, 
         bq_ops_dataset: str, bq_location: str):
         super().__init__(executions, transactional_type)
-
         self._bq_ops_dataset = bq_ops_dataset
         self._bq_location = bq_location
         
   
         if transactional_type is not TransactionalType.NOT_TRANSACTIONAL:
-            if not bq_ops_dataset:
+            if not bq_ops_dataset or bq_ops_dataset == '':
                 raise Exception(f'Missing bq_ops_dataset for this uploader. Source="{self._source_name}". Destination="{self._destination_name}"')
 
     
@@ -152,7 +152,7 @@ class BigQueryDataSource(BaseDataSource):
         return datetime.now().timestamp()
         
     def _get_table_name(self, source_metadata: list, uploaded: bool):
-        dataset = None
+        dataset = ''
         if self._transactional_type != TransactionalType.NOT_TRANSACTIONAL and uploaded:
             dataset = self._bq_ops_dataset
         else:

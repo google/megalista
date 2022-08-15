@@ -16,7 +16,7 @@ import asyncio
 import logging
 import time
 from datetime import datetime
-from typing import Any, List
+from typing import Any, List, Optional
 
 from aiohttp import ClientSession, ClientTimeout
 
@@ -31,7 +31,7 @@ class AppsFlyerS2SUploaderDoFn(MegalistaUploader):
     super().__init__(error_handler)
     self.API_URL = "https://api2.appsflyer.com/inappevent/"
     self.dev_key = dev_key
-    self.app_id = None
+    self.app_id: Optional[str] = None
     self.timeout = ClientTimeout(total=15)  # 15 sec timeout
 
   def start_bundle(self):

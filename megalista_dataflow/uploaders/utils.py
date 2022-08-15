@@ -17,6 +17,7 @@ import logging
 import pytz
 import math
 
+from typing import Optional
 from models.execution import Batch
 from uploaders.uploaders import MegalistaUploader
 
@@ -105,7 +106,7 @@ def convert_datetime_tz(dt, origin_tz, destination_tz):
     return datetime_obj.astimezone(pytz.timezone(destination_tz))
 
 
-def print_partial_error_messages(logger_name, action, response) -> str:
+def print_partial_error_messages(logger_name, action, response) -> Optional[str]:
     """
     Print partials errors received in the response.
     @param logger_name: logger name to be used

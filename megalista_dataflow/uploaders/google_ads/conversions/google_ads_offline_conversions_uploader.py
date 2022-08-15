@@ -108,7 +108,7 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     conversions = [{
           'conversion_action': conversion_resource_name,
           'conversion_date_time': utils.format_date(conversion['time']),
-          'conversion_value': int(conversion['amount']),
+          'conversion_value': float(str(conversion['amount'])),
           'gclid': conversion['gclid']
     } for conversion in rows]
 

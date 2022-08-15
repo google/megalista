@@ -23,7 +23,7 @@ class JsonConfig:
     self._dataflow_options = dataflow_options
 
   def parse_json_from_url(self, url):
-    fileProvider = FileProvider(url, self._dataflow_options, SourceType.FILE, "File Config (JSON)")
+    fileProvider = FileProvider(url, self._dataflow_options, SourceType.FILE, "File Config (JSON)", False)
     data = json.loads(fileProvider.read().decode('utf-8'))
     return data
 
