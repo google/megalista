@@ -247,6 +247,8 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
         if error_message:
             self._add_error(execution, error_message)
 
+        return [execution]
+
     def get_list_definition(self, account_config: AccountConfig,
                             destination_metadata: List[str]) -> Dict[str, Any]:
         pass

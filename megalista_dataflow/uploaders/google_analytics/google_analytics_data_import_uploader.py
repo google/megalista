@@ -85,6 +85,8 @@ class GoogleAnalyticsDataImportUploaderDoFn(MegalistaUploader):
         self._do_upload_data(execution, web_property_id, data_import_name,
                              ga_account_id, batch.elements)
 
+        return [execution]
+
     def _do_upload_data(self, execution, web_property_id, data_import_name, ga_account_id,
                         rows: List[Dict[str, Union[str, Dict[str, str]]]]):
         analytics = self._get_analytics_service()
