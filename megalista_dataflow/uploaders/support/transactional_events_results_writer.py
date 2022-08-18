@@ -57,7 +57,7 @@ class TransactionalEventsResultsWriter(beam.PTransform):
       
     def process(self, batches: BatchesGroupedBySource):
       elements = []
-      for batch in batches:
+      for batch in batches.batches:
         for el in batch.elements:
           if el not in elements:
             elements.append(el)

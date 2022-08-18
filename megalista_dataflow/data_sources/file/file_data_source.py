@@ -49,9 +49,8 @@ class FileDataSource(BaseDataSource):
         if self._transactional_type == TransactionalType.NOT_TRANSACTIONAL:
             return self._retrieve_data_non_transactional(executions)
         else:
-            data = self._retrieve_data_transactional(executions)
-            return data
-  
+            return self._retrieve_data_transactional(executions)
+            
     def _retrieve_data_non_transactional(self, executions: ExecutionsGroupedBySource) -> List[DataRowsGroupedBySource]:
         source = executions.source
         # Get Data Source
@@ -69,7 +68,6 @@ class FileDataSource(BaseDataSource):
         else:
             raise Exception(f'Unable to read from data source. Source="{source.source_name}".')
     
-    @with_output_types(DataRowsGroupedBySource)
     def _retrieve_data_transactional(self, executions: ExecutionsGroupedBySource) -> List[DataRowsGroupedBySource]:
         source = executions.source
         # Get Data Source
