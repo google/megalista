@@ -16,7 +16,7 @@
 from configparser import MissingSectionHeaderError
 from typing import List, Dict, Any
 from models.execution import Destination, DestinationType, Execution, Batch
-
+import logging
 import functools
 import pandas as pd
 import ast
@@ -158,7 +158,7 @@ _dtypes: Dict[str, Dict[str, Any]] = {
             {'name': 'user_property_\\d+', 'required': False, 'data_type': 'string'},  
         ],
         'groups': [
-            ['apps_instance_id', 'client_id']
+            ['app_instance_id', 'client_id']
         ]
     },
     'DV_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD': {
@@ -261,7 +261,9 @@ def get_error_message(data_cols: List[str], destination_type: DestinationType) -
 def get_cols_names(data_cols: list, destination_type: DestinationType) -> list:
     data_type = _dtypes[destination_type.name]
     data_type_cols = [col['name'] for col in data_type['columns']]
-
+    data_type_optional_cols = [col for col in [group for group in data_type['groups']]]
+    
+    data_type_cols = data_type_cols + data_type_optional_cols
     filtered_cols = []
     for col in data_cols:
         found = False
