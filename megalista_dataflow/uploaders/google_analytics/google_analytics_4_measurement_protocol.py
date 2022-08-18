@@ -115,7 +115,7 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
       url = ''.join(url_container)
       response = requests.post(url,data=json.dumps(payload))
       if response.status_code != 204:
-        error_message = f'Error calling GA4 MP {response.status_code}: {response.raw}'
+        error_message = f'Error calling GA4 MP {response.status_code}: {response.content}'
         logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').error(error_message)
         self._add_error(execution, error_message)
       else:

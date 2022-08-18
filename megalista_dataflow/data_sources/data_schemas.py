@@ -154,8 +154,8 @@ _dtypes: Dict[str, Dict[str, Any]] = {
             {'name': 'client_id', 'required': False, 'data_type': 'string'},
             {'name': 'name', 'required': False, 'data_type': 'string'},
             {'name': 'user_id', 'required': False, 'data_type': 'string'},
-            {'name': 'parameter_\\d+', 'required': False, 'data_type': 'string'},
-            {'name': 'user_property_\\d+', 'required': False, 'data_type': 'string'},  
+            {'name': 'parameter_.*', 'required': False, 'data_type': 'string'},
+            {'name': 'user_property_.*', 'required': False, 'data_type': 'string'},  
         ],
         'groups': [
             ['app_instance_id', 'client_id']
@@ -261,9 +261,9 @@ def get_error_message(data_cols: List[str], destination_type: DestinationType) -
 def get_cols_names(data_cols: list, destination_type: DestinationType) -> list:
     data_type = _dtypes[destination_type.name]
     data_type_cols = [col['name'] for col in data_type['columns']]
-    data_type_optional_cols = [col for col in [group for group in data_type['groups']]]
+    # data_type_optional_cols = [col for col in [group for group in data_type['groups']]]
     
-    data_type_cols = data_type_cols + data_type_optional_cols
+    # data_type_cols = data_type_cols + data_type_optional_cols
     filtered_cols = []
     for col in data_cols:
         found = False
