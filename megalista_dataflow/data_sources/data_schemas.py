@@ -73,7 +73,9 @@ _dtypes: Dict[str, Dict[str, Any]] = {
         ]
     },
     'ADS_ENHANCED_CONVERSION': {
-        'columns': [],
+        'columns': [
+            { 'name': '.*', 'required': False, 'data_type': 'string' }
+        ],
         'groups': []
     },
     'ADS_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD': {
@@ -100,7 +102,9 @@ _dtypes: Dict[str, Dict[str, Any]] = {
         'groups': []
     },
     'GA_USER_LIST_UPLOAD': {
-        'columns': [],
+        'columns': [
+            { 'name': '.*', 'required': False, 'data_type': 'string' }
+        ],
         'groups': []
     },
     'APPSFLYER_S2S_EVENTS': {
@@ -261,9 +265,7 @@ def get_error_message(data_cols: List[str], destination_type: DestinationType) -
 def get_cols_names(data_cols: list, destination_type: DestinationType) -> list:
     data_type = _dtypes[destination_type.name]
     data_type_cols = [col['name'] for col in data_type['columns']]
-    # data_type_optional_cols = [col for col in [group for group in data_type['groups']]]
     
-    # data_type_cols = data_type_cols + data_type_optional_cols
     filtered_cols = []
     for col in data_cols:
         found = False
