@@ -158,8 +158,7 @@ _dtypes: Dict[str, Dict[str, Any]] = {
             {'name': 'client_id', 'required': False, 'data_type': 'string'},
             {'name': 'name', 'required': False, 'data_type': 'string'},
             {'name': 'user_id', 'required': False, 'data_type': 'string'},
-            {'name': 'parameter_.*', 'required': False, 'data_type': 'string'},
-            {'name': 'user_property_.*', 'required': False, 'data_type': 'string'},  
+            {'name': '.*', 'required': False, 'data_type': 'string'},
         ],
         'groups': [
             ['app_instance_id', 'client_id']
