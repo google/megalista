@@ -80,17 +80,19 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
       app_instance_id = row.get('app_instance_id')
       client_id = row.get('client_id')
       user_id = row.get('user_id')
+      if 'timestamp_micros' in row:
+        payload['timestamp_micros'] = int(str(row.get('timestamp_micros')))
 
       if not self._exactly_one_of(app_instance_id, client_id):
         raise ValueError(
           'GA4 MP should be called either with an app_instance_id (for apps) or a client_id (for web)')
     
       if is_event:
-        params = {k: v for k, v in row.items() if k not in ('name', 'app_instance_id', 'client_id', 'uuid', 'user_id')}
+        params = {k: v for k, v in row.items() if k not in ('name', 'app_instance_id', 'client_id', 'uuid', 'user_id', 'timestamp_micros') and v is not None}
         payload['events'] = [{'name': row['name'], 'params': params}]
 
       if is_user_property: 
-        payload['userProperties'] = {k: {'value': v} for k, v in row.items() if k not in ('app_instance_id', 'client_id', 'uuid', 'user_id')}
+        payload['userProperties'] = {k: {'value': v} for k, v in row.items() if k not in ('app_instance_id', 'client_id', 'uuid', 'user_id', 'timestamp_micros') and v is not None}
         payload['events'] = {'name': 'user_property_addition_event', 'params': {}}
 
       url_container = [f'{self.API_URL}?api_secret={api_secret}']
@@ -115,7 +117,7 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
       url = ''.join(url_container)
       response = requests.post(url,data=json.dumps(payload))
       if response.status_code != 204:
-        error_message = f'Error calling GA4 MP {response.status_code}: {response.raw}'
+        error_message = f'Error calling GA4 MP {response.status_code}: {str(response.content)}'
         logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').error(error_message)
         self._add_error(execution, error_message)
       else:

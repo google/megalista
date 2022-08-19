@@ -22,7 +22,7 @@ class LoggingHandler(logging.Handler):
         self.level = level
         self.filters = []
         self.lock = None
-        self._has_errors = False
+        self._has_errors:bool = False
         self._records: List[logging.LogRecord] = []
 
     def emit(self, record: logging.LogRecord):
@@ -43,7 +43,7 @@ class LoggingHandler(logging.Handler):
         return list(filter(lambda rec: rec.levelno >= logging.ERROR, self._records))
 
     @staticmethod
-    def format_records(records: List[logging.LogRecord]) -> str:
+    def format_records(records: List[logging.LogRecord]) -> Optional[str]:
         if records is not None and len(records) > 0:
             message = ''
             for i in range(len(records)):

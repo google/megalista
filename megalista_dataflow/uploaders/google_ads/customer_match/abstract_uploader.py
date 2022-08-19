@@ -192,7 +192,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
         return [{key: row.get(key) for key in keys if key in row} for row in rows]
 
     @utils.safe_process(logger=logging.getLogger(_DEFAULT_LOGGER))
-    def process(self, batch: Batch, **kwargs) -> None:
+    def process(self, batch: Batch, **kwargs):
         if not self.active:
             logging.getLogger(_DEFAULT_LOGGER).warning(
                 'Skipping upload to ads, parameters not configured.')

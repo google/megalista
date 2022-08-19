@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from site import execsitecustomize
 from models.execution import Execution, ExecutionsGroupedBySource, TransactionalType, DataRowsGroupedBySource
 from typing import Any, Iterable, List
 from apache_beam.typehints.decorators import with_output_types

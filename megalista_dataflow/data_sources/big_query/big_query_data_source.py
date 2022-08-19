@@ -36,7 +36,7 @@ class BigQueryDataSource(BaseDataSource):
 
     def __init__(self, 
         executions: ExecutionsGroupedBySource, transactional_type: TransactionalType, 
-        bq_ops_dataset: str, bq_location: str):
+        bq_ops_dataset: str, bq_location: Optional[str]):
         super().__init__(executions, transactional_type)
         self._bq_ops_dataset = bq_ops_dataset
         self._bq_location = bq_location
