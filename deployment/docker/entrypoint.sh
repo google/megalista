@@ -7,7 +7,10 @@ do
     IFS='='
     read key value <<< "$var"
     key=`echo "${key}" | tr [:upper:] [:lower:]`
-    params="${params} --${key:10} ${value}"
+    if [[ $key == megalista_* ]]
+    then
+        params="${params} --${key:10} ${value}"
+    fi
     IFS=' '
 done
 
