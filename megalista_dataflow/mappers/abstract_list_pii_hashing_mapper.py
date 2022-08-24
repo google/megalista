@@ -26,7 +26,8 @@ class FieldHasher:
     def hash_field(self, field):
 
         if self.should_hash_fields:
-            return hashlib.sha256(field.strip().lower().encode("utf-8")).hexdigest()
+            msg = field.strip().lower().encode("utf-8")
+            return hashlib.sha256(msg).hexdigest()
 
         return field
 
