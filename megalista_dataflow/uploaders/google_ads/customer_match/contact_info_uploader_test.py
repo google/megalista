@@ -34,11 +34,11 @@ def error_notifier(mocker):
 def uploader(mocker, error_notifier):
   mocker.patch('google.ads.googleads.client.GoogleAdsClient')
   mocker.patch('google.ads.googleads.oauth2')
-  id = StaticValueProvider(str, 'id')
+  _id = StaticValueProvider(str, 'id')
   secret = StaticValueProvider(str, 'secret')
   access = StaticValueProvider(str, 'access')
   refresh = StaticValueProvider(str, 'refresh')
-  credentials = OAuthCredentials(id, secret, access, refresh)
+  credentials = OAuthCredentials(_id, secret, access, refresh)
   return GoogleAdsCustomerMatchContactInfoUploaderDoFn(credentials,
                                                        StaticValueProvider(str, 'devtoken'), ErrorHandler(
       DestinationType.ADS_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD, error_notifier))

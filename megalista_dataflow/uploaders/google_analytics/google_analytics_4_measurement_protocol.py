@@ -24,14 +24,12 @@ from models.execution import Batch
 from uploaders import utils
 from uploaders.uploaders import MegalistaUploader
 
+LOGGER_NAME = 'megalista.GoogleAnalytics4MeasurementProtocolUploader'
 
 class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
   def __init__(self, error_handler: ErrorHandler):
     super().__init__(error_handler)
     self.API_URL = 'https://www.google-analytics.com/mp/collect'
-
-  def start_bundle(self):
-    pass
 
   @staticmethod
   def _str2bool(s: str) -> bool:
@@ -41,7 +39,7 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
   def _exactly_one_of(a: Any, b: Any) -> bool:
     return (a and not b) or (not a and b)
 
-  @utils.safe_process(logger=logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader'))
+  @utils.safe_process(logger=logging.getLogger(LOGGER_NAME))
   def process(self, batch: Batch, **kwargs):
     return self.do_process(batch)
 
@@ -118,11 +116,11 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
       response = requests.post(url,data=json.dumps(payload))
       if response.status_code != 204:
         error_message = f'Error calling GA4 MP {response.status_code}: {str(response.content)}'
-        logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').error(error_message)
+        logging.getLogger(LOGGER_NAME).error(error_message)
         self._add_error(execution, error_message)
       else:
         accepted_elements.append(row)
 
-    logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(
+    logging.getLogger(LOGGER_NAME).info(
       f'Successfully uploaded {len(accepted_elements)}/{len(batch.elements)} events.')
     return [Batch(execution, accepted_elements)]

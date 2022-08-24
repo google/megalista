@@ -34,13 +34,6 @@ _BIGQUERY_PAGE_SIZE = 20000
 
 _LOGGER_NAME = 'megalista.BatchesFromExecutions'
 
-
-def _convert_row_to_dict(row):
-    dict = {}
-    for key, value in row.items():
-        dict[key] = value
-    return dict
-
 class ExecutionCoder(coders.Coder):
     """A custom coder for the Execution class."""
 

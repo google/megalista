@@ -25,6 +25,7 @@ from models.execution import Batch, Union
 from uploaders import utils
 from uploaders.uploaders import MegalistaUploader
 
+LOGGER_NAME = 'megalista.GoogleAnalyticsDataImportUploader'
 
 class GoogleAnalyticsDataImportUploaderDoFn(MegalistaUploader):
     """
@@ -54,9 +55,6 @@ class GoogleAnalyticsDataImportUploaderDoFn(MegalistaUploader):
         service = build('analytics', 'v3', credentials=credentials)
         return service
 
-    def start_bundle(self):
-        pass
-
     @staticmethod
     def _assert_all_list_names_are_present(any_execution):
         destination = any_execution.destination.destination_metadata
@@ -69,7 +67,7 @@ class GoogleAnalyticsDataImportUploaderDoFn(MegalistaUploader):
                 str(destination)))
 
     @utils.safe_process(
-        logger=logging.getLogger('megalista.GoogleAnalyticsDataImportUploader'))
+        logger=logging.getLogger(LOGGER_NAME))
     def process(self, batch: Batch, **kwargs):
         execution = batch.execution
         self._assert_all_list_names_are_present(execution)
@@ -106,11 +104,11 @@ class GoogleAnalyticsDataImportUploaderDoFn(MegalistaUploader):
                                       data_source_id, rows, web_property_id)
             except Exception as e:
                 error_message = f'Error while uploading GA Data: {e}'
-                logging.getLogger('megalista.GoogleAnalyticsDataImportUploader').error(error_message)
+                logging.getLogger(LOGGER_NAME).error(error_message)
                 self._add_error(execution, error_message)
         else:
             error_message = f'{data_import_name} - data import not found, please configure it in Google Analytics'
-            logging.getLogger('megalista.GoogleAnalyticsDataImportUploader').error(error_message)
+            logging.getLogger(LOGGER_NAME).error(error_message)
             self._add_error(execution, error_message)
 
     @staticmethod
@@ -138,7 +136,7 @@ class GoogleAnalyticsDataImportUploaderDoFn(MegalistaUploader):
 
     def _call_upload_api(self, analytics, data_import_name, ga_account_id,
                          data_source_id, rows, web_property_id):
-        logging.getLogger('megalista.GoogleAnalyticsDataImportUploader').info(
+        logging.getLogger(LOGGER_NAME).info(
             'Adding data to %s - %s' % (data_import_name, data_source_id))
         csv = self.prepare_csv(rows)
 

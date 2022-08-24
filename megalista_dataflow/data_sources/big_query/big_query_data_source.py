@@ -44,7 +44,7 @@ class BigQueryDataSource(BaseDataSource):
   
         if transactional_type is not TransactionalType.NOT_TRANSACTIONAL:
             if not bq_ops_dataset or bq_ops_dataset == '':
-                raise Exception(f'Missing bq_ops_dataset for this uploader. Source="{self._source_name}". Destination="{self._destination_name}"')
+                raise ValueError(f'Missing bq_ops_dataset for this uploader. Source="{self._source_name}". Destination="{self._destination_name}"')
 
     
     def retrieve_data(self, executions: ExecutionsGroupedBySource) -> List[DataRowsGroupedBySource]:
@@ -93,7 +93,7 @@ class BigQueryDataSource(BaseDataSource):
                                 LEFT JOIN $uploaded_table_name AS uploaded USING(gclid, time) \
                                 WHERE uploaded.gclid IS NULL;"
             else:
-                raise Exception(f'Unrecognized TransactionalType: {self._transactional_type}. Source="{self._source_name}". Destination="{self._destination_name}"')
+                raise ValueError(f'Unrecognized TransactionalType: {self._transactional_type}. Source="{self._source_name}". Destination="{self._destination_name}"')
 
             query = Template(template).substitute(table_name=table_name, uploaded_table_name=uploaded_table_name, query_cols=query_cols)
             logging.getLogger(_LOGGER_NAME).info(
@@ -122,7 +122,7 @@ class BigQueryDataSource(BaseDataSource):
                             PARTITION BY _PARTITIONDATE \
                             OPTIONS(partition_expiration_days=15)"
         else:
-            raise Exception(f'Unrecognized TransactionalType: {self._transactional_type}. Source="{self._source_name}". Destination="{self._destination_name}"')
+            raise ValueError(f'Unrecognized TransactionalType: {self._transactional_type}. Source="{self._source_name}". Destination="{self._destination_name}"')
 
         query = Template(template).substitute(uploaded_table_name=uploaded_table_name)
 
@@ -167,14 +167,14 @@ class BigQueryDataSource(BaseDataSource):
             return SchemaField("uuid", "string"), SchemaField("timestamp", "timestamp")
         if self._transactional_type == TransactionalType.GCLID_TIME:
             return SchemaField("gclid", "string"), SchemaField("time", "string"), SchemaField("timestamp", "timestamp")
-        raise Exception(f'Unrecognized TransactionalType: {self._transactional_type}. Source="{self._source_name}". Destination="{self._destination_name}"')
+        raise ValueError(f'Unrecognized TransactionalType: {self._transactional_type}. Source="{self._source_name}". Destination="{self._destination_name}"')
 
     def _get_bq_rows(self, rows, now):
         if self._transactional_type == TransactionalType.UUID:
             return [{'uuid': row['uuid'], 'timestamp': now} for row in rows]
         if self._transactional_type == TransactionalType.GCLID_TIME:
             return [{'gclid': row['gclid'], 'time': row['time'], 'timestamp': now} for row in rows]
-        raise Exception(f'Unrecognized TransactionalType: {self._transactional_type}. Source="{self._source_name}". Destination="{self._destination_name}"')
+        raise ValueError(f'Unrecognized TransactionalType: {self._transactional_type}. Source="{self._source_name}". Destination="{self._destination_name}"')
 
     def _get_table_columns(self, client, table_name):
         table = client.get_table(table_name)
@@ -182,10 +182,4 @@ class BigQueryDataSource(BaseDataSource):
 
     def _get_bq_client(self):
         return bigquery.Client(location=self._bq_location)
-        
-def _convert_row_to_dict(row):
-    dict = {}
-    for key, value in row.items():
-        dict[key] = value
-    return dict
- 
+    

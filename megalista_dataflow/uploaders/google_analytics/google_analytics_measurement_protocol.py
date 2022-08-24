@@ -32,8 +32,7 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
     self.API_URL = "https://www.google-analytics.com/batch"
     self.UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36"
 
-  def start_bundle(self):
-    pass
+  
 
   def _format_hit(self, payload: Dict[str, Any]) -> str:
     return "&".join([key + "=" + quote(str(value)) for key, value in payload.items() if value is not None])
@@ -67,7 +66,7 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
 
       # enhanced ecommerce parameters for events
       for key in row.keys():
-        if (re.match('p([a]|[r]\d*[a-z]+)', key) # product details
+        if (re.match('p(a|r\d*[a-z]+)', key) # product details
            or re.match('t([irast])', key) # transaction details
            or re.match('cu', key) # currency code
            ):

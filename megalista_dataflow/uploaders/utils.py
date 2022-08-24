@@ -74,7 +74,7 @@ def safe_process(logger):
             logger.info(f'Uploading {len(batch.elements)} rows...')
             try:
                 return func(*args, **kwargs)
-            except BaseException as e:
+            except Exception as e:
                 self_._add_error(batch.execution, f'Error uploading data: {e}')
                 logger.error(f'Error uploading data for :{batch.elements}')
                 logger.error(e, exc_info=True)
@@ -93,7 +93,7 @@ def safe_call_api(function, logger, *args, **kwargs):
 def _do_safe_call_api(function, logger, current_retry, *args, **kwargs):
     try:
         return function(*args, *kwargs)
-    except Exception as e:
+    except Exception:
         if current_retry < MAX_RETRIES:
             logger.exception(
                 f'Fail number {current_retry}. Stack track follows. Trying again.')

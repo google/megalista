@@ -27,7 +27,6 @@ _LOGGER_NAME = 'megalista.data_sources.DataSource'
 class DataSource:
     @staticmethod
     def get_data_source(executions: ExecutionsGroupedBySource, transactional_type: TransactionalType, dataflow_options: DataflowOptions) -> BaseDataSource:
-        data_source = None
         source_type = executions.source.source_type
         if source_type == SourceType.BIG_QUERY:
             bq_ops_dataset = ''
@@ -41,4 +40,3 @@ class DataSource:
             return FileDataSource(executions, transactional_type, dataflow_options)
         else:
             raise NotImplementedError("Source Type not implemented. Please check your configuration (sheet / json / firestore).")
-        return data_source

@@ -41,7 +41,7 @@ warnings.filterwarnings(
     "ignore", "Your application has authenticated using end user credentials"
 )
 
-def run(argv=None):
+def run():
     pipeline_options = PipelineOptions()
     dataflow_options = pipeline_options.view_as(DataflowOptions)
     oauth_credentials = OAuthCredentials(
@@ -76,8 +76,6 @@ def run(argv=None):
         )
 
         processing_results = executions | "Execute integrations" >> ProcessingStep(params)
-
-        # todo: update trix at the end
 
         tuple(processing_results) | "Consolidate results" >> LastStep(params)
 

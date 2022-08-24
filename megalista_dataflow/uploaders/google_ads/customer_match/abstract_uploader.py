@@ -42,9 +42,6 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
         self._user_list_id_cache: Dict[str, str] = {}
         self._job_cache: Dict[str, Dict[str, str]] = {}
 
-    def start_bundle(self):
-        pass
-
     def finish_bundle(self):
         for job_definition in self._job_cache.values():
             logging.getLogger(_DEFAULT_LOGGER).info(f"Running job {job_definition['job_resource_name']}")
@@ -251,10 +248,11 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
 
     def get_list_definition(self, account_config: AccountConfig,
                             destination_metadata: List[str]) -> Dict[str, Any]:
-        pass
+        raise NotImplementedError()
 
     def get_row_keys(self) -> List[str]:
-        pass
+        raise NotImplementedError()
 
     def get_action_type(self) -> DestinationType:
-        pass
+        raise NotImplementedError()
+

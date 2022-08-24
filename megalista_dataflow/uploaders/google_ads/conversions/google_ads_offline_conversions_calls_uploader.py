@@ -52,9 +52,6 @@ class GoogleAdsOfflineUploaderCallsDoFn(MegalistaUploader):
                                      self.developer_token.get(),
                                      customer_id)
 
-  def start_bundle(self):
-    pass
-
   def _get_customer_id(self, account_config:AccountConfig, destination:Destination) -> str:
     """
       If the customer_id is present on the destination, returns it, otherwise defaults to the account_config info.
@@ -86,7 +83,7 @@ class GoogleAdsOfflineUploaderCallsDoFn(MegalistaUploader):
     
     resource_name = self._get_resource_name(customer_id, execution.destination.destination_metadata[0])
 
-    response = self._do_upload(oc_service,
+    _ = self._do_upload(oc_service,
                     execution,
                     resource_name,
                     customer_id,
@@ -124,4 +121,4 @@ class GoogleAdsOfflineUploaderCallsDoFn(MegalistaUploader):
       for batch in response_query:
         for row in batch.results:
           return row.conversion_action.resource_name
-      raise Exception(f'Conversion "{name}" could not be found on account {customer_id}')
+      raise ValueError(f'Conversion "{name}" could not be found on account {customer_id}')

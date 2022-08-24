@@ -36,11 +36,11 @@ def error_notifier(mocker):
 def uploader(mocker, error_notifier):
     mocker.patch('googleapiclient.discovery.build')
     mocker.patch('google.ads.googleads.oauth2')
-    id = StaticValueProvider(str, 'id')
+    _id = StaticValueProvider(str, 'id')
     secret = StaticValueProvider(str, 'secret')
     access = StaticValueProvider(str, 'access')
     refresh = StaticValueProvider(str, 'refresh')
-    credentials = OAuthCredentials(id, secret, access, refresh)
+    credentials = OAuthCredentials(_id, secret, access, refresh)
     return DisplayVideoCustomerMatchMobileUploaderDoFn(credentials,
                                                             StaticValueProvider(
                                                                 str, 'devtoken'),

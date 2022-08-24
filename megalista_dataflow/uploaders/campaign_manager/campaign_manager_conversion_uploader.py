@@ -47,9 +47,6 @@ class CampaignManagerConversionUploaderDoFn(MegalistaUploader):
 
     return build('dfareporting', 'v3.5', credentials=credentials)
 
-  def start_bundle(self):
-    pass
-
   @staticmethod
   def _assert_all_list_names_are_present(any_execution):
     destination = any_execution.destination.destination_metadata

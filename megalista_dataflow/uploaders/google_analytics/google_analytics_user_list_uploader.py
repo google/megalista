@@ -64,15 +64,12 @@ class GoogleAnalyticsUserListUploaderDoFn(MegalistaUploader):
                     }],
                     **list_definition
                 }).execute()
-            id = response['id']
+            _id = response['id']
             logging.getLogger().info('%s created with id: %s' % (list_name, id))
         else:
-            id = results[0]['id']
+            _id = results[0]['id']
             logging.getLogger().info('%s found with id: %s' % (list_name, id))
-        return id
-
-    def start_bundle(self):
-        pass
+        return _id
 
     def _create_list(self, web_property_id, view_id, user_id_list_name, buyer_custom_dim, ga_account_id,
                      ads_customer_id,
@@ -147,9 +144,9 @@ class GoogleAnalyticsUserListUploaderDoFn(MegalistaUploader):
 
         if len(results) == 1:
 
-            id = results[0]['id']
+            _id = results[0]['id']
 
-            logging.getLogger().info("Adding data to %s - %s" % (data_import_name, id))
+            logging.getLogger().info("Adding data to %s - %s" % (data_import_name, _id))
             body = '\n'.join([
                 '%s,%s' % (user_id_custom_dim, buyer_custom_dim),
                 *['%s,%s' % (row['user_id'], row[custom_dim_field] if custom_dim_field else 'buyer') for row in rows]
@@ -162,7 +159,7 @@ class GoogleAnalyticsUserListUploaderDoFn(MegalistaUploader):
                 analytics.management().uploads().uploadData(
                     accountId=ga_account_id,
                     webPropertyId=web_property_id,
-                    customDataSourceId=id,
+                    customDataSourceId=_id,
                     media_body=media).execute()
             except Exception as e:
                 error_message = f'Error while uploading GA Data: {e}'

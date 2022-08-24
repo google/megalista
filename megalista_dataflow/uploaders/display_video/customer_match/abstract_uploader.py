@@ -62,9 +62,6 @@ class DisplayVideoCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
     def _get_dv_audience_service(self):
         return self._get_dv_service().firstAndThirdPartyAudiences()
 
-    def start_bundle(self):
-        pass
-
     def finish_bundle(self):
         super().finish_bundle()
 
@@ -209,14 +206,14 @@ class DisplayVideoCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
         
     def get_list_definition(self, account_config: AccountConfig,
                             destination_metadata: List[str], list_to_add: List[Dict[str, Any]]) -> Dict[str, Any]:
-        pass
+        raise NotImplementedError()
 
     def get_update_list_definition(self, account_config: AccountConfig,
                                   destination_metadata: List[str], list_to_add: List[Dict[str, Any]]) -> Dict[str, Any]:
-        pass
+        raise NotImplementedError()
 
     def get_row_keys(self) -> List[str]:
-        pass
+        raise NotImplementedError()
 
     def get_action_type(self) -> DestinationType:
-        pass
+        raise NotImplementedError()

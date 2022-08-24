@@ -36,11 +36,11 @@ def error_notifier(mocker):
 def uploader(mocker, error_notifier):
     mocker.patch('googleapiclient.discovery.build')
     mocker.patch('google.ads.googleads.oauth2')
-    id = StaticValueProvider(str, 'id')
+    _id = StaticValueProvider(str, 'id')
     secret = StaticValueProvider(str, 'secret')
     access = StaticValueProvider(str, 'access')
     refresh = StaticValueProvider(str, 'refresh')
-    credentials = OAuthCredentials(id, secret, access, refresh)
+    credentials = OAuthCredentials(_id, secret, access, refresh)
     return DisplayVideoCustomerMatchContactInfoUploaderDoFn(credentials,
                                                             StaticValueProvider(
                                                                 str, 'devtoken'),
@@ -119,7 +119,8 @@ def test_upload_update_users(mocker, uploader, error_notifier):
     audience.displayName = 'list_name'
 
     audience_list = MagicMock()
-    audience_list['firstAndThirdPartyAudiences'] = [audience]
+    teste = [audience]
+    audience_list.firstAndThirdPartyAudiences = teste
     uploader._get_dv_audience_service.return_value.list.return_value.execute.return_value = audience_list
     uploader._get_dv_audience_service.return_value.editCustomerMatchMembers.return_value = MagicMock()
 
@@ -162,8 +163,10 @@ def test_upload_update_users(mocker, uploader, error_notifier):
         }
     }
 
+    assert audience_list.firstAndThirdPartyAudiences[0].firstAndThirdPartyAudienceId == 12345
+
     uploader._get_dv_audience_service.return_value.editCustomerMatchMembers.assert_any_call(
-        firstAndThirdPartyAudienceId=audience_list['firstAndThirdPartyAudiences'][0]['firstAndThirdPartyAudienceId'],
+        firstAndThirdPartyAudienceId=audience.firstAndThirdPartyAudienceId,
         body=test_update_resquest
     )
 

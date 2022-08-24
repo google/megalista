@@ -145,6 +145,6 @@ def test_files_deleted_with_success(mocker, eraser):
     _, kwargs = delete_call_mock.call_args
 
     # Check if really sent values from custom field
-    ids = kwargs['body']
+    _ = kwargs['body']
 
     # assert

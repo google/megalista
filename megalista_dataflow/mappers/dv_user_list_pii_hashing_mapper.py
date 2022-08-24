@@ -35,7 +35,7 @@ class DVUserListPIIHashingMapper(ListPIIHashingMapper):
                 processed_email = self.normalize_email(user["email"])
                 processed_user["hashedEmails"] = hasher.hash_field(
                     processed_email)
-        except:
+        except Exception:
             self.logger.error(f"Error hashing email for user: {str(user)}")
 
         try:
@@ -52,14 +52,14 @@ class DVUserListPIIHashingMapper(ListPIIHashingMapper):
                 processed_user["countryCode"] = user["mailing_address_country"]
                 processed_user["zipCodes"] = user["mailing_address_zip"]
 
-        except:
+        except Exception:
             self.logger.error(f"Error hashing address for user: {str(user)}")
 
         try:
             if self._is_data_present(user, "phone"):
                 processed_user["hashedPhoneNumbers"] = hasher.hash_field(
                     user["phone"])
-        except:
+        except Exception:
             self.logger.error(f"Error hashing phone for user: {str(user)}")
 
         if self._is_data_present(user, "mobile_device_id"):

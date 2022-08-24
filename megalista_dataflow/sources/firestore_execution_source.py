@@ -22,6 +22,7 @@ from models.execution import Destination, DestinationType
 from models.execution import Execution, AccountConfig
 from models.execution import Source, SourceType
 
+LOGGER_NAME = "megalista.FirestoreExecutionSource"
 
 class FirestoreExecutionSource(BaseBoundedSource):
   """
@@ -48,7 +49,7 @@ class FirestoreExecutionSource(BaseBoundedSource):
       return doc_dict
 
     firestore_collection = self._setup_firestore_collection.get()
-    logging.getLogger("megalista.FirestoreExecutionSource").info(f"Loading Firestore collection {firestore_collection}...")
+    logging.getLogger(LOGGER_NAME).info(f"Loading Firestore collection {firestore_collection}...")
     db = firestore.Client()
     entries = db.collection(self._setup_firestore_collection.get()).where('active', '==', 'yes').stream()
     entries = [document_to_dict(doc) for doc in entries]
@@ -56,7 +57,7 @@ class FirestoreExecutionSource(BaseBoundedSource):
     account_data = document_to_dict(db.collection(self._setup_firestore_collection.get()).document('account_config').get())
   
     if not account_data:
-      raise Exception('Firestore collection is absent')
+      raise OSError('Firestore collection is absent')
     google_ads_id = account_data.get('google_ads_id', 'empty')
     mcc_trix = account_data.get('mcc_trix', 'FALSE')
     mcc = False if mcc_trix is None else bool(distutils.util.strtobool(mcc_trix))
@@ -65,18 +66,18 @@ class FirestoreExecutionSource(BaseBoundedSource):
     campaign_manager_profile_id = account_data.get('campaign_manager_profile_id', 'empty')
     
     account_config = AccountConfig(google_ads_id, mcc, google_analytics_account_id, campaign_manager_profile_id, app_id)
-    logging.getLogger("megalista.FirestoreExecutionSource").info(f"Loaded: {account_config}")
+    logging.getLogger(LOGGER_NAME).info(f"Loaded: {account_config}")
     
     sources = self._read_sources(entries)
     destinations = self._read_destination(entries)
     if entries:
       for entry in entries:
         if entry['active'].upper() == 'YES':
-          logging.getLogger("megalista.FirestoreExecutionSource").info(
+          logging.getLogger(LOGGER_NAME).info(
             f"Executing step Source:{sources[entry['source_name']].source_name} -> Destination:{destinations[entry['destination_name']].destination_name}")
           yield Execution(account_config, sources[entry['source_name']], destinations[entry['destination_name']])
     else:
-      logging.getLogger("megalista.FirestoreExecutionSource").warn("No schedules found!")
+      logging.getLogger(LOGGER_NAME).warn("No schedules found!")
 
   def _read_sources(self, entries):
     sources = {}
@@ -86,7 +87,7 @@ class FirestoreExecutionSource(BaseBoundedSource):
         source = Source(entry['source_name'], SourceType[entry['source']], metadata)
         sources[source.source_name] = source
     else:
-      logging.getLogger("megalista.FirestoreExecutionSource").warn("No sources found!")
+      logging.getLogger(LOGGER_NAME).warn("No sources found!")
     return sources
 
   def _read_destination(self, entries):
@@ -115,7 +116,7 @@ class FirestoreExecutionSource(BaseBoundedSource):
       entry_type = entry['type']
       metadata = metadata_list.get(entry_type, None)
       if not metadata: 
-        raise Exception(f'Upload type not implemented: {entry_type}')
+        raise NotImplementedError(f'Upload type not implemented: {entry_type}')
       entry_metadata = []
       for m in metadata:
         # metadata_padding stands for the N/A fields in Sheets, preserving list indexes
@@ -124,7 +125,7 @@ class FirestoreExecutionSource(BaseBoundedSource):
         elif m in entry:
           entry_metadata.append(entry[m])
         else:
-          raise Exception(f'Missing field in Firestore document for {entry_type}: {m}')
+          raise ValueError(f'Missing field in Firestore document for {entry_type}: {m}')
       return entry_metadata
 
 
@@ -134,5 +135,5 @@ class FirestoreExecutionSource(BaseBoundedSource):
         destination = Destination(entry['destination_name'], DestinationType[entry['type']], create_metadata_list(entry))
         destinations[destination.destination_name] = destination
     else:
-      logging.getLogger("megalista.FirestoreExecutionSource").warn("No destinations found!")
+      logging.getLogger(LOGGER_NAME).warn("No destinations found!")
     return destinations
