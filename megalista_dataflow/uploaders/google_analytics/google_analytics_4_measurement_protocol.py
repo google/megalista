@@ -63,6 +63,10 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
     if len(execution.destination.destination_metadata) >= 6:
       measurement_id = execution.destination.destination_metadata[5]
      
+    if not api_secret:
+          raise ValueError(
+            'GA4 MP should be called with a non-null api_secret'
+          )
     if not self._exactly_one_of(firebase_app_id, measurement_id):
           raise ValueError(
             'GA4 MP should be called either with a firebase_app_id (for apps) or a measurement_id (for web)')      
@@ -81,8 +85,7 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
       app_instance_id = row.get('app_instance_id')
       client_id = row.get('client_id')
       user_id = row.get('user_id')
-      if 'timestamp_micros' in row:
-        payload['timestamp_micros'] = int(str(row.get('timestamp_micros')))
+      timestamp_micros = row.get('timestamp_micros')
 
       if not self._exactly_one_of(app_instance_id, client_id):
         raise ValueError(
@@ -117,8 +120,7 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
         payload['user_id'] = user_id
 
       if timestamp_micros:
-        payload['timestamp_micros'] = timestamp_micros
-
+        payload['timestamp_micros'] = int(str(timestamp_micros))
       url = ''.join(url_container)
       response = requests.post(url,data=json.dumps(payload))
       if response.status_code != 204:
