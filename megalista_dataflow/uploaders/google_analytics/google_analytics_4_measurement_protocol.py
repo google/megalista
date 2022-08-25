@@ -15,12 +15,12 @@
 
 import json
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, Tuple, Optional
 
 import requests
 
 from error.error_handling import ErrorHandler
-from models.execution import Batch
+from models.execution import Batch, Execution
 from uploaders import utils
 from uploaders.uploaders import MegalistaUploader
 
@@ -50,8 +50,47 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
     api_secret = execution.destination.destination_metadata[0]
     is_event = self._str2bool(execution.destination.destination_metadata[1])
     is_user_property = self._str2bool(execution.destination.destination_metadata[2])
-    non_personalized_ads = self._str2bool(execution.destination.destination_metadata[3])
+    non_personalized_ads = self._str2bool(execution.destination.destination_metadata[3])      
+    
+    firebase_app_id, measurement_id = self._getIds(execution, is_event, is_user_property)
 
+    accepted_elements = []
+
+    for row in batch.elements:
+      app_instance_id = row.get('app_instance_id')
+      client_id = row.get('client_id')
+      user_id = row.get('user_id')
+      
+      if not self._exactly_one_of(app_instance_id, client_id):
+        raise ValueError(
+          'GA4 MP should be called either with an app_instance_id (for apps) or a client_id (for web)')
+
+      if firebase_app_id and not app_instance_id:
+        raise ValueError(
+          'GA4 MP needs an app_instance_id parameter when used for an App Stream.')
+
+      if measurement_id and not client_id:
+        raise ValueError(
+          'GA4 MP needs a client_id parameter when used for a Web Stream.')
+
+      
+      url = self._getUrl(api_secret, firebase_app_id, measurement_id)
+
+      payload = self._fillPayload(row, non_personalized_ads, is_event, is_user_property, firebase_app_id, app_instance_id, measurement_id, client_id, user_id)
+
+      response = requests.post(url,data=json.dumps(payload))
+      if response.status_code != 204:
+        error_message = f'Error calling GA4 MP {response.status_code}: {str(response.content)}'
+        logging.getLogger(LOGGER_NAME).error(error_message)
+        self._add_error(execution, error_message)
+      else:
+        accepted_elements.append(row)
+
+    logging.getLogger(LOGGER_NAME).info(
+      f'Successfully uploaded {len(accepted_elements)}/{len(batch.elements)} events.')
+    return [Batch(execution, accepted_elements)]
+
+  def _getIds(self, execution: Execution, is_event: bool, is_user_property: bool) -> Tuple[Optional[str], Optional[str]]:
     firebase_app_id = None
     if len(execution.destination.destination_metadata) >= 5:
       firebase_app_id = execution.destination.destination_metadata[4]
@@ -66,61 +105,44 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
 
     if not self._exactly_one_of(is_event, is_user_property):
           raise ValueError(
-            'GA4 MP should be called either for sending events or a user properties')        
+            'GA4 MP should be called either for sending events or a user properties')  
     
+    return firebase_app_id, measurement_id
+
+  def _getUrl(self, api_secret, firebase_app_id, measurement_id):
+    url_container = [f'{self.API_URL}?api_secret={api_secret}']
+
+    if firebase_app_id:
+      url_container.append(f'&firebase_app_id={firebase_app_id}')
+      
+    if measurement_id:
+      url_container.append(f'&measurement_id={measurement_id}')
+
+    return ''.join(url_container)
+
+  def _fillPayload(self, row, non_personalized_ads, is_event, is_user_property, firebase_app_id, app_instance_id, measurement_id, client_id, user_id):
     payload: Dict[str, Any] = {
       'nonPersonalizedAds': non_personalized_ads
     }
 
-    accepted_elements = []
-
-    for row in batch.elements:
-      app_instance_id = row.get('app_instance_id')
-      client_id = row.get('client_id')
-      user_id = row.get('user_id')
-      if 'timestamp_micros' in row:
+    if 'timestamp_micros' in row:
         payload['timestamp_micros'] = int(str(row.get('timestamp_micros')))
-
-      if not self._exactly_one_of(app_instance_id, client_id):
-        raise ValueError(
-          'GA4 MP should be called either with an app_instance_id (for apps) or a client_id (for web)')
     
-      if is_event:
-        params = {k: v for k, v in row.items() if k not in ('name', 'app_instance_id', 'client_id', 'uuid', 'user_id', 'timestamp_micros') and v is not None}
-        payload['events'] = [{'name': row['name'], 'params': params}]
+    if is_event:
+      params = {k: v for k, v in row.items() if k not in ('name', 'app_instance_id', 'client_id', 'uuid', 'user_id', 'timestamp_micros') and v is not None}
+      payload['events'] = [{'name': row['name'], 'params': params}]
 
-      if is_user_property: 
-        payload['userProperties'] = {k: {'value': v} for k, v in row.items() if k not in ('app_instance_id', 'client_id', 'uuid', 'user_id', 'timestamp_micros') and v is not None}
-        payload['events'] = {'name': 'user_property_addition_event', 'params': {}}
+    if is_user_property: 
+      payload['userProperties'] = {k: {'value': v} for k, v in row.items() if k not in ('app_instance_id', 'client_id', 'uuid', 'user_id', 'timestamp_micros') and v is not None}
+      payload['events'] = {'name': 'user_property_addition_event', 'params': {}}
 
-      url_container = [f'{self.API_URL}?api_secret={api_secret}']
+    if firebase_app_id:
+      payload['app_instance_id'] = app_instance_id
+      
+    if measurement_id:
+      payload['client_id'] = client_id
 
-      if firebase_app_id:
-        url_container.append(f'&firebase_app_id={firebase_app_id}')
-        if not app_instance_id:
-          raise ValueError(
-            'GA4 MP needs an app_instance_id parameter when used for an App Stream.')
-        payload['app_instance_id'] = app_instance_id
-        
-      if measurement_id:
-        url_container.append(f'&measurement_id={measurement_id}')
-        if not client_id:
-          raise ValueError(
-            'GA4 MP needs a client_id parameter when used for a Web Stream.')
-        payload['client_id'] = client_id
-
-      if user_id:
-        payload['user_id'] = user_id
-
-      url = ''.join(url_container)
-      response = requests.post(url,data=json.dumps(payload))
-      if response.status_code != 204:
-        error_message = f'Error calling GA4 MP {response.status_code}: {str(response.content)}'
-        logging.getLogger(LOGGER_NAME).error(error_message)
-        self._add_error(execution, error_message)
-      else:
-        accepted_elements.append(row)
-
-    logging.getLogger(LOGGER_NAME).info(
-      f'Successfully uploaded {len(accepted_elements)}/{len(batch.elements)} events.')
-    return [Batch(execution, accepted_elements)]
+    if user_id:
+      payload['user_id'] = user_id
+  
+    return payload

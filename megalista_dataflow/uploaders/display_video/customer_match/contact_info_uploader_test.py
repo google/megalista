@@ -119,8 +119,7 @@ def test_upload_update_users(mocker, uploader, error_notifier):
     audience.displayName = 'list_name'
 
     audience_list = MagicMock()
-    teste = [audience]
-    audience_list.firstAndThirdPartyAudiences = teste
+    audience_list['firstAndThirdPartyAudiences'] = [audience]
     uploader._get_dv_audience_service.return_value.list.return_value.execute.return_value = audience_list
     uploader._get_dv_audience_service.return_value.editCustomerMatchMembers.return_value = MagicMock()
 
@@ -163,10 +162,8 @@ def test_upload_update_users(mocker, uploader, error_notifier):
         }
     }
 
-    assert audience_list.firstAndThirdPartyAudiences[0].firstAndThirdPartyAudienceId == 12345
-
     uploader._get_dv_audience_service.return_value.editCustomerMatchMembers.assert_any_call(
-        firstAndThirdPartyAudienceId=audience.firstAndThirdPartyAudienceId,
+        firstAndThirdPartyAudienceId=audience_list['firstAndThirdPartyAudiences'][0]['firstAndThirdPartyAudienceId'],
         body=test_update_resquest
     )
 

@@ -64,7 +64,7 @@ class BigQueryDataSource(BaseDataSource):
             logging.getLogger(_LOGGER_NAME).info(f'Reading from table {table_name} for Execution {executions}')
             elements = []
             for row in client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE):
-                elements.append(_convert_row_to_dict(row))
+                elements.append(BaseDataSource._convert_row_to_dict(row))
             logging.getLogger(_LOGGER_NAME).info(f'Data source ({self._source_name}): using {len(elements)} rows')
             return [DataRowsGroupedBySource(executions, elements)]
         
@@ -100,7 +100,7 @@ class BigQueryDataSource(BaseDataSource):
                 f'Reading from table `{table_name}` for Execution {executions}')
             elements = []
             for row in client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE):
-                elements.append(_convert_row_to_dict(row))
+                elements.append(BaseDataSource._convert_row_to_dict(row))
             logging.getLogger(_LOGGER_NAME).info(f'Data source ({self._source_name}): using {len(elements)} rows')
             return [DataRowsGroupedBySource(executions, elements)]
         else:

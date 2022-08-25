@@ -285,7 +285,9 @@ def update_data_types_not_string(df: pd.DataFrame, destination_type: Destination
     dtypes_to_change = {}
     for key in cols_to_change:
         if key in df.columns:
-            dtypes_to_change[key] = list(filter(lambda col, value=key: col['name'] == value, data_type['columns']))[0]['data_type']
+            for col in data_type['columns']:
+                if col['name'] == key:
+                    dtypes_to_change[key] = col['data_type']
 
     return df.astype(dtypes_to_change)
 
