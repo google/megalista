@@ -274,8 +274,9 @@ def get_cols_names(data_cols: list, destination_type: DestinationType) -> list:
     for col in data_cols:
         for data_type_col in data_type_cols:
             if re.match(f'^{data_type_col}$', col) is not None:
-                filtered_cols.append(col)
-    
+                if col not in filtered_cols:
+                    filtered_cols.append(col)
+                    
     return filtered_cols
 
 # Parse columns that aren't string
