@@ -141,13 +141,19 @@ class BigQueryDataSource(BaseDataSource):
             client = self._get_bq_client()
             table = client.get_table(table_name)
             now = self._get_now()
-            results = client.insert_rows(table,
-                self._get_bq_rows(rows, now),
-                self._get_schema_fields())
+            all_bq_rows = self._get_bq_rows(rows, now)
+            partial_results = []
+            
+            for i in range(0, len(all_bq_rows), _BIGQUERY_PAGE_SIZE):
+                bq_rows = all_bq_rows[i: i + _BIGQUERY_PAGE_SIZE]
+                partial_results.append(client.insert_rows(table,
+                    bq_rows,
+                    self._get_schema_fields()))
 
-            for result in results:
-                logging.getLogger(_LOGGER_NAME).error(result['errors'])
-    
+            for results in partial_results:
+                for result in results:
+                    logging.getLogger(_LOGGER_NAME).error(result['errors'])
+        
     def _get_now(self):
         return datetime.now().timestamp()
         
