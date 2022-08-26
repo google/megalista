@@ -89,8 +89,8 @@ _dtypes: Dict[str, Dict[str, Any]] = {
             {'name': 'phone', 'required': False, 'data_type': 'string'},
             {'name': 'mailing_address_first_name', 'required': False, 'data_type': 'string'},
             {'name': 'mailing_address_last_name', 'required': False, 'data_type': 'string'},
-            {'name': 'mailing_address_country_name', 'required': False, 'data_type': 'string'},
-            {'name': 'mailing_address_zip_name', 'required': False, 'data_type': 'string'}  
+            {'name': 'mailing_address_country', 'required': False, 'data_type': 'string'},
+            {'name': 'mailing_address_zip', 'required': False, 'data_type': 'string'}  
         ],
         'groups': []
     },
@@ -175,8 +175,8 @@ _dtypes: Dict[str, Dict[str, Any]] = {
             {'name': 'phone', 'required': False, 'data_type': 'string'},
             {'name': 'mailing_address_first_name', 'required': False, 'data_type': 'string'},
             {'name': 'mailing_address_last_name', 'required': False, 'data_type': 'string'},
-            {'name': 'mailing_address_country_name', 'required': False, 'data_type': 'string'},
-            {'name': 'mailing_address_zip_name', 'required': False, 'data_type': 'string'}  
+            {'name': 'mailing_address_country', 'required': False, 'data_type': 'string'},
+            {'name': 'mailing_address_zip', 'required': False, 'data_type': 'string'}  
         ],
         'groups': []
     },
@@ -276,11 +276,7 @@ def get_cols_names(data_cols: list, destination_type: DestinationType) -> list:
             if re.match(f'^{data_type_col}$', col) is not None:
                 if col not in filtered_cols:
                     filtered_cols.append(col)
-<<<<<<< HEAD
                     
-=======
-    
->>>>>>> main
     return filtered_cols
 
 # Parse columns that aren't string

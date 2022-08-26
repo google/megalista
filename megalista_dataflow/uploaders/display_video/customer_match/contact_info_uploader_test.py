@@ -81,7 +81,7 @@ def test_upload_add_users(mocker, uploader, error_notifier):
     uploader._get_dv_audience_service.return_value.list.assert_called_once_with(
         advertiserId='advertiser_id',
         pageSize=1,
-        filter='displayName : list_name'
+        filter='displayName : "list_name"'
     )
 
     test_create_resquest = {
@@ -145,7 +145,7 @@ def test_upload_update_users(mocker, uploader, error_notifier):
     uploader._get_dv_audience_service.return_value.list.assert_called_once_with(
         advertiserId='advertiser_id',
         pageSize=1,
-        filter='displayName : list_name'
+        filter='displayName : "list_name"'
     )
 
     test_update_resquest = {

@@ -13,14 +13,15 @@
 # limitations under the License.
 
 import logging
-from typing import Dict, Any, List, Optional
+from shutil import ExecError
+from typing import Dict, Any, List, Optional, Tuple
 from apache_beam.options.value_provider import StaticValueProvider
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
 
 from error.error_handling import ErrorHandler
-from models.execution import AccountConfig, Destination
+from models.execution import AccountConfig, Destination, Execution
 from models.execution import Batch
 from models.execution import DestinationType
 from models.oauth_credentials import OAuthCredentials
@@ -39,7 +40,7 @@ class DisplayVideoCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
         self.oauth_credentials = oauth_credentials
         self.developer_token = developer_token
         self.active = True
-        self._user_list_id_cache: Dict[str, Dict[str, any]] = {}
+        self._user_list_id_cache: Dict[str, Dict[str, Any]] = dict()
 
     def _get_dv_service(self):
         credentials = Credentials(
@@ -68,7 +69,7 @@ class DisplayVideoCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
     def _create_list_if_it_does_not_exist(self,
                                           advertiser_id: str,
                                           list_name: str,
-                                          list_definition: Dict[str, Any]) -> Dict[str, Any]:
+                                          list_definition: Dict[str, Any]) -> Tuple[bool, Dict[str, Any]]:
         was_audience_created = False
         if self._user_list_id_cache.get(list_name) is None:
             was_audience_created, self._user_list_id_cache[list_name] = \
@@ -81,7 +82,7 @@ class DisplayVideoCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
                                              advertiser_id: str,
                                              list_name: str,
                                              list_definition: Dict[str, Any]
-                                             ) -> str:
+                                             ) -> Tuple[bool, Dict[str, Any]]:
 
         was_audience_created = False
         found_audience = self._get_advertiser_audience_by_display_name(
@@ -108,18 +109,18 @@ class DisplayVideoCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
 
         return was_audience_created, found_audience
 
-    def _get_advertiser_audience_by_display_name(self, advertiser_id: str, display_name: str) -> Optional[str]:
+    def _get_advertiser_audience_by_display_name(self, advertiser_id: str, display_name: str) -> Optional[Dict[str, Any]]:
         """
             Gets the advertise's audience by the displayName
         """
         response = self._get_dv_audience_service().list(
             advertiserId=advertiser_id,
             pageSize=1,
-            filter=f'displayName : {display_name}'
+            filter=f'displayName : "{display_name}"'
         ).execute()
 
         if response and response['firstAndThirdPartyAudiences']:
-            return response['firstAndThirdPartyAudiences'][0]
+            return dict(response['firstAndThirdPartyAudiences'][0])
         else: 
             return None
 
@@ -152,11 +153,11 @@ class DisplayVideoCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
         return [{key: row.get(key) for key in keys if key in row} for row in rows]
 
     @utils.safe_process(logger=logging.getLogger(_DEFAULT_LOGGER))
-    def process(self, batch: Batch, **kwargs) -> None:
+    def process(self, batch: Batch, **kwargs) -> List[Execution]:
         if not self.active:
             logging.getLogger(_DEFAULT_LOGGER).warning(
                 'Skipping upload to DV, parameters not configured.')
-            return
+            return []
 
         execution = batch.execution
 
