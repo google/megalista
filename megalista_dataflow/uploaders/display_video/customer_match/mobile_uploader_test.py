@@ -23,7 +23,6 @@ from error.error_handling_test import MockErrorNotifier
 from models.execution import AccountConfig, Destination, DestinationType, Source, SourceType, Execution, Batch
 from models.oauth_credentials import OAuthCredentials
 from uploaders.display_video.customer_match.mobile_uploader import DisplayVideoCustomerMatchMobileUploaderDoFn
-from uploaders.utils import MagicMockDict
 
 _account_config = AccountConfig('account_id', False, 'ga_account_id', '', '')
 
@@ -116,16 +115,17 @@ def test_upload_add_users(mocker, uploader, error_notifier):
     assert not error_notifier.were_errors_sent
 
 def test_upload_update_users(mocker, uploader, error_notifier):
-
     mocker.patch.object(uploader, '_get_dv_audience_service')
     
-    audience = MagicMock() 
-    audience.firstAndThirdPartyAudienceId = 12345
-    audience.displayName = 'list_name'
-
-    audience_list = MagicMockDict()
-    audience_list['firstAndThirdPartyAudiences'] = [audience]
-
+    audience_list = {
+        'firstAndThirdPartyAudiences': [
+            {
+                'firstAndThirdPartyAudienceId': 12345,
+                'displayName': 'list_name'
+            }
+        ]
+    }
+            
     uploader._get_dv_audience_service.return_value.list.return_value.execute.return_value = audience_list
     uploader._get_dv_audience_service.return_value.editCustomerMatchMembers.return_value = MagicMock()
 
@@ -169,6 +169,8 @@ def test_upload_update_users(mocker, uploader, error_notifier):
             ]
         }
     }
+
+    
 
     uploader._get_dv_audience_service.return_value.editCustomerMatchMembers.assert_any_call(
         firstAndThirdPartyAudienceId=audience_list['firstAndThirdPartyAudiences'][0]['firstAndThirdPartyAudienceId'],

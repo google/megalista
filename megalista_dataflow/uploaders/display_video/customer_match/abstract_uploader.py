@@ -118,7 +118,7 @@ class DisplayVideoCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
             pageSize=1,
             filter=f'displayName : "{display_name}"'
         ).execute()
-
+            
         if response and response['firstAndThirdPartyAudiences']:
             return dict(response['firstAndThirdPartyAudiences'][0])
         else: 

@@ -135,13 +135,3 @@ def print_partial_error_messages(logger_name, action, response) -> Optional[str]
         logging.getLogger(logger_name).debug(message)
 
     return error_message
-
-class MagicMockDict(MagicMock):
-    def __init__(self):
-        self._mock_dict = dict()
-
-    def __getitem__(self, name):
-        return self._mock_dict[name]
-
-    def __setitem__(self, name, val):
-        self.mock_dict[name] = val

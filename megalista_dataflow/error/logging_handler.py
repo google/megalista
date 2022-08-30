@@ -18,9 +18,8 @@ from typing import Optional, List
 from .error_handling import ErrorNotifier
 
 class LoggingHandler(logging.Handler):
-    def __init__(self, level=logging.INFO):
-        logging.Handler.__init__(self, level)
-        self.level = level
+    def __init__(self):
+        logging.Handler.__init__(self, logging.ERROR)
         self.filters = []
         self.lock = None
         self._has_errors:bool = False
