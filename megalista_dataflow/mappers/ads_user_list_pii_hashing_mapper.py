@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+from config import logging
 
 from models.execution import Batch
 from mappers.abstract_list_pii_hashing_mapper import ListPIIHashingMapper
@@ -20,7 +20,7 @@ from mappers.abstract_list_pii_hashing_mapper import ListPIIHashingMapper
 
 class AdsUserListPIIHashingMapper(ListPIIHashingMapper):
     def __init__(self):
-        self.logger = logging.getLogger(
+        self.logger = logging.get_logger(
             "megalista.AdsUserListPIIHashingMapper")
 
     def _hash_user(self, user, hasher):

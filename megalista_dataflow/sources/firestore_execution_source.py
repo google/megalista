@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import distutils.util
-import logging
+from config import logging
 
 from apache_beam.options.value_provider import ValueProvider
 
@@ -49,7 +49,7 @@ class FirestoreExecutionSource(BaseBoundedSource):
       return doc_dict
 
     firestore_collection = self._setup_firestore_collection.get()
-    logging.getLogger(LOGGER_NAME).info(f"Loading Firestore collection {firestore_collection}...")
+    logging.get_logger(LOGGER_NAME).info(f"Loading Firestore collection {firestore_collection}...")
     db = firestore.Client()
     entries = db.collection(self._setup_firestore_collection.get()).where('active', '==', 'yes').stream()
     entries = [document_to_dict(doc) for doc in entries]
@@ -66,18 +66,18 @@ class FirestoreExecutionSource(BaseBoundedSource):
     campaign_manager_profile_id = account_data.get('campaign_manager_profile_id', 'empty')
     
     account_config = AccountConfig(google_ads_id, mcc, google_analytics_account_id, campaign_manager_profile_id, app_id)
-    logging.getLogger(LOGGER_NAME).info(f"Loaded: {account_config}")
+    logging.get_logger(LOGGER_NAME).info(f"Loaded: {account_config}")
     
     sources = self._read_sources(entries)
     destinations = self._read_destination(entries)
     if entries:
       for entry in entries:
         if entry['active'].upper() == 'YES':
-          logging.getLogger(LOGGER_NAME).info(
+          logging.get_logger(LOGGER_NAME).info(
             f"Executing step Source:{sources[entry['source_name']].source_name} -> Destination:{destinations[entry['destination_name']].destination_name}")
           yield Execution(account_config, sources[entry['source_name']], destinations[entry['destination_name']])
     else:
-      logging.getLogger(LOGGER_NAME).warn("No schedules found!")
+      logging.get_logger(LOGGER_NAME).warn("No schedules found!")
 
   def _read_sources(self, entries):
     sources = {}
@@ -87,7 +87,7 @@ class FirestoreExecutionSource(BaseBoundedSource):
         source = Source(entry['source_name'], SourceType[entry['source']], metadata)
         sources[source.source_name] = source
     else:
-      logging.getLogger(LOGGER_NAME).warn("No sources found!")
+      logging.get_logger(LOGGER_NAME).warn("No sources found!")
     return sources
 
   def _read_destination(self, entries):
@@ -135,5 +135,5 @@ class FirestoreExecutionSource(BaseBoundedSource):
         destination = Destination(entry['destination_name'], DestinationType[entry['type']], create_metadata_list(entry))
         destinations[destination.destination_name] = destination
     else:
-      logging.getLogger(LOGGER_NAME).warn("No destinations found!")
+      logging.get_logger(LOGGER_NAME).warn("No destinations found!")
     return destinations

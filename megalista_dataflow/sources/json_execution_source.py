@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+from config import logging
 
 from apache_beam.options.value_provider import ValueProvider
 
@@ -41,7 +41,7 @@ class JsonExecutionSource(BaseBoundedSource):
 
   def read(self, range_tracker):
     json_url = self._setup_json_url.get()
-    logging.getLogger(LOGGER_NAME).info(f"Loading configuration JSON {json_url}...")
+    logging.get_logger(LOGGER_NAME).info(f"Loading configuration JSON {json_url}...")
 
     json_data = self._json_config.parse_json_from_url(json_url)
     google_ads_id = self._json_config.get_value(json_data, "GoogleAdsAccountId")
@@ -55,7 +55,7 @@ class JsonExecutionSource(BaseBoundedSource):
       campaign_manager_profile_id = self._json_config.get_value(json_data, "CampaignManagerAccountId")
     
     account_config = AccountConfig(google_ads_id, mcc, google_analytics_account_id, campaign_manager_profile_id, app_id)
-    logging.getLogger(LOGGER_NAME).info(f"Loaded: {account_config}")
+    logging.get_logger(LOGGER_NAME).info(f"Loaded: {account_config}")
 
     sources = self._read_sources(self._json_config, json_data)
     destinations = self._read_destination(self._json_config, json_data)
@@ -64,11 +64,11 @@ class JsonExecutionSource(BaseBoundedSource):
     if schedules:
       for schedule in schedules:
         if schedule["Enabled"]:
-          logging.getLogger(LOGGER_NAME).info(
+          logging.get_logger(LOGGER_NAME).info(
             f"Executing step Source:{schedule['Source']} -> Destination:{schedule['Destination']}")
           yield Execution(account_config, sources[schedule["Source"]], destinations[schedule["Destination"]])
     else:
-      logging.getLogger(LOGGER_NAME).warn("No schedules found!")
+      logging.get_logger(LOGGER_NAME).warn("No schedules found!")
 
   @staticmethod
   def _read_sources(json_config, json_data):
@@ -81,7 +81,7 @@ class JsonExecutionSource(BaseBoundedSource):
                         [row["Dataset"], row["Table"]])
         sources[source.source_name] = source
     else:
-      logging.getLogger(LOGGER_NAME).warn("No sources found!")
+      logging.get_logger(LOGGER_NAME).warn("No sources found!")
     return sources
 
   @staticmethod
@@ -95,5 +95,5 @@ class JsonExecutionSource(BaseBoundedSource):
                                   row["Metadata"])
         destinations[destination.destination_name] = destination
     else:
-      logging.getLogger(LOGGER_NAME).warn("No destinations found!")
+      logging.get_logger(LOGGER_NAME).warn("No destinations found!")
     return destinations

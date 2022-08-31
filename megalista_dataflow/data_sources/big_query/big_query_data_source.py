@@ -11,12 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from sys import exc_info
 from typing import Any, List, Iterable, Tuple, Dict, Optional
 from datetime import datetime
 from string import Template
 
 import apache_beam as beam
-import logging
+from config import logging
 from google.cloud import bigquery
 from google.cloud.bigquery import SchemaField, Client
 from apache_beam.io.gcp.bigquery import ReadFromBigQueryRequest
@@ -61,11 +62,11 @@ class BigQueryDataSource(BaseDataSource):
         if DataSchemas.validate_data_columns(cols, self._destination_type):
             cols = DataSchemas.get_cols_names(cols, self._destination_type)
             query = f"SELECT {','.join(cols)} FROM `{table_name}` AS data"
-            logging.getLogger(_LOGGER_NAME).info(f'Reading from table {table_name} for Execution {executions}')
+            logging.get_logger(_LOGGER_NAME).info(f'Reading from table {table_name} for Execution {executions}')
             elements = []
             for row in client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE):
                 elements.append(BaseDataSource._convert_row_to_dict(row))
-            logging.getLogger(_LOGGER_NAME).info(f'Data source ({self._source_name}): using {len(elements)} rows')
+            logging.get_logger(_LOGGER_NAME).info(f'Data source ({self._source_name}): using {len(elements)} rows')
             return [DataRowsGroupedBySource(executions, elements)]
         
         else:
@@ -79,7 +80,7 @@ class BigQueryDataSource(BaseDataSource):
         self._ensure_control_table_exists(client, uploaded_table_name)
         
         cols = self._get_table_columns(client, table_name)
-        logging.getLogger(_LOGGER_NAME).info(f'Destination Type: {self._destination_type}')
+        logging.get_logger(_LOGGER_NAME).info(f'Destination Type: {self._destination_type}')
         if DataSchemas.validate_data_columns(cols, self._destination_type):
             cols = DataSchemas.get_cols_names(cols, self._destination_type)
             query_cols = ','.join(['data.' + col for col in cols])
@@ -96,12 +97,12 @@ class BigQueryDataSource(BaseDataSource):
                 raise ValueError(f'Unrecognized TransactionalType: {self._transactional_type}. Source="{self._source_name}". Destination="{self._destination_name}"')
 
             query = Template(template).substitute(table_name=table_name, uploaded_table_name=uploaded_table_name, query_cols=query_cols)
-            logging.getLogger(_LOGGER_NAME).info(
+            logging.get_logger(_LOGGER_NAME).info(
                 f'Reading from table `{table_name}` for Execution {executions}')
             elements = []
             for row in client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE):
                 elements.append(BaseDataSource._convert_row_to_dict(row))
-            logging.getLogger(_LOGGER_NAME).info(f'Data source ({self._source_name}): using {len(elements)} rows')
+            logging.get_logger(_LOGGER_NAME).info(f'Data source ({self._source_name}): using {len(elements)} rows')
             return [DataRowsGroupedBySource(executions, elements)]
         else:
             raise ValueError(f'Data source incomplete. {DataSchemas.get_error_message(cols, self._destination_type)} Source="{self._source_name}". Destination="{self._destination_name}"')
@@ -126,14 +127,14 @@ class BigQueryDataSource(BaseDataSource):
 
         query = Template(template).substitute(uploaded_table_name=uploaded_table_name)
 
-        logging.getLogger(_LOGGER_NAME).info(
+        logging.get_logger(_LOGGER_NAME).info(
             f"Creating table `{uploaded_table_name}` if it doesn't exist")
 
         client.query(query).result()
 
     def write_transactional_info(self, rows, execution: Execution):
         if len(rows) == 0:
-            logging.getLogger(_LOGGER_NAME).info(
+            logging.get_logger(_LOGGER_NAME).info(
                 "No rows to insert. Skipping...")
         else:
             table_name = self._get_table_name(execution.source.source_metadata, True)
@@ -152,7 +153,7 @@ class BigQueryDataSource(BaseDataSource):
 
             for results in partial_results:
                 for result in results:
-                    logging.getLogger(_LOGGER_NAME).error(result['errors'])
+                    logging.get_logger(_LOGGER_NAME).error(result['errors'])
         
     def _get_now(self):
         return datetime.now().timestamp()

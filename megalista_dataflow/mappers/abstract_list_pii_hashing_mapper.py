@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import hashlib
-import logging
+from config import logging
 import re
 
 from models.execution import Batch
@@ -34,7 +34,7 @@ class FieldHasher:
 
 class ListPIIHashingMapper:
     def __init__(self):
-        self.logger = logging.getLogger(
+        self.logger = logging.get_logger(
             "megalista.AbstractListPIIHashingMapper")
 
     def _get_default_hasheable_keys(self):

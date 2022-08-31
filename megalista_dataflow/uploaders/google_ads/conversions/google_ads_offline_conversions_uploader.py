@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+from config import logging
 
 from apache_beam.options.value_provider import ValueProvider
 
@@ -74,7 +74,7 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
           str(destination)))
 
   @utils.safe_process(
-      logger=logging.getLogger('megalista.GoogleAdsOfflineUploader'))
+      logger=logging.get_logger('megalista.GoogleAdsOfflineUploader'))
   def process(self, batch: Batch, **kwargs):
     execution = batch.execution
     self._assert_conversion_name_is_present(execution)
@@ -101,7 +101,7 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
       return [batch_with_successful_gclids]
 
   def _do_upload(self, oc_service, execution, conversion_resource_name, customer_id, rows):
-    logging.getLogger(_DEFAULT_LOGGER).info(f'Uploading {len(rows)} offline conversions on {conversion_resource_name} to Google Ads.')
+    logging.get_logger(_DEFAULT_LOGGER).info(f'Uploading {len(rows)} offline conversions on {conversion_resource_name} to Google Ads.')
     conversions = [{
           'conversion_action': conversion_resource_name,
           'conversion_date_time': utils.format_date(conversion['time']),

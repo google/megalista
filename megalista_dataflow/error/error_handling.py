@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import base64
-import logging
+from config import logging
 from email.mime.text import MIMEText
 from typing import Iterable, Optional, Dict
 
@@ -91,7 +91,7 @@ class GmailNotifier(ErrorNotifier):
     return should_notify.lower() == 'true'
 
   def notify(self, destination_type: DestinationType, errors: Iterable[Error]):
-    logger = logging.getLogger('megalista.GmailNotifier')
+    logger = logging.get_logger('megalista.GmailNotifier')
     if not self._should_notify():
       logger.info(f'Skipping sending emails notifying of errors: {", ".join(map(str, errors))}')
       return

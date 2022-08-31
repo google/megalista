@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-import logging
+from config import logging
 import re
 from typing import Dict, Any
 from urllib.parse import quote
@@ -89,12 +89,12 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
       payload["cu"] = row.get('currency_code')  # Currency code.      
     else:
       error_message = f"Hit type {hit_type} is not supported."
-      logging.getLogger("megalista.GoogleAnalyticsMeasurementProtocolUploader").error(error_message)
+      logging.get_logger("megalista.GoogleAnalyticsMeasurementProtocolUploader").error(error_message)
       self._add_error(batch.execution, error_message)
 
     return payload
 
-  @utils.safe_process(logger=logging.getLogger("megalista.GoogleAnalyticsMeasurementProtocolUploader"))
+  @utils.safe_process(logger=logging.get_logger("megalista.GoogleAnalyticsMeasurementProtocolUploader"))
   def process(self, batch: Batch, **kwargs):
     rows = batch.elements
 
@@ -107,7 +107,7 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
     response = requests.post(url=self.API_URL, data=payload)
     if response.status_code != 200:
       error_message = f"Error uploading to Analytics HTTP {response.status_code}: {response.raw}"
-      logging.getLogger("megalista.GoogleAnalyticsMeasurementProtocolUploader").error(error_message)
+      logging.get_logger("megalista.GoogleAnalyticsMeasurementProtocolUploader").error(error_message)
       self._add_error(batch.execution, error_message)
     else:
       return [batch]

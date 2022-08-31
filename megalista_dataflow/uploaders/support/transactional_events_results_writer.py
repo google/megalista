@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+from config import logging
 from datetime import datetime
 
 import apache_beam as beam
@@ -38,7 +38,7 @@ class TransactionalEventsResultsWriter(beam.PTransform):
       self._dataflow_options = dataflow_options
       self._transactional_type = transactional_type
       
-    @utils.safe_process(logger=logging.getLogger("megalista.TransactionalEventsResultsWriter"))
+    @utils.safe_process(logger=logging.get_logger("megalista.TransactionalEventsResultsWriter"))
     def process(self, batch: Batch, *args, **kwargs):
       self._do_process(batch)
       return [batch.execution]

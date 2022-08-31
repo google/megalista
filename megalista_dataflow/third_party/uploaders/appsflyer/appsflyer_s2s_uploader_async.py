@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import asyncio
-import logging
+from config import logging
 import time
 from datetime import datetime
 from typing import Any, List, Optional
@@ -80,7 +80,7 @@ class AppsFlyerS2SUploaderDoFn(MegalistaUploader):
             await asyncio.sleep(curr_retry)
             return await self._send_http_request(session, payload, curr_retry+1)
           else:
-            logging.getLogger(LOGGER_NAME).error(
+            logging.get_logger(LOGGER_NAME).error(
               f"Fail to send event. Response code: {response.status}, "
               f"reason: {response.reason}")
             #print(await response.text()) #uncomment to troubleshoot
@@ -91,7 +91,7 @@ class AppsFlyerS2SUploaderDoFn(MegalistaUploader):
         await asyncio.sleep(curr_retry)
         return await self._send_http_request(session, payload, curr_retry+1)
       else:
-        logging.getLogger(LOGGER_NAME).error('Error inserting event: ' + str(exc))
+        logging.get_logger(LOGGER_NAME).error('Error inserting event: ' + str(exc))
         return -1
 
 
@@ -115,7 +115,7 @@ class AppsFlyerS2SUploaderDoFn(MegalistaUploader):
       payload[name] = row[row_key]
 
 
-  @utils.safe_process(logger=logging.getLogger(LOGGER_NAME))
+  @utils.safe_process(logger=logging.get_logger(LOGGER_NAME))
   def process(self, batch: Batch, **kwargs):
     success_elements: List[Any] = []
     start_datetime = datetime.now()
@@ -134,7 +134,7 @@ class AppsFlyerS2SUploaderDoFn(MegalistaUploader):
     min_duration_sec = len(batch.elements)/500 #Using Rate limitation = 500 per sec
     if delta_sec < min_duration_sec:
       time.sleep(min_duration_sec - delta_sec)
-    logging.getLogger(LOGGER_NAME).info(
+    logging.get_logger(LOGGER_NAME).info(
       f"Successfully uploaded {len(success_elements)}/{len(batch.elements)} events.")
 
     yield Batch(execution, success_elements)

@@ -25,7 +25,7 @@ from typing import Any, List, Iterable, Tuple, Dict
 from apache_beam.typehints.decorators import with_output_types
 import numpy as np
 
-import logging
+from config import logging
 
 from models.execution import SourceType, DestinationType, Execution, Batch, TransactionalType, ExecutionsGroupedBySource, DataRowsGroupedBySource
 from models.options import DataflowOptions
@@ -57,7 +57,7 @@ class FileDataSource(BaseDataSource):
         data_source = self._get_data_source(source.source_metadata[0])
         # Get Data Frame
         df = data_source.get_data_frame(source.source_metadata[1])
-        logging.getLogger(_LOGGER_NAME).info(f'Data source ({self._source_name}): using {len(df.index)} rows')
+        logging.get_logger(_LOGGER_NAME).info(f'Data source ({self._source_name}): using {len(df.index)} rows')
         if df is not None:
             df = df.fillna(np.nan).replace([np.nan], [None])
             # Process Data Frame
@@ -83,7 +83,7 @@ class FileDataSource(BaseDataSource):
             df_distinct = df_merged.drop(df_merged[df_merged.timestamp.notnull()].index)
             # Process Data Frame
             df_distinct = df_distinct.fillna(np.nan).replace([np.nan], [None])
-            logging.getLogger(_LOGGER_NAME).info(f'Data source ({self._source_name}): using {len(df_distinct.index)} rows')
+            logging.get_logger(_LOGGER_NAME).info(f'Data source ({self._source_name}): using {len(df_distinct.index)} rows')
             elements = []
             for index, row in df_distinct.iterrows():
                 elements.append(FileDataSource._convert_row_to_dict(row))

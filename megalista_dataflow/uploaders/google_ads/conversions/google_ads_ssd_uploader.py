@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import datetime
-import logging
+from config import logging
 
 from error.error_handling import ErrorHandler
 from models.execution import AccountConfig, Batch, Destination, Execution
@@ -44,7 +44,7 @@ class GoogleAdsSSDUploaderDoFn(MegalistaUploader):
                 f'Missing destination information. Received {len(metadata)} entry(ies)')
 
     @utils.safe_process(
-        logger=logging.getLogger('megalista.GoogleAdsSSDUploader'))
+        logger=logging.get_logger('megalista.GoogleAdsSSDUploader'))
     def process(self, batch: Batch, **kwargs):
         execution = batch.execution
         self._assert_conversion_metadata_is_present(execution)
@@ -69,7 +69,7 @@ class GoogleAdsSSDUploaderDoFn(MegalistaUploader):
 
     def _do_upload(self, execution, offline_user_data_job_service, customer_id, currency_code, conversion_action_resource_name,
                    ssd_external_upload_id, rows):
-        logger = logging.getLogger('megalista.GoogleAdsSSDUploader')
+        logger = logging.get_logger('megalista.GoogleAdsSSDUploader')
 
         # Upload is divided into 3 parts:
         # 1. Creates Job

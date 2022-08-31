@@ -14,7 +14,7 @@
 
 from functools import reduce
 import apache_beam as beam
-import logging
+from config import logging
 
 from typing import Callable, List, Dict, Any
 

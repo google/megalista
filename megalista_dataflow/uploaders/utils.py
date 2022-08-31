@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import datetime
-import logging
+from config import logging
 import pytz
 import math
 
@@ -120,7 +120,7 @@ def print_partial_error_messages(logger_name, action, response) -> Optional[str]
     partial_failure = getattr(response, 'partial_failure_error', None)
     if partial_failure is not None and partial_failure.message != '':
         error_message = f'Error on {action}: {partial_failure.message}.'
-        logging.getLogger(logger_name).error(error_message)
+        logging.get_logger(logger_name).error(error_message)
     results = getattr(response, 'results', [])
     for result in results:
         gclid = getattr(result, 'gclid', None)
@@ -132,6 +132,6 @@ def print_partial_error_messages(logger_name, action, response) -> Optional[str]
         else:
             message = f'item {result} uploaded.'
 
-        logging.getLogger(logger_name).debug(message)
+        logging.get_logger(logger_name).debug(message)
 
     return error_message

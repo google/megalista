@@ -13,16 +13,16 @@
 # limitations under the License.
 
 import logging
-import sys
-from error.logging_handler import LoggingHandler
+from optparse import Option
+import sys, io, os, traceback
+from types import FrameType
+from typing import Optional, Tuple, List
 
 class LoggingConfig:
     @staticmethod
     def config_logging(show_lines: bool = False):
         # If there is a FileHandler, the execution is running on Dataflow
         # In this scenario, we shouldn't change the formatter
-        logging_handler = LoggingHandler()
-        logging.getLogger().addHandler(logging_handler)
         file_handler = LoggingConfig.get_file_handler()
         if file_handler is None:
             log_format = "[%(levelname)s] %(name)s: %(message)s"
@@ -36,9 +36,7 @@ class LoggingConfig:
                 stream_handler = logging.StreamHandler(stream=sys.stderr)
                 logging.getLogger().addHandler(stream_handler)
             stream_handler.setFormatter(formatter)
-
-            logging_handler.setFormatter(formatter)
-        
+            
         logging.getLogger().setLevel(logging.ERROR)
         logging.getLogger("megalista").setLevel(logging.INFO)
     
@@ -50,11 +48,6 @@ class LoggingConfig:
     def get_file_handler():
         return LoggingConfig.get_handler(logging.FileHandler)
 
-
-    @staticmethod
-    def get_logging_handler():
-        return LoggingConfig.get_handler(LoggingHandler)
-
     @staticmethod
     def get_handler(type: type):
         result_handler = None
@@ -64,3 +57,95 @@ class LoggingConfig:
                 break
         
         return result_handler
+
+class _LogWrapper:
+    def __init__(self, name: Optional[str]):
+        self._name = str(name)
+        self._logger = logging.getLogger(name)
+
+    def debug(self, msg: str, *args, **kwargs):
+        self._logger.debug(msg, *args, **self._change_stacklevel(**kwargs))
+    
+    def info(self, msg: str, *args, **kwargs):
+        self._logger.info(msg, *args, **self._change_stacklevel(**kwargs))
+
+    def warning(self, msg: str, *args, **kwargs):
+        self._logger.warning(msg, *args, **self._change_stacklevel(**kwargs))
+
+    def error(self, msg: str, *args, **kwargs):
+        stacklevel = self._get_stacklevel(**kwargs)
+        _add_error(self._name, msg, stacklevel, logging.ERROR, args)
+        self._logger.error(msg, *args, **self._change_stacklevel(**kwargs))
+    
+    def critical(self, msg: str, *args, **kwargs):
+        stacklevel = self._get_stacklevel(**kwargs)
+        _add_error(self._name, msg, stacklevel, logging.CRITICAL, args)
+        self._logger.critical(msg, *args, **self._change_stacklevel(**kwargs))
+
+    def exception(self, msg: str, *args, **kwargs):
+        stacklevel = self._get_stacklevel(**kwargs)
+        _add_error(self._name, msg, stacklevel, logging.CRITICAL, args)
+        self._logger.exception(msg, *args, **self._change_stacklevel(**kwargs))
+    
+    def _change_stacklevel(self, **kwargs):
+        stacklevel = self._get_stacklevel(**kwargs)
+        return dict(kwargs, stacklevel = stacklevel)
+    
+    def _get_stacklevel(self, **kwargs):
+        dict_kwargs = dict(kwargs)
+        stacklevel = 2
+        if 'stacklevel' in dict_kwargs:
+            stacklevel = 1 + dict_kwargs['stacklevel']
+        return stacklevel
+
+def get_logger(name: Optional[str] = None):
+    return _LogWrapper(name)
+
+_error_list: List[logging.LogRecord] = []
+
+def _add_error(name: str, msg: str, stacklevel: int, level: int, args):
+    fn, lno, func, sinfo = _get_stack_trace(stacklevel)    
+    _error_list.append(logging.LogRecord(name, level, fn, lno, msg, args, None, func, sinfo))
+
+def _get_stack_trace(stacklevel: int, stack_info: bool = True):
+    # from python logging module
+    f: Optional[FrameType] = sys._getframe(3)
+    if f is not None:
+        f = f.f_back
+    orig_f = f
+    while f and stacklevel > 1:
+        f = f.f_back
+        stacklevel -= 1
+    if not f:
+        f = orig_f
+    rv: Tuple[str, int, str, Optional[str]]= "(unknown file)", 0, "(unknown function)", None
+    if f is not None and hasattr(f, "f_code"):
+        co = f.f_code
+        sinfo = None
+        if stack_info:
+            sio = io.StringIO()
+            sio.write('Stack (most recent call last):\n')
+            traceback.print_stack(f, file=sio)
+            sinfo = sio.getvalue()
+            if sinfo[-1] == '\n':
+                sinfo = sinfo[:-1]
+            sio.close()
+        rv = (co.co_filename, f.f_lineno, co.co_name, sinfo)
+    return rv
+
+def has_errors() -> bool:
+    return len(_error_list) > 0
+
+def error_list() -> List[logging.LogRecord]:
+    return _error_list
+
+def get_formatted_error_list() -> Optional[str]:
+    records = _error_list
+    if records is not None and len(records) > 0:
+        message = ''
+        for i in range(len(records)):
+            rec = records[i]
+            message += f'{i+1}. {rec.msg}\n  in {rec.pathname}:{rec.lineno}\n'
+        return message
+    else:
+        return None

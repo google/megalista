@@ -20,7 +20,7 @@ This module is responsible for handling file operatios. As of now, it handles th
 """
 
 import io
-import logging
+from config import logging
 from os.path import exists
 from urllib.parse import ParseResultBytes
 
@@ -127,7 +127,7 @@ class FileProvider:
         self._s3_client = boto3.client('s3')
         self._s3_resource = boto3.resource('s3')
 
-      logging.getLogger(_LOGGER_NAME).info(f'S3 File Provider initiated. Bucket: "{bucket_name}". Key="{key}"')
+      logging.get_logger(_LOGGER_NAME).info(f'S3 File Provider initiated. Bucket: "{bucket_name}". Key="{key}"')
         
     def read(self):
       try:
@@ -165,7 +165,7 @@ class FileProvider:
       file_path = '/'.join(path.split('/')[1:])
       self._bucket_name = bucket_name
       self._file_path = file_path
-      logging.getLogger(_LOGGER_NAME).info(f'GCP Storage File Provider initiated. Bucket: "{bucket_name}". Path="{file_path}"')
+      logging.get_logger(_LOGGER_NAME).info(f'GCP Storage File Provider initiated. Bucket: "{bucket_name}". Path="{file_path}"')
       
       self._gcs_client = storage.Client()
 

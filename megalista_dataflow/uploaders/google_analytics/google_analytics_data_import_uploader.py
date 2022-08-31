@@ -13,7 +13,7 @@
 # limitations under the License.
 #
 
-import logging
+from config import logging
 from typing import List, Dict
 
 from google.oauth2.credentials import Credentials
@@ -67,7 +67,7 @@ class GoogleAnalyticsDataImportUploaderDoFn(MegalistaUploader):
                 str(destination)))
 
     @utils.safe_process(
-        logger=logging.getLogger(LOGGER_NAME))
+        logger=logging.get_logger(LOGGER_NAME))
     def process(self, batch: Batch, **kwargs):
         execution = batch.execution
         self._assert_all_list_names_are_present(execution)
@@ -104,11 +104,11 @@ class GoogleAnalyticsDataImportUploaderDoFn(MegalistaUploader):
                                       data_source_id, rows, web_property_id)
             except Exception as e:
                 error_message = f'Error while uploading GA Data: {e}'
-                logging.getLogger(LOGGER_NAME).error(error_message)
+                logging.get_logger(LOGGER_NAME).error(error_message)
                 self._add_error(execution, error_message)
         else:
             error_message = f'{data_import_name} - data import not found, please configure it in Google Analytics'
-            logging.getLogger(LOGGER_NAME).error(error_message)
+            logging.get_logger(LOGGER_NAME).error(error_message)
             self._add_error(execution, error_message)
 
     @staticmethod
@@ -136,7 +136,7 @@ class GoogleAnalyticsDataImportUploaderDoFn(MegalistaUploader):
 
     def _call_upload_api(self, analytics, data_import_name, ga_account_id,
                          data_source_id, rows, web_property_id):
-        logging.getLogger(LOGGER_NAME).info(
+        logging.get_logger(LOGGER_NAME).info(
             'Adding data to %s - %s' % (data_import_name, data_source_id))
         csv = self.prepare_csv(rows)
 

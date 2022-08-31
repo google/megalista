@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
+from config import logging
 import math
 import time
 
@@ -59,7 +59,7 @@ class CampaignManagerConversionUploaderDoFn(MegalistaUploader):
       raise ValueError(
           f'Missing destination information. Received {str(destination)}')
 
-  @utils.safe_process(logger=logging.getLogger(_LOGGER_NAME))
+  @utils.safe_process(logger=logging.get_logger(_LOGGER_NAME))
   def process(self, batch: Batch, **kwargs):
     self._do_process(batch, time.time())
     return [batch]
@@ -87,7 +87,7 @@ class CampaignManagerConversionUploaderDoFn(MegalistaUploader):
 
     service = self._get_dcm_service()
     conversions = []
-    logger = logging.getLogger(_LOGGER_NAME)
+    logger = logging.get_logger(_LOGGER_NAME)
     for conversion in rows:
       
       to_upload = self._create_body(conversion, floodlight_activity_id, floodlight_configuration_id, timestamp)

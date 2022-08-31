@@ -13,10 +13,9 @@
 # limitations under the License.
 
 
-from configparser import MissingSectionHeaderError
 from typing import List, Dict, Any
 from models.execution import Destination, DestinationType, Execution, Batch
-import logging
+from config import logging
 import functools
 import pandas as pd
 import ast

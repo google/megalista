@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+from config import logging
 from shutil import ExecError
 from typing import Dict, Any, List, Optional, Tuple
 from apache_beam.options.value_provider import StaticValueProvider
@@ -90,7 +90,7 @@ class DisplayVideoCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
 
         if found_audience is None:
             # Create list
-            logging.getLogger(_DEFAULT_LOGGER).info(
+            logging.get_logger(_DEFAULT_LOGGER).info(
                 '%s list does not exist, creating...', list_name)
             
             # Marks the newly created audience    
@@ -101,10 +101,10 @@ class DisplayVideoCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
                 body=list_definition
             ).execute()
 
-            logging.getLogger(_DEFAULT_LOGGER).info(
+            logging.get_logger(_DEFAULT_LOGGER).info(
                 'List %s created with resource name: %s', list_name, found_audience['displayName'])
         else:
-            logging.getLogger(_DEFAULT_LOGGER).info(
+            logging.get_logger(_DEFAULT_LOGGER).info(
                 'List found with name: %s [%s]', found_audience['displayName'], found_audience['firstAndThirdPartyAudienceId'] )
 
         return was_audience_created, found_audience
@@ -152,10 +152,10 @@ class DisplayVideoCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
     def get_filtered_rows(self, rows: List[Any], keys: List[str]) -> List[Dict[str, Any]]:
         return [{key: row.get(key) for key in keys if key in row} for row in rows]
 
-    @utils.safe_process(logger=logging.getLogger(_DEFAULT_LOGGER))
+    @utils.safe_process(logger=logging.get_logger(_DEFAULT_LOGGER))
     def process(self, batch: Batch, **kwargs) -> List[Execution]:
         if not self.active:
-            logging.getLogger(_DEFAULT_LOGGER).warning(
+            logging.get_logger(_DEFAULT_LOGGER).warning(
                 'Skipping upload to DV, parameters not configured.')
             return []
 

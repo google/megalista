@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-import logging
+from config import logging
 
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
@@ -50,7 +50,7 @@ class GoogleAnalyticsUserListUploaderDoFn(MegalistaUploader):
         results = list(
             filter(lambda x: x['name'] == list_name, lists))
         if len(results) == 0:
-            logging.getLogger().info('%s list does not exist, creating...' % list_name)
+            logging.get_logger().info('%s list does not exist, creating...' % list_name)
 
             response = analytics.management().remarketingAudience().insert(
                 accountId=ga_account_id,
@@ -65,10 +65,10 @@ class GoogleAnalyticsUserListUploaderDoFn(MegalistaUploader):
                     **list_definition
                 }).execute()
             _id = response['id']
-            logging.getLogger().info('%s created with id: %s' % (list_name, id))
+            logging.get_logger().info('%s created with id: %s' % (list_name, id))
         else:
             _id = results[0]['id']
-            logging.getLogger().info('%s found with id: %s' % (list_name, id))
+            logging.get_logger().info('%s found with id: %s' % (list_name, id))
         return _id
 
     def _create_list(self, web_property_id, view_id, user_id_list_name, buyer_custom_dim, ga_account_id,
@@ -101,7 +101,7 @@ class GoogleAnalyticsUserListUploaderDoFn(MegalistaUploader):
                 or not destination[5]:
             raise ValueError('Missing destination information. Received {}'.format(str(destination)))
 
-    @utils.safe_process(logger=logging.getLogger("megalista.GoogleAnalyticsUserListUploader"))
+    @utils.safe_process(logger=logging.get_logger("megalista.GoogleAnalyticsUserListUploader"))
     def process(self, batch: Batch, **kwargs):
         execution = batch.execution
         self._assert_all_list_names_are_present(execution)
@@ -146,7 +146,7 @@ class GoogleAnalyticsUserListUploaderDoFn(MegalistaUploader):
 
             _id = results[0]['id']
 
-            logging.getLogger().info("Adding data to %s - %s" % (data_import_name, _id))
+            logging.get_logger().info("Adding data to %s - %s" % (data_import_name, _id))
             body = '\n'.join([
                 '%s,%s' % (user_id_custom_dim, buyer_custom_dim),
                 *['%s,%s' % (row['user_id'], row[custom_dim_field] if custom_dim_field else 'buyer') for row in rows]
@@ -163,9 +163,9 @@ class GoogleAnalyticsUserListUploaderDoFn(MegalistaUploader):
                     media_body=media).execute()
             except Exception as e:
                 error_message = f'Error while uploading GA Data: {e}'
-                logging.getLogger().error(error_message)
+                logging.get_logger().error(error_message)
                 self._add_error(execution, error_message)
         else:
             error_message = f"{data_import_name} - data import not found, please configure it in Google Analytics"
-            logging.getLogger().error(error_message)
+            logging.get_logger().error(error_message)
             self._add_error(execution, error_message)

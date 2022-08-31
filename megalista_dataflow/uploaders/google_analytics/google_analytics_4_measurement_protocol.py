@@ -14,7 +14,7 @@
 
 
 import json
-import logging
+from config import logging
 from typing import Dict, Any, Tuple, Optional
 
 import requests
@@ -39,7 +39,7 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
   def _exactly_one_of(a: Any, b: Any) -> bool:
     return (a and not b) or (not a and b)
 
-  @utils.safe_process(logger=logging.getLogger(LOGGER_NAME))
+  @utils.safe_process(logger=logging.get_logger(LOGGER_NAME))
   def process(self, batch: Batch, **kwargs):
     return self.do_process(batch)
 
@@ -81,12 +81,12 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
       response = requests.post(url,data=json.dumps(payload))
       if response.status_code != 204:
         error_message = f'Error calling GA4 MP {response.status_code}: {str(response.content)}'
-        logging.getLogger(LOGGER_NAME).error(error_message)
+        logging.get_logger(LOGGER_NAME).error(error_message)
         self._add_error(execution, error_message)
       else:
         accepted_elements.append(row)
 
-    logging.getLogger(LOGGER_NAME).info(
+    logging.get_logger(LOGGER_NAME).info(
       f'Successfully uploaded {len(accepted_elements)}/{len(batch.elements)} events.')
     return [Batch(execution, accepted_elements)]
 
