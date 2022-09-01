@@ -205,6 +205,8 @@ class DisplayVideoCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
                 body=updated_list_definition
             ).execute()
 
+        return [execution]
+        
     def get_list_definition(self, account_config: AccountConfig,
                             destination_metadata: List[str], list_to_add: List[Dict[str, Any]]) -> Dict[str, Any]:
         pass

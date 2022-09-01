@@ -18,6 +18,7 @@ from data_sources.base_data_source import BaseDataSource
 from data_sources.big_query.big_query_data_source import BigQueryDataSource
 from data_sources.file.file_data_source import FileDataSource
 from models.execution import TransactionalType, ExecutionsGroupedBySource
+from typing import Optional
 
 import importlib
 
@@ -30,7 +31,7 @@ class DataSource:
         source_type = executions.source.source_type
         if source_type == SourceType.BIG_QUERY:
             bq_ops_dataset = ''
-            bq_location = None
+            bq_location:Optional[str] = None
             if dataflow_options.bq_ops_dataset:
                 bq_ops_dataset = dataflow_options.bq_ops_dataset.get()
             if dataflow_options.bq_location:
