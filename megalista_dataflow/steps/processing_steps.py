@@ -44,6 +44,8 @@ from mappers.dv_user_list_pii_hashing_mapper import \
 
 from third_party import THIRD_PARTY_STEPS
 
+from config import logging
+
 ADS_CM_HASHER = AdsUserListPIIHashingMapper()
 DV_CM_HASHER = DVUserListPIIHashingMapper()
 
@@ -80,7 +82,7 @@ class GoogleAdsCustomerMatchMobileDeviceIdStep(MegalistaStep):
                 self.params.dataflow_options, 
                 DestinationType.ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD
             )
-            | "Hash Users - Google Ads Customer Match Contact Info"
+            | "Hash Users - Google Ads Customer Match Mobile Device Id"
             >> beam.Map(ADS_CM_HASHER.hash_users)
             | "Upload - Google Ads Customer Match Mobile Device Id"
             >> beam.ParDo(
@@ -126,7 +128,7 @@ class GoogleAdsCustomerMatchUserIdStep(MegalistaStep):
                 self.params.dataflow_options, 
                 DestinationType.ADS_CUSTOMER_MATCH_USER_ID_UPLOAD
             )
-            | "Hash Users - Google Ads Customer Match Contact Info"
+            | "Hash Users - Google Ads Customer Match User Id"
             >> beam.Map(ADS_CM_HASHER.hash_users)
             | "Upload - Google Ads Customer User Device Id"
             >> beam.ParDo(

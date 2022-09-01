@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
+from config import logging
 import math
 import time
 
@@ -47,9 +47,6 @@ class CampaignManagerConversionUploaderDoFn(MegalistaUploader):
 
     return build('dfareporting', 'v3.5', credentials=credentials)
 
-  def start_bundle(self):
-    pass
-
   @staticmethod
   def _assert_all_list_names_are_present(any_execution):
     destination = any_execution.destination.destination_metadata
@@ -62,7 +59,7 @@ class CampaignManagerConversionUploaderDoFn(MegalistaUploader):
       raise ValueError(
           f'Missing destination information. Received {str(destination)}')
 
-  @utils.safe_process(logger=logging.getLogger(_LOGGER_NAME))
+  @utils.safe_process(logger=logging.get_logger(_LOGGER_NAME))
   def process(self, batch: Batch, **kwargs):
     self._do_process(batch, time.time())
     return [batch]
@@ -90,41 +87,10 @@ class CampaignManagerConversionUploaderDoFn(MegalistaUploader):
 
     service = self._get_dcm_service()
     conversions = []
-    logger = logging.getLogger(_LOGGER_NAME)
+    logger = logging.get_logger(_LOGGER_NAME)
     for conversion in rows:
-      to_upload = {
-          'floodlightActivityId': floodlight_activity_id,
-          'floodlightConfigurationId': floodlight_configuration_id,
-          'ordinal': math.floor(timestamp * 10e5),
-          'timestampMicros': math.floor(timestamp * 10e5)
-      }
-
-      if 'gclid' in conversion and conversion['gclid']:
-        to_upload['gclid'] = conversion['gclid']
-      elif 'encryptedUserId' in conversion and conversion['encryptedUserId']:
-        to_upload['encryptedUserId'] = conversion['encryptedUserId']
-      elif 'mobileDeviceId' in conversion and conversion['mobileDeviceId']:
-        to_upload['mobileDeviceId'] = conversion['mobileDeviceId']
-      elif 'matchId' in conversion and conversion['matchId']:
-        to_upload['matchId'] = conversion['matchId']
-
-      if 'value' in conversion:
-        to_upload['value'] = float(conversion['value'])
-      if 'quantity' in conversion:
-        to_upload['quantity'] = conversion['quantity']
-      if 'customVariables' in conversion:
-        custom_variables = []
-        for r in conversion['customVariables']:
-          cv = {
-              'type': r['type'],
-              'value': r['value'],
-              'kind': 'dfareporting#customFloodlightVariable',
-          }
-          custom_variables.append(cv)
-        to_upload['customVariables'] = custom_variables
-
-      if 'timestamp' in conversion:
-        to_upload['timestampMicros'] = utils.get_timestamp_micros(conversion['timestamp'])
+      
+      to_upload = self._create_body(conversion, floodlight_activity_id, floodlight_configuration_id, timestamp)
 
       conversions.append(to_upload)
 
@@ -132,22 +98,70 @@ class CampaignManagerConversionUploaderDoFn(MegalistaUploader):
       'conversions': conversions,
     }
 
-    logger.info(f'Conversions: \n{conversions}')
+    logger.info(f'Conversions: \n{conversions}', execution=execution)
 
     request = service.conversions().batchinsert(
         profileId=campaign_manager_profile_id, body=request_body)
     response = request.execute()
 
+    amount_of_success = 0
+    amount_of_failures = 0
+
     if response['hasFailures']:
-      logger.error(f'Error(s) inserting conversions:\n{response}')
+      logger.error(f'Error(s) inserting conversions:\n{response}', execution=execution)
       conversions_status = response['status']
       error_messages = []
 
       for status in conversions_status:
         if 'errors' in status:
+          amount_of_failures = amount_of_failures + 1
           for error in status['errors']:
             error_messages.append('[{}]: {}'.format(error['code'], error['message']))
+        else:
+          amount_of_success = amount_of_success + 1
 
       final_error_message = 'Errors from API:\n{}'.format('\n'.join(error_messages))
-      logger.error(final_error_message)
+      logger.error(final_error_message, execution=execution)
       self._add_error(execution, final_error_message)
+    else:
+      amount_of_success = len(rows)
+    
+    execution.successful_records = execution.successful_records + amount_of_success
+    execution.unsuccessful_records = execution.unsuccessful_records + amount_of_failures
+    
+  def _create_body(self, conversion, floodlight_activity_id, floodlight_configuration_id, timestamp):
+    to_upload = {
+          'floodlightActivityId': floodlight_activity_id,
+          'floodlightConfigurationId': floodlight_configuration_id,
+          'ordinal': math.floor(timestamp * 10e5),
+          'timestampMicros': math.floor(timestamp * 10e5)
+      }
+
+    if 'gclid' in conversion and conversion['gclid']:
+      to_upload['gclid'] = conversion['gclid']
+    elif 'encryptedUserId' in conversion and conversion['encryptedUserId']:
+      to_upload['encryptedUserId'] = conversion['encryptedUserId']
+    elif 'mobileDeviceId' in conversion and conversion['mobileDeviceId']:
+      to_upload['mobileDeviceId'] = conversion['mobileDeviceId']
+    elif 'matchId' in conversion and conversion['matchId']:
+      to_upload['matchId'] = conversion['matchId']
+
+    if 'value' in conversion:
+      to_upload['value'] = float(conversion['value'])
+    if 'quantity' in conversion:
+      to_upload['quantity'] = conversion['quantity']
+    if 'customVariables' in conversion:
+      custom_variables = []
+      for r in conversion['customVariables']:
+        cv = {
+            'type': r['type'],
+            'value': r['value'],
+            'kind': 'dfareporting#customFloodlightVariable',
+        }
+        custom_variables.append(cv)
+      to_upload['customVariables'] = custom_variables
+
+    if 'timestamp' in conversion:
+      to_upload['timestampMicros'] = utils.get_timestamp_micros(conversion['timestamp'])
+
+    return to_upload

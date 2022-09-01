@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-import logging
+from config import logging
 import re
 from typing import Dict, Any
 from urllib.parse import quote
@@ -32,8 +32,7 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
     self.API_URL = "https://www.google-analytics.com/batch"
     self.UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36"
 
-  def start_bundle(self):
-    pass
+  
 
   def _format_hit(self, payload: Dict[str, Any]) -> str:
     return "&".join([key + "=" + quote(str(value)) for key, value in payload.items() if value is not None])
@@ -67,7 +66,7 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
 
       # enhanced ecommerce parameters for events
       for key in row.keys():
-        if (re.match('p([a]|[r]\d*[a-z]+)', key) # product details
+        if (re.match('p(a|r\d*[a-z]+)', key) # product details
            or re.match('t([irast])', key) # transaction details
            or re.match('cu', key) # currency code
            ):
@@ -90,12 +89,12 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
       payload["cu"] = row.get('currency_code')  # Currency code.      
     else:
       error_message = f"Hit type {hit_type} is not supported."
-      logging.getLogger("megalista.GoogleAnalyticsMeasurementProtocolUploader").error(error_message)
+      logging.get_logger("megalista.GoogleAnalyticsMeasurementProtocolUploader").error(error_message, execution=batch.execution)
       self._add_error(batch.execution, error_message)
 
     return payload
 
-  @utils.safe_process(logger=logging.getLogger("megalista.GoogleAnalyticsMeasurementProtocolUploader"))
+  @utils.safe_process(logger=logging.get_logger("megalista.GoogleAnalyticsMeasurementProtocolUploader"))
   def process(self, batch: Batch, **kwargs):
     rows = batch.elements
 
@@ -108,7 +107,9 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
     response = requests.post(url=self.API_URL, data=payload)
     if response.status_code != 200:
       error_message = f"Error uploading to Analytics HTTP {response.status_code}: {response.raw}"
-      logging.getLogger("megalista.GoogleAnalyticsMeasurementProtocolUploader").error(error_message)
+      logging.get_logger("megalista.GoogleAnalyticsMeasurementProtocolUploader").error(error_message, execution=batch.execution)
       self._add_error(batch.execution, error_message)
+      batch.execution.unsuccessful_records = batch.execution.unsuccessful_records + len(rows)
     else:
+      batch.execution.successful_records = batch.execution.successful_records + len(rows)
       return [batch]

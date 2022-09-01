@@ -22,6 +22,7 @@ from models.execution import Source
 from models.execution import SourceType
 from models.execution import Batch
 import pytest
+import logging
 
 from models.execution import TransactionalType
 

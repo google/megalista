@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+from config import logging
 
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
@@ -22,6 +22,7 @@ from models.execution import Batch
 from uploaders import utils
 from uploaders.uploaders import MegalistaUploader
 
+LOGGER_NAME = 'megalista.GoogleAnalyticsDataImportUploader'
 
 class GoogleAnalyticsDataImportEraser(MegalistaUploader):
     """
@@ -47,9 +48,6 @@ class GoogleAnalyticsDataImportEraser(MegalistaUploader):
 
         return build('analytics', 'v3', credentials=credentials)
 
-    def start_bundle(self):
-        pass
-
     @staticmethod
     def _assert_all_list_names_are_present(any_execution):
         destination = any_execution.destination.destination_metadata
@@ -60,7 +58,7 @@ class GoogleAnalyticsDataImportEraser(MegalistaUploader):
             raise ValueError('Missing destination information. Received {}'.format(str(destination)))
 
     @utils.safe_process(
-        logger=logging.getLogger('megalista.GoogleAnalyticsDataImportUploader'))
+        logger=logging.get_logger(LOGGER_NAME))
     def process(self, batch: Batch, **kwargs):
         execution = batch.execution
         self._assert_all_list_names_are_present(execution)
@@ -86,16 +84,16 @@ class GoogleAnalyticsDataImportEraser(MegalistaUploader):
                 return [batch]
             except Exception as e:
                 error_message = f'Error while delete GA Data Import files: {e}'
-                logging.getLogger("megalista.GoogleAnalyticsDataImportUploader").error(error_message)
+                logging.get_logger(LOGGER_NAME).error(error_message, execution=execution)
                 self._add_error(execution, error_message)
         else:
             error_message = f"{data_import_name} - data import not found, please configure it in Google Analytics"
-            logging.getLogger("megalista.GoogleAnalyticsDataImportUploader").error(error_message)
+            logging.get_logger(LOGGER_NAME).error(error_message, execution=execution)
             self._add_error(execution, error_message)
 
     @staticmethod
     def _call_delete_api(analytics, data_import_name, ga_account_id, data_source_id, web_property_id):
-        logging.getLogger("megalista.GoogleAnalyticsDataImportUploader").info(
+        logging.get_logger(LOGGER_NAME).info(
             "Listing files from %s - %s" % (data_import_name, data_source_id))
 
         uploads = analytics.management().uploads().list(
@@ -106,14 +104,14 @@ class GoogleAnalyticsDataImportEraser(MegalistaUploader):
 
         file_ids = [upload.get('id') for upload in uploads.get('items', [])]
         if len(file_ids) == 0:
-            logging.getLogger("megalista.GoogleAnalyticsDataImportUploader").error(
+            logging.get_logger(LOGGER_NAME).error(
                 "Data Source %s had no files to delete" % data_import_name)
 
         else:
-            logging.getLogger("megalista.GoogleAnalyticsDataImportUploader").info(
+            logging.get_logger(LOGGER_NAME).info(
                 "File Ids: %s" % file_ids)
 
-            logging.getLogger("megalista.GoogleAnalyticsDataImportUploader").info(
+            logging.get_logger(LOGGER_NAME).info(
                 "Deleting %s files from %s - %s" % (len(file_ids), data_import_name, data_source_id))
             analytics.management().uploads().deleteUploadData(
                 accountId=ga_account_id,

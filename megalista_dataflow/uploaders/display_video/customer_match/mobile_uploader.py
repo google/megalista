@@ -14,9 +14,9 @@
 
 from functools import reduce
 import apache_beam as beam
-import logging
+from config import logging
 
-from typing import List, Dict, Any
+from typing import Callable, List, Dict, Any
 
 from uploaders.display_video.customer_match.abstract_uploader import DisplayVideoCustomerMatchAbstractUploaderDoFn
 from uploaders import utils as utils
@@ -50,13 +50,23 @@ class DisplayVideoCustomerMatchMobileUploaderDoFn(DisplayVideoCustomerMatchAbstr
   def get_action_type(self) -> DestinationType:
     return DestinationType.DV_CUSTOMER_MATCH_DEVICE_ID_UPLOAD
 
-  def get_simplified_list(self, list_to_add: List[Dict[str, Any]]) -> Dict[str,Any]:
+  @staticmethod
+  def _add_item_into_simplified_list(accumulator: list, item: Any) -> list:
+    mobile_device_ids = []
+    if type(item['mobileDeviceIds']) is list:
+      mobile_device_ids = item['mobileDeviceIds']
+    else:
+      mobile_device_ids = [item['mobileDeviceIds']]
+    return accumulator + mobile_device_ids
+
+  def get_simplified_list(self, list_to_add: List[Dict[str, Any]]) -> List[str]:
     # Alls devices must be within the same array
     # a single (Str) device id may be passed, so could a list od devices
     # Therefore, normalizes it within a single, one dimension list
+
     return list(
         reduce(
-          lambda accumulator, item: accumulator+(item['mobileDeviceIds'] if type(item['mobileDeviceIds']) is list else [item['mobileDeviceIds']]), 
+          DisplayVideoCustomerMatchMobileUploaderDoFn._add_item_into_simplified_list, 
           list_to_add, 
           []
         )

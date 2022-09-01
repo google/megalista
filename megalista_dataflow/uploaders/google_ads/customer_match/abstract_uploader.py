@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+from config import logging
 from typing import Dict, Any, List, Optional, Union
 
 from apache_beam.options.value_provider import StaticValueProvider
@@ -42,12 +42,9 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
         self._user_list_id_cache: Dict[str, str] = {}
         self._job_cache: Dict[str, Dict[str, str]] = {}
 
-    def start_bundle(self):
-        pass
-
     def finish_bundle(self):
         for job_definition in self._job_cache.values():
-            logging.getLogger(_DEFAULT_LOGGER).info(f"Running job {job_definition['job_resource_name']}")
+            logging.get_logger(_DEFAULT_LOGGER).info(f"Running job {job_definition['job_resource_name']}")
             self._get_offline_user_data_job_service(job_definition['login_customer_id']).run_offline_user_data_job(
                 resource_name=job_definition['job_resource_name'])
 
@@ -78,7 +75,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
 
         if resource_name is None:
             # Create list
-            logging.getLogger(_DEFAULT_LOGGER).info(
+            logging.get_logger(_DEFAULT_LOGGER).info(
                 '%s list does not exist, creating...', list_name)
             request = {
                 'customer_id': customer_id,
@@ -93,10 +90,10 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
             user_list_service_response = user_list_service.mutate_user_lists(request)
             for result in user_list_service_response.results:
                 resource_name = result.resource_name
-            logging.getLogger(_DEFAULT_LOGGER).info('List %s created with resource name: %s',
+            logging.get_logger(_DEFAULT_LOGGER).info('List %s created with resource name: %s',
                                                     list_name, resource_name)
         else:
-            logging.getLogger(_DEFAULT_LOGGER).info('List %s found with resource name: %s',
+            logging.get_logger(_DEFAULT_LOGGER).info('List %s found with resource name: %s',
                                                     list_name, resource_name)
         return str(resource_name)
 
@@ -191,10 +188,10 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
     def get_filtered_rows(self, rows: List[Any], keys: List[str]) -> List[Dict[str, Any]]:
         return [{key: row.get(key) for key in keys if key in row} for row in rows]
 
-    @utils.safe_process(logger=logging.getLogger(_DEFAULT_LOGGER))
+    @utils.safe_process(logger=logging.get_logger(_DEFAULT_LOGGER))
     def process(self, batch: Batch, **kwargs):
         if not self.active:
-            logging.getLogger(_DEFAULT_LOGGER).warning(
+            logging.get_logger(_DEFAULT_LOGGER).warning(
                 'Skipping upload to ads, parameters not configured.')
             return
 
@@ -247,14 +244,17 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
         if error_message:
             self._add_error(execution, error_message)
 
+        utils.update_execution_counters(execution, batch.elements, data_insertion_response)
+
         return [execution]
 
     def get_list_definition(self, account_config: AccountConfig,
                             destination_metadata: List[str]) -> Dict[str, Any]:
-        pass
+        raise NotImplementedError()
 
     def get_row_keys(self) -> List[str]:
-        pass
+        raise NotImplementedError()
 
     def get_action_type(self) -> DestinationType:
-        pass
+        raise NotImplementedError()
+

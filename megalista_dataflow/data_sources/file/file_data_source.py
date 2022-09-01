@@ -25,7 +25,7 @@ from typing import Any, List, Iterable, Tuple, Dict
 from apache_beam.typehints.decorators import with_output_types
 import numpy as np
 
-import logging
+from config import logging
 
 from models.execution import SourceType, DestinationType, Execution, Batch, TransactionalType, ExecutionsGroupedBySource, DataRowsGroupedBySource
 from models.options import DataflowOptions
@@ -54,10 +54,10 @@ class FileDataSource(BaseDataSource):
     def _retrieve_data_non_transactional(self, executions: ExecutionsGroupedBySource) -> List[DataRowsGroupedBySource]:
         source = executions.source
         # Get Data Source
-        data_source = self._get_data_source(source.source_name, source.source_metadata[0])
+        data_source = self._get_data_source(source.source_metadata[0])
         # Get Data Frame
-        df = data_source.get_data_frame(source.source_name, source.source_metadata[1])
-        logging.getLogger(_LOGGER_NAME).info(f'Data source ({self._source_name}): using {len(df.index)} rows')
+        df = data_source.get_data_frame(source.source_metadata[1])
+        logging.get_logger(_LOGGER_NAME).info(f'Data source ({self._source_name}): using {len(df.index)} rows')
         if df is not None:
             df = df.fillna(np.nan).replace([np.nan], [None])
             # Process Data Frame
@@ -66,16 +66,16 @@ class FileDataSource(BaseDataSource):
                 elements.append(FileDataSource._convert_row_to_dict(row))
             return [DataRowsGroupedBySource(executions, elements)]
         else:
-            raise Exception(f'Unable to read from data source. Source="{source.source_name}".')
+            raise OSError(f'Unable to read from data source. Source="{source.source_name}".')
     
     def _retrieve_data_transactional(self, executions: ExecutionsGroupedBySource) -> List[DataRowsGroupedBySource]:
         source = executions.source
         # Get Data Source
-        data_source = self._get_data_source(source.source_name, source.source_metadata[0])
+        data_source = self._get_data_source(source.source_metadata[0])
         # Get Data Frame
-        df = data_source.get_data_frame(source.source_name, source.source_metadata[1])
+        df = data_source.get_data_frame(source.source_metadata[1])
         # Get Uploaded Data Frame
-        df_uploaded = data_source.get_data_frame(source.source_name, source.source_metadata[1], is_uploaded=True)
+        df_uploaded = data_source.get_data_frame(source.source_metadata[1], is_uploaded=True)
         
         if df is not None:
             # Get items that haven't been processed yet
@@ -83,19 +83,19 @@ class FileDataSource(BaseDataSource):
             df_distinct = df_merged.drop(df_merged[df_merged.timestamp.notnull()].index)
             # Process Data Frame
             df_distinct = df_distinct.fillna(np.nan).replace([np.nan], [None])
-            logging.getLogger(_LOGGER_NAME).info(f'Data source ({self._source_name}): using {len(df_distinct.index)} rows')
+            logging.get_logger(_LOGGER_NAME).info(f'Data source ({self._source_name}): using {len(df_distinct.index)} rows')
             elements = []
             for index, row in df_distinct.iterrows():
                 elements.append(FileDataSource._convert_row_to_dict(row))
             return [DataRowsGroupedBySource(executions, elements)]
         else:
-            raise Exception(f'Unable to read from data source. Source="{self._source_name}". Destination="{self._destination_name}"')
+            raise OSError(f'Unable to read from data source. Source="{self._source_name}". Destination="{self._destination_name}"')
 
     def write_transactional_info(self, rows, execution: Execution):
         # Get Data Source
-        data_source = self._get_data_source(execution.source.source_name, execution.source.source_metadata[0])
+        data_source = self._get_data_source(execution.source.source_metadata[0])
         # Get Data Frame
-        df = data_source.get_data_frame(execution.source.source_name, execution.source.source_metadata[1], is_uploaded=True)
+        df = data_source.get_data_frame(execution.source.source_metadata[1], is_uploaded=True)
         
         now = datetime.now()
 
@@ -109,10 +109,10 @@ class FileDataSource(BaseDataSource):
         # Upload file
         # Add _uploaded into path
         path = FileDataSource._append_filename_uploaded(execution.source.source_metadata[1])
-        bytes = data_source._get_file_from_data_frame(df).getbuffer().tobytes()
-        FileProvider(path, self._dataflow_options, self._source_type, self._source_name, False).write(bytes)
+        file_bytes = data_source._get_file_from_data_frame(df).getbuffer().tobytes()
+        FileProvider(path, self._dataflow_options, self._source_type, self._source_name, False).write(file_bytes)
 
-    def get_data_frame(self, source_name: str, path: str, is_uploaded: bool = False) -> pd.DataFrame:
+    def get_data_frame(self, path: str, is_uploaded: bool = False) -> pd.DataFrame:
         # Change filename if uploaded
         if is_uploaded:
             # Add _uploaded into path
@@ -149,19 +149,13 @@ class FileDataSource(BaseDataSource):
         base_path = base_path + '_uploaded'
         return base_path + os.path.splitext(path)[1]
 
-    def _get_data_source(self, source_name: str, file_type: str):
+    def _get_data_source(self, file_type: str):
         file_type = file_type.upper()
         if file_type == 'PARQUET':
             return ParquetDataSource(self._executions, self._transactional_type, self._dataflow_options)
         elif file_type == 'CSV':
             return CSVDataSource(self._executions, self._transactional_type, self._dataflow_options)
         raise ValueError(f'Data source not found. Please check your source in config (value={file_type}). Source="{self._source_name}". Destination="{self._destination_name}"')
-        
-    def _convert_row_to_dict(row):
-        dict = {}
-        for key, value in row.items():
-            dict[key] = value
-        return dict
     
     def _update_dtypes(self, destination_type: DestinationType, col_names: list) -> dict:
         types_dict = DataSchemas.get_data_type(destination_type.name)

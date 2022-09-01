@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+from config import logging
 
 from apache_beam.options.value_provider import ValueProvider
 
@@ -52,9 +52,6 @@ class GoogleAdsOfflineUploaderCallsDoFn(MegalistaUploader):
                                      self.developer_token.get(),
                                      customer_id)
 
-  def start_bundle(self):
-    pass
-
   def _get_customer_id(self, account_config:AccountConfig, destination:Destination) -> str:
     """
       If the customer_id is present on the destination, returns it, otherwise defaults to the account_config info.
@@ -76,7 +73,7 @@ class GoogleAdsOfflineUploaderCallsDoFn(MegalistaUploader):
           str(destination)))
 
   @utils.safe_process(
-      logger=logging.getLogger('megalista.GoogleAdsOfflineUploader'))
+      logger=logging.get_logger('megalista.GoogleAdsOfflineUploader'))
   def process(self, batch: Batch, **kwargs):
     execution = batch.execution
     self._assert_conversion_name_is_present(execution)
@@ -92,8 +89,11 @@ class GoogleAdsOfflineUploaderCallsDoFn(MegalistaUploader):
                     customer_id,
                     batch.elements)
 
+    batch_with_successful_gclids = GoogleAdsOfflineUploaderCallsDoFn._get_new_batch_with_successfully_uploaded_gclids(batch, response)
+    return [batch_with_successful_gclids]
+
   def _do_upload(self, oc_service: Any, execution: Execution, conversion_resource_name: str, customer_id: str, rows: List[Dict[str, Union[str, Dict[str, str]]]]):
-    logging.getLogger(_DEFAULT_LOGGER).info(f'Uploading {len(rows)} offline conversions (calls) on {conversion_resource_name} to Google Ads.')
+    logging.get_logger(_DEFAULT_LOGGER).info(f'Uploading {len(rows)} offline conversions (calls) on {conversion_resource_name} to Google Ads.', execution=execution)
     conversions = [{
           'conversion_action': conversion_resource_name,
           'caller_id': conversion['caller_id'],
@@ -115,6 +115,8 @@ class GoogleAdsOfflineUploaderCallsDoFn(MegalistaUploader):
     if error_message:
       self._add_error(execution, error_message)
 
+    utils.update_execution_counters(execution, rows, response)
+
     return response
 
   def _get_resource_name(self, customer_id: str, name: str):
@@ -124,4 +126,13 @@ class GoogleAdsOfflineUploaderCallsDoFn(MegalistaUploader):
       for batch in response_query:
         for row in batch.results:
           return row.conversion_action.resource_name
-      raise Exception(f'Conversion "{name}" could not be found on account {customer_id}')
+      raise ValueError(f'Conversion "{name}" could not be found on account {customer_id}')
+
+  @staticmethod
+  def _get_new_batch_with_successfully_uploaded_gclids(batch: Batch, response):
+    def caller_id_lambda(result): return result.caller_id
+
+    successful_caller_ids = list(map(caller_id_lambda, filter(caller_id_lambda, response.results)))
+    successful_elements = list(filter(lambda element: element['caller_id'] in successful_caller_ids, batch.elements))
+
+    return Batch(batch.execution, successful_elements)

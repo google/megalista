@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+from config import logging
 
 from models.execution import Batch
 from mappers.abstract_list_pii_hashing_mapper import ListPIIHashingMapper
@@ -20,7 +20,7 @@ from mappers.abstract_list_pii_hashing_mapper import ListPIIHashingMapper
 
 class DVUserListPIIHashingMapper(ListPIIHashingMapper):
     def __init__(self):
-        self.logger = logging.getLogger("megalista.DVUserListPIIHashingMapper")
+        self.logger = logging.get_logger("megalista.DVUserListPIIHashingMapper")
 
     def _hash_user(self, user, hasher):
         hashable_keys = self._get_default_hasheable_keys()
@@ -35,7 +35,7 @@ class DVUserListPIIHashingMapper(ListPIIHashingMapper):
                 processed_email = self.normalize_email(user["email"])
                 processed_user["hashedEmails"] = hasher.hash_field(
                     processed_email)
-        except:
+        except Exception:
             self.logger.error(f"Error hashing email for user: {str(user)}")
 
         try:
@@ -52,14 +52,14 @@ class DVUserListPIIHashingMapper(ListPIIHashingMapper):
                 processed_user["countryCode"] = user["mailing_address_country"]
                 processed_user["zipCodes"] = user["mailing_address_zip"]
 
-        except:
+        except Exception:
             self.logger.error(f"Error hashing address for user: {str(user)}")
 
         try:
             if self._is_data_present(user, "phone"):
                 processed_user["hashedPhoneNumbers"] = hasher.hash_field(
                     user["phone"])
-        except:
+        except Exception:
             self.logger.error(f"Error hashing phone for user: {str(user)}")
 
         if self._is_data_present(user, "mobile_device_id"):

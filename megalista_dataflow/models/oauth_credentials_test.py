@@ -17,11 +17,11 @@ from apache_beam.options.value_provider import StaticValueProvider
 
 
 def test_init():
-    id = StaticValueProvider(str, "id")
+    _id = StaticValueProvider(str, "id")
     secret = StaticValueProvider(str, "secret")
     access = StaticValueProvider(str, "access")
     refresh = StaticValueProvider(str, "refresh")
-    credentials = OAuthCredentials(id, secret, access, refresh)
+    credentials = OAuthCredentials(_id, secret, access, refresh)
     assert credentials.get_client_id() == "id"
     assert credentials.get_client_secret() == "secret"
     assert credentials.get_access_token() == "access"

@@ -31,5 +31,9 @@ class MegalistaUploader(beam.DoFn):
   def _add_error(self, execution: Execution, error_message: str):
     self._error_handler.add_error(execution, error_message)
 
+  def start_bundle(self):
+    # Nothing is needed when starting bundle.
+    pass
+
   def finish_bundle(self):
     self._error_handler.notify_errors()

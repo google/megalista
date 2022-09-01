@@ -13,14 +13,18 @@
 # limitations under the License.
 
 
-from configparser import MissingSectionHeaderError
 from typing import List, Dict, Any
 from models.execution import Destination, DestinationType, Execution, Batch
-import logging
+from config import logging
 import functools
 import pandas as pd
 import ast
 import re
+
+CUSTOM_VARIABLES_TYPE = 'customVariables.type'
+CUSTOM_VARIABLES_VALUE = 'customVariables.value'
+CUSTOM_DIMENSION = 'cd\\d+'
+CUSTOM_METRIC = 'cm\\d+'
 
 _dtypes: Dict[str, Dict[str, Any]] = {
     'CM_OFFLINE_CONVERSION': {
@@ -33,8 +37,8 @@ _dtypes: Dict[str, Dict[str, Any]] = {
             {'name': 'value', 'required': False, 'data_type': 'int'},
             {'name': 'quantity', 'required': False, 'data_type': 'int'},
             {'name': 'timestamp', 'required': False, 'data_type': 'string'},
-            {'name': 'customVariables.type', 'required': False, 'data_type': 'string'},
-            {'name': 'customVariables.value', 'required': False, 'data_type': 'string'}
+            {'name': CUSTOM_VARIABLES_TYPE, 'required': False, 'data_type': 'string'},
+            {'name': CUSTOM_VARIABLES_VALUE, 'required': False, 'data_type': 'string'}
         ],
         'groups': [
             ['gclid', 'mobileDeviceId', 'encryptedUserId', 'matchId']
@@ -84,8 +88,8 @@ _dtypes: Dict[str, Dict[str, Any]] = {
             {'name': 'phone', 'required': False, 'data_type': 'string'},
             {'name': 'mailing_address_first_name', 'required': False, 'data_type': 'string'},
             {'name': 'mailing_address_last_name', 'required': False, 'data_type': 'string'},
-            {'name': 'mailing_address_country_name', 'required': False, 'data_type': 'string'},
-            {'name': 'mailing_address_zip_name', 'required': False, 'data_type': 'string'}  
+            {'name': 'mailing_address_country', 'required': False, 'data_type': 'string'},
+            {'name': 'mailing_address_zip', 'required': False, 'data_type': 'string'}  
         ],
         'groups': []
     },
@@ -134,8 +138,8 @@ _dtypes: Dict[str, Dict[str, Any]] = {
             {'name': 'event_action', 'required': True, 'data_type': 'string'},
             {'name': 'event_label', 'required': False, 'data_type': 'string'},
             {'name': 'event_value', 'required': False, 'data_type': 'string'},
-            {'name': 'cm\\d+', 'required': False, 'data_type': 'string'},
-            {'name': 'cd\\d+', 'required': False, 'data_type': 'string'},
+            {'name': CUSTOM_METRIC, 'required': False, 'data_type': 'string'},
+            {'name': CUSTOM_DIMENSION, 'required': False, 'data_type': 'string'},
             {'name': 'campaign_source', 'required': False, 'data_type': 'string'},
             {'name': 'campaign_medium', 'required': False, 'data_type': 'string'},
         ],
@@ -145,9 +149,9 @@ _dtypes: Dict[str, Dict[str, Any]] = {
     },
     'GA_DATA_IMPORT': {
         'columns': [
-            {'name': 'cd\\d+', 'required': True, 'data_type': 'string'},
-            {'name': 'cd\\d+', 'required': True, 'data_type': 'string'},
-            {'name': 'cd\\d+', 'required': False, 'data_type': 'string'},
+            {'name': CUSTOM_DIMENSION, 'required': True, 'data_type': 'string'},
+            {'name': CUSTOM_DIMENSION, 'required': True, 'data_type': 'string'},
+            {'name': CUSTOM_DIMENSION, 'required': False, 'data_type': 'string'},
         ],
         'groups': []
     },
@@ -170,8 +174,8 @@ _dtypes: Dict[str, Dict[str, Any]] = {
             {'name': 'phone', 'required': False, 'data_type': 'string'},
             {'name': 'mailing_address_first_name', 'required': False, 'data_type': 'string'},
             {'name': 'mailing_address_last_name', 'required': False, 'data_type': 'string'},
-            {'name': 'mailing_address_country_name', 'required': False, 'data_type': 'string'},
-            {'name': 'mailing_address_zip_name', 'required': False, 'data_type': 'string'}  
+            {'name': 'mailing_address_country', 'required': False, 'data_type': 'string'},
+            {'name': 'mailing_address_zip', 'required': False, 'data_type': 'string'}  
         ],
         'groups': []
     },
@@ -267,23 +271,23 @@ def get_cols_names(data_cols: list, destination_type: DestinationType) -> list:
     
     filtered_cols = []
     for col in data_cols:
-        found = False
         for data_type_col in data_type_cols:
             if re.match(f'^{data_type_col}$', col) is not None:
                 if col not in filtered_cols:
                     filtered_cols.append(col)
-    
+                    
     return filtered_cols
 
 # Parse columns that aren't string
 def update_data_types_not_string(df: pd.DataFrame, destination_type: DestinationType) -> pd.DataFrame:
-    # temp_dtypes_to_change = _dtypes_not_string[destination_type.name]
     data_type = _dtypes[destination_type.name]
     cols_to_change = [col['name'] for col in filter(lambda col: col['data_type'] != 'string', data_type['columns'])]
     dtypes_to_change = {}
     for key in cols_to_change:
         if key in df.columns:
-            dtypes_to_change[key] = list(filter(lambda col: col['name'] == key, data_type['columns']))[0]['data_type']
+            for col in data_type['columns']:
+                if col['name'] == key:
+                    dtypes_to_change[key] = col['data_type']
 
     return df.astype(dtypes_to_change)
 
@@ -296,8 +300,8 @@ def process_by_destination_type(df: pd.DataFrame, destination_type: DestinationT
 
 # Data treatment - CM_OFFLINE_CONVERSION
 def _join_custom_variables(df) -> pd.DataFrame:
-    df['customVariables'] = '{ "type": "' + df['customVariables.type'] + '", "value": "' + df['customVariables.value'] + '"}'
-    df.drop(['customVariables.type', 'customVariables.value'], axis=1, inplace=True)
+    df['customVariables'] = '{ "type": "' + df[CUSTOM_VARIABLES_TYPE] + '", "value": "' + df[CUSTOM_VARIABLES_VALUE] + '"}'
+    df.drop([CUSTOM_VARIABLES_TYPE, CUSTOM_VARIABLES_VALUE], axis=1, inplace=True)
     df['customVariables'] = df.groupby('uuid')['customVariables'].transform(lambda x: '[' + ', '.join(x) + ']')
     df = df.drop_duplicates()
     df = df.reset_index()

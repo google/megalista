@@ -12,15 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
-from typing import Dict, Any, List, Optional
+from config import logging
+from shutil import ExecError
+from typing import Dict, Any, List, Optional, Tuple
 from apache_beam.options.value_provider import StaticValueProvider
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
 
 from error.error_handling import ErrorHandler
-from models.execution import AccountConfig, Destination
+from models.execution import AccountConfig, Destination, Execution
 from models.execution import Batch
 from models.execution import DestinationType
 from models.oauth_credentials import OAuthCredentials
@@ -39,7 +40,7 @@ class DisplayVideoCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
         self.oauth_credentials = oauth_credentials
         self.developer_token = developer_token
         self.active = True
-        self._user_list_id_cache: Dict[str, Dict[str, any]] = {}
+        self._user_list_id_cache: Dict[str, Dict[str, Any]] = dict()
 
     def _get_dv_service(self):
         credentials = Credentials(
@@ -62,16 +63,13 @@ class DisplayVideoCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
     def _get_dv_audience_service(self):
         return self._get_dv_service().firstAndThirdPartyAudiences()
 
-    def start_bundle(self):
-        pass
-
     def finish_bundle(self):
         super().finish_bundle()
 
     def _create_list_if_it_does_not_exist(self,
                                           advertiser_id: str,
                                           list_name: str,
-                                          list_definition: Dict[str, Any]) -> Dict[str, Any]:
+                                          list_definition: Dict[str, Any]) -> Tuple[bool, Dict[str, Any]]:
         was_audience_created = False
         if self._user_list_id_cache.get(list_name) is None:
             was_audience_created, self._user_list_id_cache[list_name] = \
@@ -84,7 +82,7 @@ class DisplayVideoCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
                                              advertiser_id: str,
                                              list_name: str,
                                              list_definition: Dict[str, Any]
-                                             ) -> str:
+                                             ) -> Tuple[bool, Dict[str, Any]]:
 
         was_audience_created = False
         found_audience = self._get_advertiser_audience_by_display_name(
@@ -92,7 +90,7 @@ class DisplayVideoCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
 
         if found_audience is None:
             # Create list
-            logging.getLogger(_DEFAULT_LOGGER).info(
+            logging.get_logger(_DEFAULT_LOGGER).info(
                 '%s list does not exist, creating...', list_name)
             
             # Marks the newly created audience    
@@ -103,26 +101,26 @@ class DisplayVideoCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
                 body=list_definition
             ).execute()
 
-            logging.getLogger(_DEFAULT_LOGGER).info(
+            logging.get_logger(_DEFAULT_LOGGER).info(
                 'List %s created with resource name: %s', list_name, found_audience['displayName'])
         else:
-            logging.getLogger(_DEFAULT_LOGGER).info(
+            logging.get_logger(_DEFAULT_LOGGER).info(
                 'List found with name: %s [%s]', found_audience['displayName'], found_audience['firstAndThirdPartyAudienceId'] )
 
         return was_audience_created, found_audience
 
-    def _get_advertiser_audience_by_display_name(self, advertiser_id: str, display_name: str) -> Optional[str]:
+    def _get_advertiser_audience_by_display_name(self, advertiser_id: str, display_name: str) -> Optional[Dict[str, Any]]:
         """
             Gets the advertise's audience by the displayName
         """
         response = self._get_dv_audience_service().list(
             advertiserId=advertiser_id,
             pageSize=1,
-            filter=f'displayName : {display_name}'
+            filter=f'displayName : "{display_name}"'
         ).execute()
-
+            
         if response and response['firstAndThirdPartyAudiences']:
-            return response['firstAndThirdPartyAudiences'][0]
+            return dict(response['firstAndThirdPartyAudiences'][0])
         else: 
             return None
 
@@ -154,12 +152,12 @@ class DisplayVideoCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
     def get_filtered_rows(self, rows: List[Any], keys: List[str]) -> List[Dict[str, Any]]:
         return [{key: row.get(key) for key in keys if key in row} for row in rows]
 
-    @utils.safe_process(logger=logging.getLogger(_DEFAULT_LOGGER))
-    def process(self, batch: Batch, **kwargs) -> None:
+    @utils.safe_process(logger=logging.get_logger(_DEFAULT_LOGGER))
+    def process(self, batch: Batch, **kwargs) -> List[Execution]:
         if not self.active:
-            logging.getLogger(_DEFAULT_LOGGER).warning(
+            logging.get_logger(_DEFAULT_LOGGER).warning(
                 'Skipping upload to DV, parameters not configured.')
-            return
+            return []
 
         execution = batch.execution
 
@@ -205,18 +203,20 @@ class DisplayVideoCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
                 body=updated_list_definition
             ).execute()
 
+        execution.successful_records = execution.successful_records + len(rows)
+
         return [execution]
         
     def get_list_definition(self, account_config: AccountConfig,
                             destination_metadata: List[str], list_to_add: List[Dict[str, Any]]) -> Dict[str, Any]:
-        pass
+        raise NotImplementedError()
 
     def get_update_list_definition(self, account_config: AccountConfig,
                                   destination_metadata: List[str], list_to_add: List[Dict[str, Any]]) -> Dict[str, Any]:
-        pass
+        raise NotImplementedError()
 
     def get_row_keys(self) -> List[str]:
-        pass
+        raise NotImplementedError()
 
     def get_action_type(self) -> DestinationType:
-        pass
+        raise NotImplementedError()

@@ -40,15 +40,21 @@ _time1_result = '2020-04-09 14:13:55-03:00'
 _time2 = '2020-04-09T13:13:55.0005'
 _time2_result = '2020-04-09 13:13:55-03:00'
 
+EMAIL_1 = 'a@a.com'
+EMAIL_2 = 'b@b.com'
+CURRENCY_BRL = 'BRL'
+AMOUNT_1 = '123'
+AMOUNT_2 = '234'
+
 @pytest.fixture
 def uploader(mocker):
     mocker.patch('google.ads.googleads.client.GoogleAdsClient')
     mocker.patch('google.ads.googleads.oauth2')
-    id = StaticValueProvider(str, 'id')
+    _id = StaticValueProvider(str, 'id')
     secret = StaticValueProvider(str, 'secret')
     access = StaticValueProvider(str, 'access')
     refresh = StaticValueProvider(str, 'refresh')
-    credentials = OAuthCredentials(id, secret, access, refresh)
+    credentials = OAuthCredentials(_id, secret, access, refresh)
     return GoogleAdsSSDUploaderDoFn(credentials,
                                     StaticValueProvider(str, 'devtoken'),
                                     ErrorHandler(DestinationType.ADS_SSD_UPLOAD, MockErrorNotifier()))
@@ -72,13 +78,13 @@ def create_batch(account_config, currency_override, account_override):
     execution = Execution(account_config, source, destination)
 
     return Batch(execution, [{
-        'hashed_email': 'a@a.com',
+        'hashed_email': EMAIL_1,
         'time': _time1,
-        'amount': '123'
+        'amount': AMOUNT_1
     }, {
-        'hashed_email': 'b@b.com',
+        'hashed_email': EMAIL_2,
         'time': _time2,
-        'amount': '234'
+        'amount': AMOUNT_2
     }])
 
 def test_get_service(mocker, uploader):
@@ -108,24 +114,24 @@ def test_conversion_upload(mocker, uploader, ssd_batch):
         'operations': [{
             'create': {
                 'user_identifiers': [{
-                    'hashed_email': 'a@a.com'
+                    'hashed_email': EMAIL_1
                 }],
                 'transaction_attribute': {
                     'conversion_action': conversion_name_resource_name,
-                    'currency_code': 'BRL',
-                    'transaction_amount_micros': '123',
+                    'currency_code': CURRENCY_BRL,
+                    'transaction_amount_micros': AMOUNT_1,
                     'transaction_date_time': _time1_result
                 }
             }
         }, {
             'create': {
                 'user_identifiers': [{
-                    'hashed_email': 'b@b.com'
+                    'hashed_email': EMAIL_2
                 }],
                 'transaction_attribute': {
                     'conversion_action': conversion_name_resource_name,
-                    'currency_code': 'BRL',
-                    'transaction_amount_micros': '234',
+                    'currency_code': CURRENCY_BRL,
+                    'transaction_amount_micros': AMOUNT_2,
                     'transaction_date_time': _time2_result
                 }
             }
@@ -150,24 +156,24 @@ def test_conversion_upload_account_and_currency_override(mocker, uploader, ssd_b
         'operations': [{
             'create': {
                 'user_identifiers': [{
-                    'hashed_email': 'a@a.com'
+                    'hashed_email': EMAIL_1
                 }],
                 'transaction_attribute': {
                     'conversion_action': conversion_name_resource_name,
                     'currency_code': 'currency_override',
-                    'transaction_amount_micros': '123',
+                    'transaction_amount_micros': AMOUNT_1,
                     'transaction_date_time': _time1_result
                 }
             }
         }, {
             'create': {
                 'user_identifiers': [{
-                    'hashed_email': 'b@b.com'
+                    'hashed_email': EMAIL_2
                 }],
                 'transaction_attribute': {
                     'conversion_action': conversion_name_resource_name,
                     'currency_code': 'currency_override',
-                    'transaction_amount_micros': '234',
+                    'transaction_amount_micros': AMOUNT_2,
                     'transaction_date_time': _time2_result
                 }
             }
@@ -192,24 +198,24 @@ def test_conversion_mcc_account_override(mocker, uploader, ssd_batch_with_mcc_ac
         'operations': [{
             'create': {
                 'user_identifiers': [{
-                    'hashed_email': 'a@a.com'
+                    'hashed_email': EMAIL_1
                 }],
                 'transaction_attribute': {
                     'conversion_action': conversion_name_resource_name,
-                    'currency_code': 'BRL',
-                    'transaction_amount_micros': '123',
+                    'currency_code': CURRENCY_BRL,
+                    'transaction_amount_micros': AMOUNT_1,
                     'transaction_date_time': _time1_result
                 }
             }
         }, {
             'create': {
                 'user_identifiers': [{
-                    'hashed_email': 'b@b.com'
+                    'hashed_email': EMAIL_2
                 }],
                 'transaction_attribute': {
                     'conversion_action': conversion_name_resource_name,
-                    'currency_code': 'BRL',
-                    'transaction_amount_micros': '234',
+                    'currency_code': CURRENCY_BRL,
+                    'transaction_amount_micros': AMOUNT_2,
                     'transaction_date_time': _time2_result
                 }
             }

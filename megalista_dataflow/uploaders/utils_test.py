@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
+from config import logging
 
 from error.error_handling import ErrorHandler
 from error.error_handling_test import MockErrorNotifier
@@ -26,7 +26,7 @@ class MockUploader(MegalistaUploader):
   def __init__(self, error_handler: ErrorHandler):
     super().__init__(error_handler)
 
-  @utils.safe_process(logger=logging.getLogger('megalista.UtilsTest'))
+  @utils.safe_process(logger=logging.get_logger('megalista.UtilsTest'))
   def process(self, batch: Batch, **kwargs):
     self._add_error(batch.execution, error_message)
 

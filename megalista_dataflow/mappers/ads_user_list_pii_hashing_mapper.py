@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+from config import logging
 
 from models.execution import Batch
 from mappers.abstract_list_pii_hashing_mapper import ListPIIHashingMapper
@@ -20,7 +20,7 @@ from mappers.abstract_list_pii_hashing_mapper import ListPIIHashingMapper
 
 class AdsUserListPIIHashingMapper(ListPIIHashingMapper):
     def __init__(self):
-        self.logger = logging.getLogger(
+        self.logger = logging.get_logger(
             "megalista.AdsUserListPIIHashingMapper")
 
     def _hash_user(self, user, hasher):
@@ -36,7 +36,7 @@ class AdsUserListPIIHashingMapper(ListPIIHashingMapper):
                 processed_email = self.normalize_email(user["email"])
                 processed_user["hashed_email"] = hasher.hash_field(
                     processed_email)
-        except:
+        except Exception:
             self.logger.error(f"Error hashing email for user: {str(user)}")
 
         try:
@@ -56,14 +56,14 @@ class AdsUserListPIIHashingMapper(ListPIIHashingMapper):
                     "country_code": user["mailing_address_country"],
                     "postal_code": user["mailing_address_zip"],
                 }
-        except:
+        except Exception:
             self.logger.error(f"Error hashing address for user: {str(user)}")
 
         try:
             if self._is_data_present(user, "phone"):
                 processed_user["hashed_phone_number"] = hasher.hash_field(
                     user["phone"])
-        except:
+        except Exception:
             self.logger.error(f"Error hashing phone for user: {str(user)}")
 
         if self._is_data_present(user, "mobile_device_id"):
@@ -73,7 +73,7 @@ class AdsUserListPIIHashingMapper(ListPIIHashingMapper):
             if self._is_data_present(user, "user_id"):
                 processed_user["third_party_user_id"] = hasher.hash_field(
                     user["user_id"])
-        except:
+        except Exception:
             self.logger.error(f"Error hashing user_id for user: {str(user)}")
 
         return processed_user

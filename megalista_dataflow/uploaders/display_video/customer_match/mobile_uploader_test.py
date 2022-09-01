@@ -36,11 +36,11 @@ def error_notifier(mocker):
 def uploader(mocker, error_notifier):
     mocker.patch('googleapiclient.discovery.build')
     mocker.patch('google.ads.googleads.oauth2')
-    id = StaticValueProvider(str, 'id')
+    _id = StaticValueProvider(str, 'id')
     secret = StaticValueProvider(str, 'secret')
     access = StaticValueProvider(str, 'access')
     refresh = StaticValueProvider(str, 'refresh')
-    credentials = OAuthCredentials(id, secret, access, refresh)
+    credentials = OAuthCredentials(_id, secret, access, refresh)
     return DisplayVideoCustomerMatchMobileUploaderDoFn(credentials,
                                                             StaticValueProvider(
                                                                 str, 'devtoken'),
@@ -87,7 +87,7 @@ def test_upload_add_users(mocker, uploader, error_notifier):
     uploader._get_dv_audience_service.return_value.list.assert_called_once_with(
         advertiserId='advertiser_id',
         pageSize=1,
-        filter='displayName : list_name'
+        filter='displayName : "list_name"'
     )
 
     test_create_resquest = {
@@ -115,16 +115,17 @@ def test_upload_add_users(mocker, uploader, error_notifier):
     assert not error_notifier.were_errors_sent
 
 def test_upload_update_users(mocker, uploader, error_notifier):
-
     mocker.patch.object(uploader, '_get_dv_audience_service')
     
-    audience = MagicMock() 
-    audience.firstAndThirdPartyAudienceId = 12345
-    audience.displayName = 'list_name'
-
-    audience_list = MagicMock()
-    audience_list.firstAndThirdPartyAudiences = [audience]
-
+    audience_list = {
+        'firstAndThirdPartyAudiences': [
+            {
+                'firstAndThirdPartyAudienceId': 12345,
+                'displayName': 'list_name'
+            }
+        ]
+    }
+            
     uploader._get_dv_audience_service.return_value.list.return_value.execute.return_value = audience_list
     uploader._get_dv_audience_service.return_value.editCustomerMatchMembers.return_value = MagicMock()
 
@@ -154,7 +155,7 @@ def test_upload_update_users(mocker, uploader, error_notifier):
     uploader._get_dv_audience_service.return_value.list.assert_called_once_with(
         advertiserId='advertiser_id',
         pageSize=1,
-        filter='displayName : list_name'
+        filter='displayName : "list_name"'
     )
 
     test_update_resquest = {
@@ -168,6 +169,8 @@ def test_upload_update_users(mocker, uploader, error_notifier):
             ]
         }
     }
+
+    
 
     uploader._get_dv_audience_service.return_value.editCustomerMatchMembers.assert_any_call(
         firstAndThirdPartyAudienceId=audience_list['firstAndThirdPartyAudiences'][0]['firstAndThirdPartyAudienceId'],

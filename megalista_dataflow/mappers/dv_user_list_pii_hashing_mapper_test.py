@@ -15,6 +15,7 @@
 from mappers.dv_user_list_pii_hashing_mapper import DVUserListPIIHashingMapper
 from models.execution import Batch
 
+PHONE_1 = "+551199999999"
 
 def test_get_should_hash_fields():
 
@@ -40,7 +41,7 @@ def test_pii_hashing(mocker):
 
     users = [{
         "email": "john@doe.com",
-        "phone": "+551199999999",
+        "phone": PHONE_1,
         "mailing_address_first_name": "John ",
         "mailing_address_last_name": "Doe",
         "mailing_address_zip": "12345",
@@ -84,11 +85,11 @@ def test_pii_hashing(mocker):
     },
         {
             "email": "ca.us@gmail.com",
-            "phone": "+551199999999",
+            "phone": PHONE_1,
     },
         {
             "email": "us.ca@doe.com",
-            "phone": "+551199999999",
+            "phone": PHONE_1,
     }
     ]
 

@@ -44,4 +44,4 @@ class MegalistaStep(beam.PTransform):
         return self._params
 
     def expand(self, executions):
-        pass
+        raise NotImplementedError()

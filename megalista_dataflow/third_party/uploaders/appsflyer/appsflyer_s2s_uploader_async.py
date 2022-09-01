@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import asyncio
-import logging
+from config import logging
 import time
 from datetime import datetime
 from typing import Any, List, Optional
@@ -25,6 +25,7 @@ from models.execution import Batch
 from uploaders import utils
 from uploaders.uploaders import MegalistaUploader
 
+LOGGER_NAME = "megalista.AppsFlyerS2SUploader"
 
 class AppsFlyerS2SUploaderDoFn(MegalistaUploader):
   def __init__(self, dev_key, error_handler: ErrorHandler):
@@ -33,10 +34,6 @@ class AppsFlyerS2SUploaderDoFn(MegalistaUploader):
     self.dev_key = dev_key
     self.app_id: Optional[str] = None
     self.timeout = ClientTimeout(total=15)  # 15 sec timeout
-
-  def start_bundle(self):
-    pass
-
 
   async def _prepare_and_send(self, session, row, success_elements):
 
@@ -83,7 +80,7 @@ class AppsFlyerS2SUploaderDoFn(MegalistaUploader):
             await asyncio.sleep(curr_retry)
             return await self._send_http_request(session, payload, curr_retry+1)
           else:
-            logging.getLogger("megalista.AppsFlyerS2SUploader").error(
+            logging.get_logger(LOGGER_NAME).error(
               f"Fail to send event. Response code: {response.status}, "
               f"reason: {response.reason}")
             #print(await response.text()) #uncomment to troubleshoot
@@ -94,7 +91,7 @@ class AppsFlyerS2SUploaderDoFn(MegalistaUploader):
         await asyncio.sleep(curr_retry)
         return await self._send_http_request(session, payload, curr_retry+1)
       else:
-        logging.getLogger("megalista.AppsFlyerS2SUploader").error('Error inserting event: ' + str(exc))
+        logging.get_logger(LOGGER_NAME).error('Error inserting event: ' + str(exc))
         return -1
 
 
@@ -118,7 +115,7 @@ class AppsFlyerS2SUploaderDoFn(MegalistaUploader):
       payload[name] = row[row_key]
 
 
-  @utils.safe_process(logger=logging.getLogger("megalista.AppsFlyerS2SUploader"))
+  @utils.safe_process(logger=logging.get_logger(LOGGER_NAME))
   def process(self, batch: Batch, **kwargs):
     success_elements: List[Any] = []
     start_datetime = datetime.now()
@@ -129,7 +126,7 @@ class AppsFlyerS2SUploaderDoFn(MegalistaUploader):
     #send all requests asyncronously
     loop = asyncio.new_event_loop()
     future = asyncio.ensure_future(self._async_request_runner(batch.elements, success_elements), loop = loop)
-    responses = loop.run_until_complete(future)
+    _ = loop.run_until_complete(future)
 
 
     #wait to avoid api trotle
@@ -137,7 +134,11 @@ class AppsFlyerS2SUploaderDoFn(MegalistaUploader):
     min_duration_sec = len(batch.elements)/500 #Using Rate limitation = 500 per sec
     if delta_sec < min_duration_sec:
       time.sleep(min_duration_sec - delta_sec)
-    logging.getLogger("megalista.AppsFlyerS2SUploader").info(
-      f"Successfully uploaded {len(success_elements)}/{len(batch.elements)} events.")
+    logging.get_logger(LOGGER_NAME).info(
+      f"Successfully uploaded {len(success_elements)}/{len(batch.elements)} events.", execution=execution)
+
+    execution.successful_records = execution.successful_records + len(success_elements)
+    execution.unsuccessful_records = execution.unsuccessful_records + (len(batch.elements) - len(success_elements))
+    
 
     yield Batch(execution, success_elements)

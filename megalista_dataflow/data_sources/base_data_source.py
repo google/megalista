@@ -31,3 +31,11 @@ class BaseDataSource:
   
   def write_transactional_info(self, rows, execution):
     raise NotImplementedError("Source Type not implemented. Please check your configuration (sheet / json / firestore).")
+  
+  @staticmethod
+  def _convert_row_to_dict(row):
+    result = {}
+    for key, value in row.items():
+        result[key] = value
+    return result
+ 

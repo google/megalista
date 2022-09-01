@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+from config import logging
 
 from apache_beam.options.value_provider import ValueProvider
 
@@ -54,13 +54,13 @@ class PrimaryExecutionSource(BaseBoundedSource):
 
   def _do_count(self):
     if self._setup_sheet_id.get():
-      logging.getLogger("megalista").info("Using Sheets count")
+      logging.get_logger("megalista").info("Using Sheets count")
       return self._sheets_execution_source._do_count()
     elif self._setup_firestore_collection.get():
-      logging.getLogger("megalista").info("Using Firestore count")
+      logging.get_logger("megalista").info("Using Firestore count")
       return self._firestore_execution_source._do_count()
     elif self._setup_json_url.get():
-      logging.getLogger("megalista").info("Using JSON count")
+      logging.get_logger("megalista").info("Using JSON count")
       return self._json_execution_source._do_count()
     else:
       raise ValueError("Configuration file/sheet not informed. Please check and run Megalista again.")
@@ -69,15 +69,15 @@ class PrimaryExecutionSource(BaseBoundedSource):
     # config logging. has to be done inside a processing step due to Dataflow, since it removes
     # all log handlers in the beginning of the pipeline
     LoggingConfig.config_logging(self._show_code_lines_in_log.get())
-    logging.getLogger("megalista").info(f"MEGALISTA build {MEGALISTA_VERSION}: Init.")
+    logging.get_logger("megalista").info(f"MEGALISTA build {MEGALISTA_VERSION}: Init.")
     
     if self._setup_sheet_id.get():
-      logging.getLogger("megalista").info("Reading Sheets configuration")
+      logging.get_logger("megalista").info("Reading Sheets configuration")
       return self._sheets_execution_source.read(range_tracker)
     elif self._setup_firestore_collection.get():
-      logging.getLogger("megalista").info("Reading Firestore configuration")
+      logging.get_logger("megalista").info("Reading Firestore configuration")
       return self._firestore_execution_source.read(range_tracker)
     else:
-      logging.getLogger("megalista").info("Reading JSON configuration")
+      logging.get_logger("megalista").info("Reading JSON configuration")
       return self._json_execution_source.read(range_tracker)
       

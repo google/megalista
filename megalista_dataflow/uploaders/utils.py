@@ -13,13 +13,14 @@
 # limitations under the License.
 
 import datetime
-import logging
+from config import logging
 import pytz
 import math
 
 from typing import Optional
 from models.execution import Batch
 from uploaders.uploaders import MegalistaUploader
+from unittest.mock import ANY, MagicMock
 
 MAX_RETRIES = 3
 
@@ -71,14 +72,14 @@ def safe_process(logger):
             if not batch:
                 logger.warning('Skipping upload, received no elements.')
                 return
-            logger.info(f'Uploading {len(batch.elements)} rows...')
+            logger.info(f'Uploading {len(batch.elements)} rows...', execution=batch.execution)
             try:
                 return func(*args, **kwargs)
-            except BaseException as e:
+            except Exception as e:
                 self_._add_error(batch.execution, f'Error uploading data: {e}')
-                logger.error(f'Error uploading data for :{batch.elements}')
-                logger.error(e, exc_info=True)
-                logger.exception('Error uploading data.')
+                logger.error(f'Error uploading data for :{batch.elements}', execution=batch.execution)
+                logger.error(e, exc_info=True, execution=batch.execution)
+                logger.exception('Error uploading data.', execution=batch.execution)
 
         return inner
 
@@ -93,7 +94,7 @@ def safe_call_api(function, logger, *args, **kwargs):
 def _do_safe_call_api(function, logger, current_retry, *args, **kwargs):
     try:
         return function(*args, *kwargs)
-    except Exception as e:
+    except Exception:
         if current_retry < MAX_RETRIES:
             logger.exception(
                 f'Fail number {current_retry}. Stack track follows. Trying again.')
@@ -119,7 +120,7 @@ def print_partial_error_messages(logger_name, action, response) -> Optional[str]
     partial_failure = getattr(response, 'partial_failure_error', None)
     if partial_failure is not None and partial_failure.message != '':
         error_message = f'Error on {action}: {partial_failure.message}.'
-        logging.getLogger(logger_name).error(error_message)
+        logging.get_logger(logger_name).error(error_message)
     results = getattr(response, 'results', [])
     for result in results:
         gclid = getattr(result, 'gclid', None)
@@ -131,6 +132,14 @@ def print_partial_error_messages(logger_name, action, response) -> Optional[str]
         else:
             message = f'item {result} uploaded.'
 
-        logging.getLogger(logger_name).debug(message)
+        logging.get_logger(logger_name).debug(message)
 
     return error_message
+
+def update_execution_counters(execution, elements, response):
+    validation_results = getattr(response, 'results', [])
+    unsuccessful_records = len(validation_results)
+    successful_records = len(elements) - unsuccessful_records
+    execution.successful_records = execution.successful_records + successful_records
+    execution.unsuccessful_records = execution.unsuccessful_records + unsuccessful_records
+    

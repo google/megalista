@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+from config import logging
 
 from models.execution import Batch
 from mappers.abstract_list_pii_hashing_mapper import ListPIIHashingMapper
@@ -22,7 +22,7 @@ import apache_beam as beam
 
 class BatchesGroupedBySourceMapper():
     def __init__(self):
-        self.logger = logging.getLogger("megalista.BatchesGroupedBySourceMapper")
+        self.logger = logging.get_logger("megalista.BatchesGroupedBySourceMapper")
 
     def encapsulate(self, element):
         return BatchesGroupedBySource(element[0], element[1])

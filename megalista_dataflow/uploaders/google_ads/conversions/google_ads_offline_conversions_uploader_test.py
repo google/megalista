@@ -31,6 +31,12 @@ from uploaders.google_ads.conversions.google_ads_offline_conversions_uploader im
 _account_config = AccountConfig('123-45567-890', False, 'ga_account_id', '', '')
 
 
+time1 = '2020-04-09T14:13:55.0005'
+time1_result = '2020-04-09 14:13:55-03:00'
+
+time2 = '2020-04-09T13:13:55.0005'
+time2_result = '2020-04-09 13:13:55-03:00'
+
 @pytest.fixture()
 def error_notifier():
   return MockErrorNotifier()
@@ -77,12 +83,6 @@ def test_conversion_upload(mocker, uploader):
     'dest1', DestinationType.ADS_OFFLINE_CONVERSION, ['user_list'])
   source = Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers'])
   execution = Execution(_account_config, source, destination)
-
-  time1 = '2020-04-09T14:13:55.0005'
-  time1_result = '2020-04-09 14:13:55-03:00'
-
-  time2 = '2020-04-09T13:13:55.0005'
-  time2_result = '2020-04-09 13:13:55-03:00'
 
   element1 = {
     'time': time1,
@@ -149,12 +149,6 @@ def test_upload_with_ads_account_override(mocker, uploader):
   source = Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers'])
   execution = Execution(_account_config, source, destination)
 
-  time1 = '2020-04-09T14:13:55.0005'
-  time1_result = '2020-04-09 14:13:55-03:00'
-
-  time2 = '2020-04-09T13:13:55.0005'
-  time2_result = '2020-04-09 13:13:55-03:00'
-
   batch = Batch(execution, [{
     'time': time1,
     'amount': '123',
@@ -214,8 +208,7 @@ def test_should_not_notify_errors_when_api_call_is_successful(mocker, uploader, 
   source = Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers'])
   execution = Execution(_account_config, source, destination)
 
-  time1 = '2020-04-09T14:13:55.0005'
-
+ 
   element1 = {
     'time': time1,
     'amount': '123',
@@ -254,7 +247,6 @@ def test_error_notification(mocker, uploader, error_notifier):
   source = Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers'])
   execution = Execution(_account_config, source, destination)
 
-  time1 = '2020-04-09T14:13:55.0005'
 
   element1 = {
     'time': time1,
@@ -293,12 +285,6 @@ def test_conversion_upload_and_error_notification(mocker, uploader, error_notifi
     'dest1', DestinationType.ADS_OFFLINE_CONVERSION, ['user_list'])
   source = Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers'])
   execution = Execution(_account_config, source, destination)
-
-  time1 = '2020-04-09T14:13:55.0005'
-  time1_result = '2020-04-09 14:13:55-03:00'
-
-  time2 = '2020-04-09T13:13:55.0005'
-  time2_result = '2020-04-09 13:13:55-03:00'
 
   element1 = {
     'time': time1,

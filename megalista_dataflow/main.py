@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+from config import logging
 import warnings
 
 import apache_beam as beam
@@ -41,7 +41,7 @@ warnings.filterwarnings(
     "ignore", "Your application has authenticated using end user credentials"
 )
 
-def run(argv=None):
+def run():
     pipeline_options = PipelineOptions()
     dataflow_options = pipeline_options.view_as(DataflowOptions)
     oauth_credentials = OAuthCredentials(
@@ -77,20 +77,14 @@ def run(argv=None):
 
         processing_results = executions | "Execute integrations" >> ProcessingStep(params)
 
-        # todo: update trix at the end
-
         tuple(processing_results) | "Consolidate results" >> LastStep(params)
 
 if __name__ == "__main__":
     run()
 
-    logging_handler = LoggingConfig.get_logging_handler()
-    if logging_handler is None:
-        logging.getLogger("megalista").info(f"MEGALISTA build {MEGALISTA_VERSION}: Clould not find error interception handler. Skipping error intereception.")
+    if logging.has_errors():
+        logging.get_logger("megalista").critical(f'MEGALISTA build {MEGALISTA_VERSION}: Completed with errors')
+        raise SystemExit(1)
     else:
-        if logging_handler.has_errors:
-            logging.getLogger("megalista").critical(f'MEGALISTA build {MEGALISTA_VERSION}: Completed with errors')
-            raise SystemExit(1)
-        else:
-            logging.getLogger("megalista").info(f"MEGALISTA build {MEGALISTA_VERSION}: Completed successfully!")
+        logging.get_logger("megalista").info(f"MEGALISTA build {MEGALISTA_VERSION}: Completed successfully!")
     exit(0)
