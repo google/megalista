@@ -88,6 +88,10 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
 
     logging.get_logger(LOGGER_NAME).info(
       f'Successfully uploaded {len(accepted_elements)}/{len(batch.elements)} events.')
+
+    execution.successful_records = execution.successful_records + len(accepted_elements)
+    execution.unsuccessful_records = execution.unsuccessful_records + (len(batch.elements) - len(accepted_elements))
+    
     return [Batch(execution, accepted_elements)]
 
   def _getIds(self, execution: Execution, is_event: bool, is_user_property: bool) -> Tuple[Optional[str], Optional[str]]:

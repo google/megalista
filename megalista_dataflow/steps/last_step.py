@@ -18,6 +18,7 @@ from config import logging
 from models.execution import Execution
 from .megalista_step import MegalistaStep
 from config.logging import LoggingConfig
+from typing import List
 
 class LastStep(MegalistaStep):
     def expand(self, executions):
@@ -51,6 +52,20 @@ class CombineExecutionsFn(beam.CombineFn):
     return accumulator
 
 class PrintResultsDoFn(beam.DoFn):
-    def process(self, executions):
-        if logging.has_errors():
-          logging.get_logger("megalista.LOG").error(f"SUMMARY OF ERRORS:\n{logging.get_formatted_error_list()}")
+  def process(self, executions):
+    executions_results = []
+    execution_counter = 1
+    for key in executions:
+      execution = executions[key]
+      summary_of_records = execution.summary_of_records
+      msg = f"{execution_counter}. {key}:\n \
+      - Type: {str(execution.destination.destination_type)[16:]}\n \
+      - Total records: {summary_of_records['total']}\n \
+      - Successful: {summary_of_records['successful']}\n \
+      - Unsuccessful: {summary_of_records['unsuccessful']}\n"
+      executions_results.append(msg)
+      execution_counter = execution_counter + 1
+    summary_msg = '\n'.join(executions_results)
+    logging.get_logger("megalista.LOG").info(f"SUMMARY OF RESULTS:\n{summary_msg}")
+    if logging.has_errors():
+      logging.get_logger("megalista.LOG").error(f"SUMMARY OF ERRORS:\n{logging.get_formatted_error_list()}")

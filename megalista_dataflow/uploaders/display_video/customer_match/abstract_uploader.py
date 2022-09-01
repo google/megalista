@@ -203,6 +203,8 @@ class DisplayVideoCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
                 body=updated_list_definition
             ).execute()
 
+        execution.successful_records = execution.successful_records + len(rows)
+
         return [execution]
         
     def get_list_definition(self, account_config: AccountConfig,

@@ -104,6 +104,9 @@ class CampaignManagerConversionUploaderDoFn(MegalistaUploader):
         profileId=campaign_manager_profile_id, body=request_body)
     response = request.execute()
 
+    amount_of_success = 0
+    amount_of_failures = 0
+
     if response['hasFailures']:
       logger.error(f'Error(s) inserting conversions:\n{response}')
       conversions_status = response['status']
@@ -111,13 +114,21 @@ class CampaignManagerConversionUploaderDoFn(MegalistaUploader):
 
       for status in conversions_status:
         if 'errors' in status:
+          amount_of_failures = amount_of_failures + 1
           for error in status['errors']:
             error_messages.append('[{}]: {}'.format(error['code'], error['message']))
+        else:
+          amount_of_success = amount_of_success + 1
 
       final_error_message = 'Errors from API:\n{}'.format('\n'.join(error_messages))
       logger.error(final_error_message)
       self._add_error(execution, final_error_message)
-
+    else:
+      amount_of_success = len(rows)
+    
+    execution.successful_records = execution.successful_records + amount_of_success
+    execution.unsuccessful_records = execution.unsuccessful_records + amount_of_failures
+    
   def _create_body(self, conversion, floodlight_activity_id, floodlight_configuration_id, timestamp):
     to_upload = {
           'floodlightActivityId': floodlight_activity_id,

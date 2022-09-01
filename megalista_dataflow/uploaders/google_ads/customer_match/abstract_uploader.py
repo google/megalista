@@ -244,6 +244,8 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
         if error_message:
             self._add_error(execution, error_message)
 
+        utils.update_execution_counters(execution, batch.elements, data_insertion_response)
+
         return [execution]
 
     def get_list_definition(self, account_config: AccountConfig,

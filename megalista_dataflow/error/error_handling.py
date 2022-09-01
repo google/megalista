@@ -163,7 +163,7 @@ class ErrorHandler:
 
     if execution.destination.destination_type != self._destination_type:
       raise ValueError(
-        f'Received a error of destination type: {execution.destination.destination_type}'
+        f'Received an error of destination type: {execution.destination.destination_type}'
         f' but this error handler is initialized with {self._destination_type} destination type')
 
     error = Error(execution, error_message)

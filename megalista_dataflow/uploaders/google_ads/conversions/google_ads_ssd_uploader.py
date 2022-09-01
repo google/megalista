@@ -114,6 +114,9 @@ class GoogleAdsSSDUploaderDoFn(MegalistaUploader):
         if error_message:
             self._add_error(execution, error_message)
 
+        utils.update_execution_counters(execution, rows, data_insertion_response)
+
+
         # 3. Runs the Job
         offline_user_data_job_service.run_offline_user_data_job(resource_name = job_resource_name)
 

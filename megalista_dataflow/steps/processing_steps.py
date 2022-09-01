@@ -44,6 +44,8 @@ from mappers.dv_user_list_pii_hashing_mapper import \
 
 from third_party import THIRD_PARTY_STEPS
 
+from config import logging
+
 ADS_CM_HASHER = AdsUserListPIIHashingMapper()
 DV_CM_HASHER = DVUserListPIIHashingMapper()
 

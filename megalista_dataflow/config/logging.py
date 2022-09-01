@@ -145,7 +145,7 @@ def get_formatted_error_list() -> Optional[str]:
         message = ''
         for i in range(len(records)):
             rec = records[i]
-            message += f'{i+1}. {rec.msg}\n  in {rec.pathname}:{rec.lineno}\n'
+            message += f'{i+1}. {rec.msg}\n... in {rec.pathname}:{rec.lineno}\n'
         return message
     else:
         return None

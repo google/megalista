@@ -135,3 +135,11 @@ def print_partial_error_messages(logger_name, action, response) -> Optional[str]
         logging.get_logger(logger_name).debug(message)
 
     return error_message
+
+def update_execution_counters(execution, elements, response):
+    validation_results = getattr(response, 'results', [])
+    unsuccessful_records = len(validation_results)
+    successful_records = len(elements) - unsuccessful_records
+    execution.successful_records = execution.successful_records + successful_records
+    execution.unsuccessful_records = execution.unsuccessful_records + unsuccessful_records
+    

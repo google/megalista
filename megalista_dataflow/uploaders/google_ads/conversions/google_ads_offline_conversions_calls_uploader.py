@@ -83,11 +83,14 @@ class GoogleAdsOfflineUploaderCallsDoFn(MegalistaUploader):
     
     resource_name = self._get_resource_name(customer_id, execution.destination.destination_metadata[0])
 
-    _ = self._do_upload(oc_service,
+    response = self._do_upload(oc_service,
                     execution,
                     resource_name,
                     customer_id,
                     batch.elements)
+
+    batch_with_successful_gclids = GoogleAdsOfflineUploaderCallsDoFn._get_new_batch_with_successfully_uploaded_gclids(batch, response)
+    return [batch_with_successful_gclids]
 
   def _do_upload(self, oc_service: Any, execution: Execution, conversion_resource_name: str, customer_id: str, rows: List[Dict[str, Union[str, Dict[str, str]]]]):
     logging.get_logger(_DEFAULT_LOGGER).info(f'Uploading {len(rows)} offline conversions (calls) on {conversion_resource_name} to Google Ads.')
@@ -112,6 +115,8 @@ class GoogleAdsOfflineUploaderCallsDoFn(MegalistaUploader):
     if error_message:
       self._add_error(execution, error_message)
 
+    utils.update_execution_counters(execution, rows, response)
+
     return response
 
   def _get_resource_name(self, customer_id: str, name: str):
@@ -122,3 +127,12 @@ class GoogleAdsOfflineUploaderCallsDoFn(MegalistaUploader):
         for row in batch.results:
           return row.conversion_action.resource_name
       raise ValueError(f'Conversion "{name}" could not be found on account {customer_id}')
+
+  @staticmethod
+  def _get_new_batch_with_successfully_uploaded_gclids(batch: Batch, response):
+    def caller_id_lambda(result): return result.caller_id
+
+    successful_caller_ids = list(map(caller_id_lambda, filter(caller_id_lambda, response.results)))
+    successful_elements = list(filter(lambda element: element['caller_id'] in successful_caller_ids, batch.elements))
+
+    return Batch(batch.execution, successful_elements)

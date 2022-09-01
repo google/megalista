@@ -97,6 +97,7 @@ class BatchesFromExecutions(beam.PTransform):
         def process(self, grouped_elements):
             # grouped_elements[0] is the grouping key, the execution
             execution = grouped_elements[0]
+            execution.total_records = len(grouped_elements[1])
             batch: List[Any] = []        
             # Keeps track of the batch iteration
             iteration = 1
@@ -110,9 +111,13 @@ class BatchesFromExecutions(beam.PTransform):
             yield Batch(execution, batch, iteration)
 
     class _BreakIntoExecutions(beam.DoFn):
+        def __init__(self, destination_type: DestinationType):
+            self._destination_type = destination_type
+
         def process(self, el):
             for item in el:
-                yield item
+                if item[0].destination.destination_type == self._destination_type:
+                    yield item
 
     def __init__(
         self,
@@ -142,6 +147,6 @@ class BatchesFromExecutions(beam.PTransform):
             )
             | beam.ParDo(self._ReadDataSource(self._transactional_type, self._dataflow_options, self._error_handler))
             | beam.Map(lambda el: [(execution, el.rows) for execution in iter(el.executions.executions)])
-            | beam.ParDo(self._BreakIntoExecutions())
+            | beam.ParDo(self._BreakIntoExecutions(self._destination_type))
             | beam.ParDo(self._BatchElements(self._batch_size, self._error_handler))
         )
