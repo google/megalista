@@ -18,6 +18,8 @@ import sys, io, os, traceback
 from types import FrameType
 from typing import Optional, Tuple, List
 
+from models.execution import Execution
+
 class LoggingConfig:
     @staticmethod
     def config_logging(show_lines: bool = False):
@@ -64,28 +66,31 @@ class _LogWrapper:
         self._logger = logging.getLogger(name)
 
     def debug(self, msg: str, *args, **kwargs):
-        self._logger.debug(msg, *args, **self._change_stacklevel(**kwargs))
+        self.log(msg, logging.DEBUG, *args, **kwargs)
     
     def info(self, msg: str, *args, **kwargs):
-        self._logger.info(msg, *args, **self._change_stacklevel(**kwargs))
-
+        self.log(msg, logging.INFO, *args, **kwargs)
+        
     def warning(self, msg: str, *args, **kwargs):
-        self._logger.warning(msg, *args, **self._change_stacklevel(**kwargs))
-
+        self.log(msg, logging.WARNING, *args, **kwargs)
+        
     def error(self, msg: str, *args, **kwargs):
-        stacklevel = self._get_stacklevel(**kwargs)
-        _add_error(self._name, msg, stacklevel, logging.ERROR, args)
-        self._logger.error(msg, *args, **self._change_stacklevel(**kwargs))
+        self.log(msg, logging.ERROR, *args, **kwargs)
     
     def critical(self, msg: str, *args, **kwargs):
-        stacklevel = self._get_stacklevel(**kwargs)
-        _add_error(self._name, msg, stacklevel, logging.CRITICAL, args)
-        self._logger.critical(msg, *args, **self._change_stacklevel(**kwargs))
+        self.log(msg, logging.CRITICAL, *args, **kwargs)
 
     def exception(self, msg: str, *args, **kwargs):
+        self.log(msg, logging.CRITICAL, *args, **kwargs)
+    
+    def log(self, msg: str, level: int, *args, **kwargs):
         stacklevel = self._get_stacklevel(**kwargs)
-        _add_error(self._name, msg, stacklevel, logging.CRITICAL, args)
-        self._logger.exception(msg, *args, **self._change_stacklevel(**kwargs))
+        msg = self._get_msg_execution(msg, **kwargs)
+        if level >= logging.ERROR:
+            _add_error(self._name, msg, stacklevel, level, args)
+        if 'execution' in kwargs:
+            del kwargs['execution']
+        self._logger.log(level, msg, *args, **self._change_stacklevel(**kwargs))
     
     def _change_stacklevel(self, **kwargs):
         stacklevel = self._get_stacklevel(**kwargs)
@@ -93,10 +98,17 @@ class _LogWrapper:
     
     def _get_stacklevel(self, **kwargs):
         dict_kwargs = dict(kwargs)
-        stacklevel = 2
+        stacklevel = 3
         if 'stacklevel' in dict_kwargs:
-            stacklevel = 1 + dict_kwargs['stacklevel']
+            stacklevel = 2 + dict_kwargs['stacklevel']
         return stacklevel
+
+    def _get_msg_execution(self, msg: str, **kwargs):
+        if 'execution' in kwargs:
+            execution: Execution = kwargs['execution']
+            msg = f'[{execution.source.source_name} -> {execution.destination.destination_name}] {msg}'
+        return msg
+
 
 def get_logger(name: Optional[str] = None):
     return _LogWrapper(name)
