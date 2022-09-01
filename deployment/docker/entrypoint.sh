@@ -15,6 +15,7 @@ do
 done
 
 echo "Running Megalista"
+source virtual_env/bin/activate
 python megalista_dataflow/main.py \
     --runner DirectRunner \
     --direct_num_workers 0 \
