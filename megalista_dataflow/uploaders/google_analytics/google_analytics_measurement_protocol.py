@@ -89,7 +89,7 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
       payload["cu"] = row.get('currency_code')  # Currency code.      
     else:
       error_message = f"Hit type {hit_type} is not supported."
-      logging.get_logger("megalista.GoogleAnalyticsMeasurementProtocolUploader").error(error_message)
+      logging.get_logger("megalista.GoogleAnalyticsMeasurementProtocolUploader").error(error_message, execution=batch.execution)
       self._add_error(batch.execution, error_message)
 
     return payload
@@ -107,7 +107,7 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
     response = requests.post(url=self.API_URL, data=payload)
     if response.status_code != 200:
       error_message = f"Error uploading to Analytics HTTP {response.status_code}: {response.raw}"
-      logging.get_logger("megalista.GoogleAnalyticsMeasurementProtocolUploader").error(error_message)
+      logging.get_logger("megalista.GoogleAnalyticsMeasurementProtocolUploader").error(error_message, execution=batch.execution)
       self._add_error(batch.execution, error_message)
       batch.execution.unsuccessful_records = batch.execution.unsuccessful_records + len(rows)
     else:

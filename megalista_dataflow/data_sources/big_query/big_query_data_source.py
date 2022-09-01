@@ -153,7 +153,7 @@ class BigQueryDataSource(BaseDataSource):
 
             for results in partial_results:
                 for result in results:
-                    logging.get_logger(_LOGGER_NAME).error(result['errors'])
+                    logging.get_logger(_LOGGER_NAME).error(result['errors'], execution=execution)
         
     def _get_now(self):
         return datetime.now().timestamp()

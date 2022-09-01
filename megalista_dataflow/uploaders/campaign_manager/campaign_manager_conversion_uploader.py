@@ -98,7 +98,7 @@ class CampaignManagerConversionUploaderDoFn(MegalistaUploader):
       'conversions': conversions,
     }
 
-    logger.info(f'Conversions: \n{conversions}')
+    logger.info(f'Conversions: \n{conversions}', execution=execution)
 
     request = service.conversions().batchinsert(
         profileId=campaign_manager_profile_id, body=request_body)
@@ -108,7 +108,7 @@ class CampaignManagerConversionUploaderDoFn(MegalistaUploader):
     amount_of_failures = 0
 
     if response['hasFailures']:
-      logger.error(f'Error(s) inserting conversions:\n{response}')
+      logger.error(f'Error(s) inserting conversions:\n{response}', execution=execution)
       conversions_status = response['status']
       error_messages = []
 
@@ -121,7 +121,7 @@ class CampaignManagerConversionUploaderDoFn(MegalistaUploader):
           amount_of_success = amount_of_success + 1
 
       final_error_message = 'Errors from API:\n{}'.format('\n'.join(error_messages))
-      logger.error(final_error_message)
+      logger.error(final_error_message, execution=execution)
       self._add_error(execution, final_error_message)
     else:
       amount_of_success = len(rows)

@@ -100,7 +100,7 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     return [batch_with_successful_gclids]
 
   def _do_upload(self, oc_service, execution, conversion_resource_name, customer_id, rows):
-    logging.get_logger(_DEFAULT_LOGGER).info(f'Uploading {len(rows)} offline conversions on {conversion_resource_name} to Google Ads.')
+    logging.get_logger(_DEFAULT_LOGGER).info(f'Uploading {len(rows)} offline conversions on {conversion_resource_name} to Google Ads.', execution=execution)
     conversions = [{
           'conversion_action': conversion_resource_name,
           'conversion_date_time': utils.format_date(conversion['time']),

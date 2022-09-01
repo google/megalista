@@ -81,13 +81,13 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
       response = requests.post(url,data=json.dumps(payload))
       if response.status_code != 204:
         error_message = f'Error calling GA4 MP {response.status_code}: {str(response.content)}'
-        logging.get_logger(LOGGER_NAME).error(error_message)
+        logging.get_logger(LOGGER_NAME).error(error_message, execution=execution)
         self._add_error(execution, error_message)
       else:
         accepted_elements.append(row)
 
     logging.get_logger(LOGGER_NAME).info(
-      f'Successfully uploaded {len(accepted_elements)}/{len(batch.elements)} events.')
+      f'Successfully uploaded {len(accepted_elements)}/{len(batch.elements)} events.', execution=execution)
 
     execution.successful_records = execution.successful_records + len(accepted_elements)
     execution.unsuccessful_records = execution.unsuccessful_records + (len(batch.elements) - len(accepted_elements))

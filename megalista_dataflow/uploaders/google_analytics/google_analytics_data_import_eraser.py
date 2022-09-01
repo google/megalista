@@ -84,11 +84,11 @@ class GoogleAnalyticsDataImportEraser(MegalistaUploader):
                 return [batch]
             except Exception as e:
                 error_message = f'Error while delete GA Data Import files: {e}'
-                logging.get_logger(LOGGER_NAME).error(error_message)
+                logging.get_logger(LOGGER_NAME).error(error_message, execution=execution)
                 self._add_error(execution, error_message)
         else:
             error_message = f"{data_import_name} - data import not found, please configure it in Google Analytics"
-            logging.get_logger(LOGGER_NAME).error(error_message)
+            logging.get_logger(LOGGER_NAME).error(error_message, execution=execution)
             self._add_error(execution, error_message)
 
     @staticmethod

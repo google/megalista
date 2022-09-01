@@ -104,14 +104,14 @@ class GoogleAnalyticsDataImportUploaderDoFn(MegalistaUploader):
                                       data_source_id, rows, web_property_id)
             except Exception as e:
                 error_message = f'Error while uploading GA Data: {e}'
-                logging.get_logger(LOGGER_NAME).error(error_message)
+                logging.get_logger(LOGGER_NAME).error(error_message, execution=execution)
                 self._add_error(execution, error_message)
                 execution.unsuccessful_records = execution.unsuccessful_records + len(rows)
             else:
                 execution.successful_records = execution.successful_records + len(rows)
         else:
             error_message = f'{data_import_name} - data import not found, please configure it in Google Analytics'
-            logging.get_logger(LOGGER_NAME).error(error_message)
+            logging.get_logger(LOGGER_NAME).error(error_message, execution=execution)
             self._add_error(execution, error_message)
             execution.unsuccessful_records = execution.unsuccessful_records + len(rows)
 

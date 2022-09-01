@@ -14,7 +14,6 @@
 
 from enum import Enum
 from typing import Dict, List, Union, Any
-from config import logging
 from apache_beam.typehints.decorators import with_output_types
 
 class DestinationType(Enum):

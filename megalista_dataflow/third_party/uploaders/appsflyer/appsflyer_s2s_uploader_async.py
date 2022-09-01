@@ -135,7 +135,7 @@ class AppsFlyerS2SUploaderDoFn(MegalistaUploader):
     if delta_sec < min_duration_sec:
       time.sleep(min_duration_sec - delta_sec)
     logging.get_logger(LOGGER_NAME).info(
-      f"Successfully uploaded {len(success_elements)}/{len(batch.elements)} events.")
+      f"Successfully uploaded {len(success_elements)}/{len(batch.elements)} events.", execution=execution)
 
     execution.successful_records = execution.successful_records + len(success_elements)
     execution.unsuccessful_records = execution.unsuccessful_records + (len(batch.elements) - len(success_elements))
