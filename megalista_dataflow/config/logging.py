@@ -86,10 +86,13 @@ class _LogWrapper:
     def log(self, msg: str, level: int, *args, **kwargs):
         stacklevel = self._get_stacklevel(**kwargs)
         msg = self._get_msg_execution(msg, **kwargs)
+        msg = self._get_msg_context(msg, **kwargs)
         if level >= logging.ERROR:
             _add_error(self._name, msg, stacklevel, level, args)
-        if 'execution' in kwargs:
-            del kwargs['execution']
+        keys_to_remove = ['execution', 'context']
+        for key in keys_to_remove:
+            if key in kwargs:
+                del kwargs[key]
         self._logger.log(level, msg, *args, **self._change_stacklevel(**kwargs))
     
     def _change_stacklevel(self, **kwargs):
@@ -103,10 +106,16 @@ class _LogWrapper:
             stacklevel = 2 + dict_kwargs['stacklevel']
         return stacklevel
 
+    def _get_msg_context(self, msg: str, **kwargs):
+        if 'context' in kwargs:
+            context = kwargs['context']
+            msg = f'[Context: {context}] {msg}'
+        return msg
+
     def _get_msg_execution(self, msg: str, **kwargs):
         if 'execution' in kwargs:
             execution: Execution = kwargs['execution']
-            msg = f'[{execution.source.source_name} -> {execution.destination.destination_name}] {msg}'
+            msg = f'[Execution: {execution.source.source_name} -> {execution.destination.destination_name}] {msg}'
         return msg
 
 
