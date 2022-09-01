@@ -15,7 +15,7 @@
 
 import json
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, Sequence
 
 import requests
 
@@ -41,6 +41,10 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
   @staticmethod
   def _exactly_one_of(a: Any, b: Any) -> bool:
     return (a and not b) or (not a and b)
+
+  @staticmethod
+  def _validate_param(key: str, value: Any, reserved_keys: Sequence[str]) -> bool:
+    return key not in reserved_keys and value is not None and value != ''
 
   @utils.safe_process(logger=logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader'))
   def process(self, batch: Batch, **kwargs):
@@ -93,11 +97,11 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
     
       if is_event:
         event_reserved_keys = self.reserved_keys + ['name']
-        params = {k: v for k, v in row.items() if k not in event_reserved_keys}
+        params = {k: v for k, v in row.items() if self._validate_param(k, v, event_reserved_keys)}
         payload['events'] = [{'name': row['name'], 'params': params}]
 
       if is_user_property: 
-        payload['userProperties'] = {k: {'value': v} for k, v in row.items() if k not in self.reserved_keys}
+        payload['userProperties'] = {k: {'value': v} for k, v in row.items() if self._validate_param(k, v, self.reserved_keys)}
         payload['events'] = {'name': 'user_property_addition_event', 'params': {}}
 
       url_container = [f'{self.API_URL}?api_secret={api_secret}']

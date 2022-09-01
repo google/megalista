@@ -278,9 +278,28 @@ def test_unsuccessful_api_call(uploader, error_notifier):
         }
         ]))
 
-        uploader.finish_bundle()
 
-        assert error_notifier.were_errors_sent
+def test_unsuccessful_null_api_secret(uploader, error_notifier):
+    with requests_mock.Mocker() as m:
+        m.post(requests_mock.ANY, status_code=500)
+        destination = Destination(
+            'dest1', DestinationType.GA_4_MEASUREMENT_PROTOCOL, [
+                '',
+                'False',
+                'True',
+                '',
+                '',
+                'some_id'
+            ])
+        source = Source('orig1', SourceType.BIG_QUERY, ['',''])
+        execution = Execution(_account_config, source, destination)
+        with pytest.raises(ValueError, match='GA4 MP should be called with a non-null api_secret'):
+            uploader.do_process(Batch(execution, [{
+                'client_id': '123',
+                'name': 'event_name',
+                'value': '42',
+                'important_event': 'False'
+            }]))
 
 def test_succesful_app_event_call_with_timestamp(uploader):
     with requests_mock.Mocker() as m:
@@ -306,3 +325,30 @@ def test_succesful_app_event_call_with_timestamp(uploader):
 
         assert m.call_count == 1
         assert m.last_request.json()['timestamp_micros'] == 123123123
+
+def test_succesful_filter_out_nulls(uploader):
+    with requests_mock.Mocker() as m:
+        m.post(requests_mock.ANY, status_code=204)
+        destination = Destination(
+            'dest1', DestinationType.GA_4_MEASUREMENT_PROTOCOL, [
+                'api_secret',
+                'True',
+                'False',
+                '',
+                'some_id',
+                ''
+            ])
+        source = Source('orig1', SourceType.BIG_QUERY, [])
+        execution = Execution(_account_config, source, destination)
+        uploader.do_process(Batch(execution, [{
+            'app_instance_id': '123',
+            'name': 'event_name',
+            'empty_param': '',
+            'important_event': 'False',
+            'null_param': None
+        }
+        ]))
+
+        assert m.call_count == 1
+        assert 'empty_param' not in m.last_request.json().keys()
+        assert 'null_param' not in m.last_request.json().keys()
