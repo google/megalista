@@ -1,4 +1,6 @@
 #!/bin/bash
+echo "Environment variables handling"
+
 ENV_VARS=`env | grep ^MEGALISTA_.*`
 params=""
 
@@ -14,8 +16,11 @@ do
     IFS=' '
 done
 
-echo "Running Megalista"
+export GOOGLE_APPLICATION_CREDENTIALS=/app/megalista_dataflow/service-account-file.json
+
+echo "Activating virual environment (python)"
 source virtual_env/bin/activate
+echo "Running Megalista"
 python megalista_dataflow/main.py \
     --runner DirectRunner \
     --direct_num_workers 0 \

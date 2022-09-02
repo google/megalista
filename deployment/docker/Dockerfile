@@ -23,11 +23,6 @@ ENV VIRTUAL_ENV=/app/virtual_env
 ENV PATH="$VIRTUAL_ENV/bin:$PATH" 
 RUN env
 RUN python --version
-# RUN ls /app
-# RUN ls /app/virtual_env
-# RUN ls /app/virtual_env/bin
-# RUN ls $VIRTUAL_ENV
-# Python - pip
 RUN python -m ensurepip --upgrade
 RUN pip install --upgrade pip setuptools wheel
 
@@ -35,6 +30,7 @@ RUN pip install --upgrade pip setuptools wheel
 RUN pip install --no-warn-script-location -r megalista_dataflow/requirements.txt
 
 COPY --chown=worker:worker deployment/docker/entrypoint.sh .
-COPY --chown=worker:worker deployment/docker/service-account-file.json .
+COPY --chown=worker:worker deployment/docker/service-account-file.json ./megalista_dataflow/
+
 RUN ["chmod", "+x", "entrypoint.sh"]
 ENTRYPOINT [ "/app/entrypoint.sh" ]
