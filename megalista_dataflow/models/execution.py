@@ -260,7 +260,7 @@ class Execution:
         self._source = source
         self._destination = destination
         self._total_records = 0
-        self._unsuccessful_records = 0
+        self._failed_records = 0
         self._successful_records = 0
         
 
@@ -281,7 +281,7 @@ class Execution:
         return {
             'total': self.total_records,
             'successful': self.successful_records,
-            'unsuccessful': self.unsuccessful_records
+            'failed': self._failed_records
         }
 
     @property
@@ -304,15 +304,15 @@ class Execution:
         self._successful_records = self._successful_records + 1
 
     @property
-    def unsuccessful_records(self):
-        return self._unsuccessful_records
+    def failed_records(self):
+        return self._failed_records
 
-    @unsuccessful_records.setter
-    def unsuccessful_records(self, value):
-        self._unsuccessful_records = value
+    @failed_records.setter
+    def failed_records(self, value):
+        self._failed_records = value
 
-    def add_unsuccessful_record(self, _):
-        self._unsuccessful_records = self._unsuccessful_records + 1
+    def add_failed_record(self, _):
+        self._failed_records = self._failed_records + 1
 
     def to_dict(self):
         return {

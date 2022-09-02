@@ -127,7 +127,7 @@ class CampaignManagerConversionUploaderDoFn(MegalistaUploader):
       amount_of_success = len(rows)
     
     execution.successful_records = execution.successful_records + amount_of_success
-    execution.unsuccessful_records = execution.unsuccessful_records + amount_of_failures
+    execution.failed_records = execution.failed_records + amount_of_failures
     
   def _create_body(self, conversion, floodlight_activity_id, floodlight_configuration_id, timestamp):
     to_upload = {

@@ -62,7 +62,7 @@ class PrintResultsDoFn(beam.DoFn):
       - Type: {str(execution.destination.destination_type)[16:]}\n \
       - Total records: {summary_of_records['total']}\n \
       - Successful: {summary_of_records['successful']}\n \
-      - Unsuccessful: {summary_of_records['unsuccessful']}\n"
+      - Failed: {summary_of_records['failed']}\n"
       executions_results.append(msg)
       execution_counter = execution_counter + 1
     summary_msg = '\n'.join(executions_results)

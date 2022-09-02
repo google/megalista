@@ -165,7 +165,7 @@ class GoogleAnalyticsUserListUploaderDoFn(MegalistaUploader):
                 error_message = f'Error while uploading GA Data: {e}'
                 logging.get_logger().error(error_message, execution=execution)
                 self._add_error(execution, error_message)
-                execution.unsuccessful_records = execution.unsuccessful_records + len(rows)
+                execution.failed_records = execution.failed_records + len(rows)
             else:
                 execution.successful_records = execution.successful_records + len(rows)
 
@@ -173,5 +173,5 @@ class GoogleAnalyticsUserListUploaderDoFn(MegalistaUploader):
             error_message = f"{data_import_name} - data import not found, please configure it in Google Analytics"
             logging.get_logger().error(error_message, execution=execution)
             self._add_error(execution, error_message)
-            execution.unsuccessful_records = execution.unsuccessful_records + len(rows)
+            execution.failed_records = execution.failed_records + len(rows)
 

@@ -109,7 +109,7 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
       error_message = f"Error uploading to Analytics HTTP {response.status_code}: {response.raw}"
       logging.get_logger("megalista.GoogleAnalyticsMeasurementProtocolUploader").error(error_message, execution=batch.execution)
       self._add_error(batch.execution, error_message)
-      batch.execution.unsuccessful_records = batch.execution.unsuccessful_records + len(rows)
+      batch.execution.failed_records = batch.execution.failed_records + len(rows)
     else:
       batch.execution.successful_records = batch.execution.successful_records + len(rows)
       return [batch]

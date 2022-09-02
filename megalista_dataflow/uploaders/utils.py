@@ -138,8 +138,8 @@ def print_partial_error_messages(logger_name, action, response) -> Optional[str]
 
 def update_execution_counters(execution, elements, response):
     validation_results = getattr(response, 'results', [])
-    unsuccessful_records = len(validation_results)
-    successful_records = len(elements) - unsuccessful_records
+    failed_records = len(validation_results)
+    successful_records = len(elements) - failed_records
     execution.successful_records = execution.successful_records + successful_records
-    execution.unsuccessful_records = execution.unsuccessful_records + unsuccessful_records
+    execution.failed_records = execution.failed_records + failed_records
     

@@ -138,7 +138,7 @@ class AppsFlyerS2SUploaderDoFn(MegalistaUploader):
       f"Successfully uploaded {len(success_elements)}/{len(batch.elements)} events.", execution=execution)
 
     execution.successful_records = execution.successful_records + len(success_elements)
-    execution.unsuccessful_records = execution.unsuccessful_records + (len(batch.elements) - len(success_elements))
+    execution.failed_records = execution.failed_records + (len(batch.elements) - len(success_elements))
     
 
     yield Batch(execution, success_elements)

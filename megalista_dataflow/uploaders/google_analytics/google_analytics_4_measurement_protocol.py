@@ -90,7 +90,7 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
       f'Successfully uploaded {len(accepted_elements)}/{len(batch.elements)} events.', execution=execution)
 
     execution.successful_records = execution.successful_records + len(accepted_elements)
-    execution.unsuccessful_records = execution.unsuccessful_records + (len(batch.elements) - len(accepted_elements))
+    execution.failed_records = execution.failed_records + (len(batch.elements) - len(accepted_elements))
     
     return [Batch(execution, accepted_elements)]
 
