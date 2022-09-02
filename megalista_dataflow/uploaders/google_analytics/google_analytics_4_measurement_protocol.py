@@ -15,7 +15,7 @@
 
 import json
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, Sequence
 
 import requests
 
@@ -29,6 +29,7 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
   def __init__(self, error_handler: ErrorHandler):
     super().__init__(error_handler)
     self.API_URL = 'https://www.google-analytics.com/mp/collect'
+    self.reserved_keys = ['app_instance_id', 'client_id', 'uuid', 'user_id', 'timestamp_micros']
 
   def start_bundle(self):
     pass
@@ -40,6 +41,10 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
   @staticmethod
   def _exactly_one_of(a: Any, b: Any) -> bool:
     return (a and not b) or (not a and b)
+
+  @staticmethod
+  def _validate_param(key: str, value: Any, reserved_keys: Sequence[str]) -> bool:
+    return key not in reserved_keys and value is not None and value != ''
 
   @utils.safe_process(logger=logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader'))
   def process(self, batch: Batch, **kwargs):
@@ -62,6 +67,10 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
     if len(execution.destination.destination_metadata) >= 6:
       measurement_id = execution.destination.destination_metadata[5]
      
+    if not api_secret:
+          raise ValueError(
+            'GA4 MP should be called with a non-null api_secret'
+          )
     if not self._exactly_one_of(firebase_app_id, measurement_id):
           raise ValueError(
             'GA4 MP should be called either with a firebase_app_id (for apps) or a measurement_id (for web)')      
@@ -80,19 +89,19 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
       app_instance_id = row.get('app_instance_id')
       client_id = row.get('client_id')
       user_id = row.get('user_id')
-      if 'timestamp_micros' in row:
-        payload['timestamp_micros'] = int(str(row.get('timestamp_micros')))
+      timestamp_micros = row.get('timestamp_micros')
 
       if not self._exactly_one_of(app_instance_id, client_id):
         raise ValueError(
           'GA4 MP should be called either with an app_instance_id (for apps) or a client_id (for web)')
     
       if is_event:
-        params = {k: v for k, v in row.items() if k not in ('name', 'app_instance_id', 'client_id', 'uuid', 'user_id', 'timestamp_micros') and v is not None}
+        event_reserved_keys = self.reserved_keys + ['name']
+        params = {k: v for k, v in row.items() if self._validate_param(k, v, event_reserved_keys)}
         payload['events'] = [{'name': row['name'], 'params': params}]
 
       if is_user_property: 
-        payload['userProperties'] = {k: {'value': v} for k, v in row.items() if k not in ('app_instance_id', 'client_id', 'uuid', 'user_id', 'timestamp_micros') and v is not None}
+        payload['userProperties'] = {k: {'value': v} for k, v in row.items() if self._validate_param(k, v, self.reserved_keys)}
         payload['events'] = {'name': 'user_property_addition_event', 'params': {}}
 
       url_container = [f'{self.API_URL}?api_secret={api_secret}']
@@ -114,6 +123,8 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
       if user_id:
         payload['user_id'] = user_id
 
+      if timestamp_micros:
+        payload['timestamp_micros'] = int(str(timestamp_micros))
       url = ''.join(url_container)
       response = requests.post(url,data=json.dumps(payload))
       if response.status_code != 204:
