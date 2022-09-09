@@ -34,6 +34,8 @@ _BIGQUERY_PAGE_SIZE = 20000
 
 _LOGGER_NAME = 'megalista.BatchesFromExecutions'
 
+_INT_MAX = 2147483647
+
 class ExecutionCoder(coders.Coder):
     """A custom coder for the Execution class."""
 
@@ -45,7 +47,8 @@ class ExecutionCoder(coders.Coder):
 
     def is_deterministic(self):
         return True
-
+        
+    
 class ExecutionsGroupedBySourceCoder(coders.Coder):
     """A custom coder for the Execution class."""
 
@@ -70,6 +73,18 @@ class DataRowsGroupedBySourceCoder(coders.Coder):
 
     def is_deterministic(self):
         return True
+
+    def estimate_size(self, o):
+        amount_of_rows = len(o.rows)
+        row_size = 0
+        if amount_of_rows > 0:
+            row_size = len(json.dumps(o.rows[0]).encode('utf-8'))
+        estimate = amount_of_rows * row_size
+        # there is an overflow error if estimated size > _INT_MAX
+        if estimate > _INT_MAX:
+            estimate = _INT_MAX
+        return estimate
+
 
 
 class BatchesFromExecutions(beam.PTransform):

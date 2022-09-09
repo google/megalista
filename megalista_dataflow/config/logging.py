@@ -16,7 +16,7 @@ import logging
 from optparse import Option
 import sys, io, os, traceback
 from types import FrameType
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Any
 
 from models.execution import Execution
 
@@ -139,7 +139,7 @@ def _get_stack_trace(stacklevel: int, stack_info: bool = True):
         stacklevel -= 1
     if not f:
         f = orig_f
-    rv: Tuple[str, int, str, Optional[str]]= "(unknown file)", 0, "(unknown function)", None
+    rv: Tuple[str, int, str, Optional[str]]= ("(unknown file)", 0, "(unknown function)", None)
     if f is not None and hasattr(f, "f_code"):
         co = f.f_code
         sinfo = None
@@ -170,3 +170,7 @@ def get_formatted_error_list() -> Optional[str]:
         return message
     else:
         return None
+
+def null_filter(el: Any) -> Any:
+    get_logger('megalista.LOG').info(f'Logging: {el}')
+    return el
