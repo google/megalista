@@ -90,6 +90,7 @@ class JsonExecutionSource(BaseBoundedSource):
     destinations = {}
     if destinations_list:
       for row in destinations_list:
+        print(row)
         # Create Destinations using Name, Type, and Metadata
         destination = Destination(row["Name"], DestinationType[row["Type"]],
                                   row["Metadata"])
