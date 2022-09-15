@@ -324,7 +324,7 @@ def test_succesful_app_event_call_with_timestamp(uploader):
         }]))
 
         assert m.call_count == 1
-        assert m.last_request.json()['timestamp_micros'] == 123123123
+        assert m.last_request.json()['events'][0]['timestamp_micros'] == 123123123
 
 def test_succesful_filter_out_nulls(uploader):
     with requests_mock.Mocker() as m:
