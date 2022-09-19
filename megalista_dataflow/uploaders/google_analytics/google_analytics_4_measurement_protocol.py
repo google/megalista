@@ -96,9 +96,24 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
           'GA4 MP should be called either with an app_instance_id (for apps) or a client_id (for web)')
     
       if is_event:
-        event_reserved_keys = self.reserved_keys + ['name']
-        params = {k: v for k, v in row.items() if self._validate_param(k, v, event_reserved_keys)}
-        payload['events'] = [{'name': row['name'], 'params': params}]
+        # event_reserved_keys = self.reserved_keys + ['name']
+        # params = {k: v for k, v in row.items() if self._validate_param(k, v, event_reserved_keys)}
+        # payload['events'] = [{'name': row['name'], 'params': params}]
+        
+        event_reserved_keys = self.reserved_keys + ["name"]
+        event_params = {
+            k.replace("event_", ""): v
+            for k, v in row.items()
+            if self._validate_param(k, v, event_reserved_keys) and "event_" in k
+        }
+        payload["events"] = {"name": row["name"], "params": event_params}
+        user_property_params = {
+            k.replace("user_property_", ""): {"value": v}
+            for k, v in row.items()
+            if self._validate_param(k, v, self.reserved_keys)
+            and "user_property_" in k and len(str(v)) <= 36
+        }
+        payload["userProperties"] = user_property_params
 
       if is_user_property: 
         payload['userProperties'] = {k: {'value': v} for k, v in row.items() if self._validate_param(k, v, self.reserved_keys)}
