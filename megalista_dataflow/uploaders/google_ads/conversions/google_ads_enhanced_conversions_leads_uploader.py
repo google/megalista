@@ -13,8 +13,6 @@
 # limitations under the License.
 
 import logging
-from numpy import NaN
-import pandas as pd
 
 from apache_beam.options.value_provider import ValueProvider
 
@@ -163,3 +161,34 @@ class GoogleAdsECLeadsUploaderDoFn(MegalistaUploader):
                     raise Exception(
                         f'Google Ads for account {customer_id} has not been set up for Enhanced Conversions for Leads, check https://developers.google.com/google-ads/api/docs/conversions/upload-identifiers'
                     )
+
+    def _get_results_dataframe(self, response):
+        successful_users = [
+            user for user in response.results if user.ListFields()]
+        logging.getLogger(_DEFAULT_LOGGER).info(
+            f'Sucessfully uploaded {len(successful_users)} conversions')
+
+        sucess_df = pd.DataFrame(columns=['conversion_action',
+                                          'conversion_date_time',
+                                          'hashed_email',
+                                          'hashed_phone_number'])
+
+        for row in range(len(successful_users)):
+            sucess_conv_action = str(successful_users[row].conversion_action)
+            sucess_conv_date_time = str(
+                successful_users[row].conversion_date_time)
+            try:
+                sucess_hashed_email = str((
+                    successful_users[row].user_identifiers[0].hashed_email or successful_users[row].user_identifiers[1].hashed_email))
+            except:
+                sucess_hashed_email = NaN
+            try:
+                sucess_hashed_phone = str((
+                    successful_users[row].user_identifiers[0].hashed_phone_number or successful_users[row].user_identifiers[1].hashed_phone_number))
+            except:
+                sucess_hashed_phone = NaN
+
+            sucess_df.loc[row] = [sucess_conv_action, sucess_conv_date_time,
+                                  sucess_hashed_email, sucess_hashed_phone]
+
+        return sucess_df
