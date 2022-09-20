@@ -17,6 +17,7 @@ from typing import Dict, List, Union, Any
 import logging
 from apache_beam.typehints.decorators import with_output_types
 
+
 class DestinationType(Enum):
     (
         CM_OFFLINE_CONVERSION,
@@ -24,6 +25,7 @@ class DestinationType(Enum):
         ADS_OFFLINE_CONVERSION_CALLS,
         ADS_SSD_UPLOAD,
         ADS_ENHANCED_CONVERSION,
+        ADS_ENHANCED_CONVERSION_LEADS,
         ADS_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD,
         ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD,
         ADS_CUSTOMER_MATCH_USER_ID_UPLOAD,
@@ -34,9 +36,9 @@ class DestinationType(Enum):
         GA_4_MEASUREMENT_PROTOCOL,
         DV_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD,
         DV_CUSTOMER_MATCH_DEVICE_ID_UPLOAD,
-        UPLOADED_UUID, # schema verification purposes
-        UPLOADED_GCLID_TIME # schema verification purposes
-    ) = range(17)
+        UPLOADED_UUID,  # schema verification purposes
+        UPLOADED_GCLID_TIME  # schema verification purposes
+    ) = range(18)
 
     def __eq__(self, other):
         if other is None:
@@ -46,6 +48,7 @@ class DestinationType(Enum):
 
 class SourceType(Enum):
     BIG_QUERY, FILE = range(2)
+
 
 class TransactionalType(Enum):
     """
@@ -60,8 +63,6 @@ class TransactionalType(Enum):
         GCLID_TIME,
     ) = range(3)
 
-
-    
 
 class AccountConfig:
     def __init__(
@@ -100,7 +101,7 @@ class AccountConfig:
 
     def to_dict(self):
         return {
-            'google_ads_account_id' : self.google_ads_account_id,
+            'google_ads_account_id': self.google_ads_account_id,
             'mcc': self.mcc,
             'google_analytics_account_id': self.google_analytics_account_id,
             'campaign_manager_profile_id': self.campaign_manager_profile_id,
@@ -169,7 +170,7 @@ class Source:
     def to_dict(self):
         return {
             'source_name': self.source_name,
-            'source_type' : self.source_type.name,
+            'source_type': self.source_type.name,
             'source_metadata': self.source_metadata,
         }
 
@@ -271,7 +272,7 @@ class Execution:
 
     @property
     def account_config(self) -> AccountConfig:
-        return self._account_config 
+        return self._account_config
 
     def to_dict(self):
         return {
@@ -316,7 +317,7 @@ class ExecutionsGroupedBySource:
     @property
     def executions(self) -> List[Execution]:
         return self._executions
-    
+
     @property
     def source_name(self) -> str:
         return self._source_name
@@ -324,7 +325,7 @@ class ExecutionsGroupedBySource:
     @property
     def source(self) -> Source:
         return self._executions[0].source
-    
+
     @property
     def destinations(self) -> List[Destination]:
         return list([exec.destination for exec in self._executions])
@@ -338,12 +339,12 @@ class ExecutionsGroupedBySource:
             'source_name': self._source_name,
             'executions': executions_json
         }
-        
 
     @staticmethod
     def from_dict(dict_executions):
-        executions = list([Execution.from_dict(exec_json) for exec_json in dict_executions['executions']])
-        
+        executions = list([Execution.from_dict(exec_json)
+                          for exec_json in dict_executions['executions']])
+
         return ExecutionsGroupedBySource(
             dict_executions['source_name'],
             executions
@@ -364,6 +365,7 @@ class ExecutionsGroupedBySource:
 class DataRow(Dict[str, Any]):
     pass
 
+
 class DataRowsGroupedBySource:
     def __init__(
         self,
@@ -376,7 +378,7 @@ class DataRowsGroupedBySource:
     @property
     def rows(self) -> List[DataRow]:
         return self._rows
-    
+
     @property
     def executions(self) -> ExecutionsGroupedBySource:
         return self._executions
@@ -388,7 +390,7 @@ class DataRowsGroupedBySource:
     @property
     def source_name(self) -> str:
         return self._executions.source.source_name
-    
+
     @property
     def destinations(self) -> List[Destination]:
         return self._executions.destinations
@@ -398,7 +400,6 @@ class DataRowsGroupedBySource:
             'rows': self._rows,
             'executions': self._executions.to_dict()
         }
-        
 
     @staticmethod
     def from_dict(dict_rows):
@@ -453,6 +454,7 @@ class Batch:
     def __hash__(self):
         return hash(("Batch", self.execution))
 
+
 class BatchesGroupedBySource:
     def __init__(
         self,
@@ -465,15 +467,13 @@ class BatchesGroupedBySource:
     @property
     def batches(self) -> List[Batch]:
         return self._batches
-    
+
     @property
     def source_name(self) -> str:
         return self._source_name
 
-    
     def __getitem__(self, i):
         return self._batches[i]
-
 
     def __str__(self):
         return f"Source: {self._source_name}. Batches: {self._batches}"
