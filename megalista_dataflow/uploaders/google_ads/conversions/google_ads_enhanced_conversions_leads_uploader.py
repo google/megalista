@@ -172,23 +172,3 @@ class GoogleAdsECLeadsUploaderDoFn(MegalistaUploader):
                                           'conversion_date_time',
                                           'hashed_email',
                                           'hashed_phone_number'])
-
-    #     for row in range(len(successful_users)):
-    #         sucess_conv_action = str(successful_users[row].conversion_action)
-    #         sucess_conv_date_time = str(
-    #             successful_users[row].conversion_date_time)
-    #         try:
-    #             sucess_hashed_email = str((
-    #                 successful_users[row].user_identifiers[0].hashed_email or successful_users[row].user_identifiers[1].hashed_email))
-    #         except:
-    #             sucess_hashed_email = NaN
-    #         try:
-    #             sucess_hashed_phone = str((
-    #                 successful_users[row].user_identifiers[0].hashed_phone_number or successful_users[row].user_identifiers[1].hashed_phone_number))
-    #         except:
-    #             sucess_hashed_phone = NaN
-
-    #         sucess_df.loc[row] = [sucess_conv_action, sucess_conv_date_time,
-    #                               sucess_hashed_email, sucess_hashed_phone]
-
-    #     return sucess_df
