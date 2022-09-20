@@ -38,7 +38,7 @@ class DestinationType(Enum):
         DV_CUSTOMER_MATCH_DEVICE_ID_UPLOAD,
         UPLOADED_UUID,  # schema verification purposes
         UPLOADED_GCLID_TIME  # schema verification purposes
-    ) = range(17)
+    ) = range(18)
 
     def __eq__(self, other):
         if other is None:
