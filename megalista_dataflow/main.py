@@ -41,6 +41,7 @@ warnings.filterwarnings(
     "ignore", "Your application has authenticated using end user credentials"
 )
 
+
 def run(argv=None):
     pipeline_options = PipelineOptions()
     dataflow_options = pipeline_options.view_as(DataflowOptions)
@@ -63,34 +64,42 @@ def run(argv=None):
     )
     error_notifier = GmailNotifier(dataflow_options.notify_errors_by_email, oauth_credentials,
                                    dataflow_options.errors_destination_emails)
-    params = MegalistaStepParams(oauth_credentials, dataflow_options, error_notifier)
+    params = MegalistaStepParams(
+        oauth_credentials, dataflow_options, error_notifier)
 
     coders.registry.register_coder(Execution, ExecutionCoder)
-    coders.registry.register_coder(ExecutionsGroupedBySource, ExecutionsGroupedBySourceCoder)
-    coders.registry.register_coder(DataRowsGroupedBySource, DataRowsGroupedBySourceCoder)
+    coders.registry.register_coder(
+        ExecutionsGroupedBySource, ExecutionsGroupedBySourceCoder)
+    coders.registry.register_coder(
+        DataRowsGroupedBySource, DataRowsGroupedBySourceCoder)
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
         # Add load executions step
-        executions = (pipeline 
-            | "Load executions" >> LoadExecutionsStep(params, execution_source)
-        )
+        executions = (pipeline
+                      | "Load executions" >> LoadExecutionsStep(params, execution_source)
+                      )
 
-        processing_results = executions | "Execute integrations" >> ProcessingStep(params)
+        processing_results = executions | "Execute integrations" >> ProcessingStep(
+            params)
 
         # todo: update trix at the end
 
         tuple(processing_results) | "Consolidate results" >> LastStep(params)
+
 
 if __name__ == "__main__":
     run()
 
     logging_handler = LoggingConfig.get_logging_handler()
     if logging_handler is None:
-        logging.getLogger("megalista").info(f"MEGALISTA build {MEGALISTA_VERSION}: Clould not find error interception handler. Skipping error intereception.")
+        logging.getLogger("megalista").info(
+            f"MEGALISTA build {MEGALISTA_VERSION}: Clould not find error interception handler. Skipping error intereception.")
     else:
         if logging_handler.has_errors:
-            logging.getLogger("megalista").critical(f'MEGALISTA build {MEGALISTA_VERSION}: Completed with errors')
+            logging.getLogger("megalista").critical(
+                f'MEGALISTA build {MEGALISTA_VERSION}: Completed with errors')
             raise SystemExit(1)
         else:
-            logging.getLogger("megalista").info(f"MEGALISTA build {MEGALISTA_VERSION}: Completed successfully!")
+            logging.getLogger("megalista").info(
+                f"MEGALISTA build {MEGALISTA_VERSION}: Completed successfully!")
     exit(0)
