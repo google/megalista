@@ -232,12 +232,10 @@ class GoogleAdsECLeadsStep(MegalistaStep):
                 )
             )
             | "Persist results - GoogleAdsECLeadsConversions"
-            >> beam.ParDo(
-                TransactionalEventsResultsWriter(
-                    self.params._dataflow_options,
-                    TransactionalType.UUID,
-                    ErrorHandler(DestinationType.ADS_ENHANCED_CONVERSION_LEADS, self.params.error_notifier))
-            )
+            >> TransactionalEventsResultsWriter(
+                self.params._dataflow_options,
+                TransactionalType.UUID,
+                ErrorHandler(DestinationType.ADS_ENHANCED_CONVERSION_LEADS, self.params.error_notifier))
         )
 
 

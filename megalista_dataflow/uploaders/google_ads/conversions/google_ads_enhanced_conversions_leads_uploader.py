@@ -105,11 +105,13 @@ class GoogleAdsECLeadsUploaderDoFn(MegalistaUploader):
                                    resource_name,
                                    customer_id,
                                    batch.elements)
+        successful_users = [
+            user for user in response.results if user.ListFields()]
+        logging.getLogger(_DEFAULT_LOGGER).info(
+            f'Sucessfully uploaded {len(successful_users)} conversions')
 
-        batch_with_uploaded_uuids = self._get_new_batch_with_uploaded_uuids(
-            batch, batch.elements)
-        if len(batch_with_uploaded_uuids.elements) > 0:
-            return [batch_with_uploaded_uuids]
+        # all uploaded results do not need to be sent again
+        return [batch]
 
     def _do_upload(self, oc_service, execution, conversion_resource_name, customer_id, rows):
         logging.getLogger(_DEFAULT_LOGGER).info(
@@ -161,44 +163,3 @@ class GoogleAdsECLeadsUploaderDoFn(MegalistaUploader):
                     raise Exception(
                         f'Google Ads for account {customer_id} has not been set up for Enhanced Conversions for Leads, check https://developers.google.com/google-ads/api/docs/conversions/upload-identifiers'
                     )
-
-    # saves all uploaded uuids
-    @staticmethod
-    def _get_new_batch_with_uploaded_uuids(batch: Batch, elements):
-        def uuid_lambda(elements): return elements.uuid
-
-        uploaded_uuids = list(map(uuid_lambda, filter(uuid_lambda, elements)))
-
-        return Batch(batch.execution, uploaded_uuids)
-
-    # Keep code bellow for future iterations
-    # def _get_results_dataframe(self, response, elements):
-    #     successful_users = [
-    #         user for user in response.results if user.ListFields()]
-    #     logging.getLogger(_DEFAULT_LOGGER).info(
-    #         f'Sucessfully uploaded {len(successful_users)} conversions')
-
-    #     sucess_df = pd.DataFrame(columns=['conversion_action',
-    #                                       'conversion_date_time',
-    #                                       'hashed_email',
-    #                                       'hashed_phone_number'])
-
-    #     for row in range(len(successful_users)):
-    #         sucess_conv_action = str(successful_users[row].conversion_action)
-    #         sucess_conv_date_time = str(
-    #             successful_users[row].conversion_date_time)
-    #         try:
-    #             sucess_hashed_email = str((
-    #                 successful_users[row].user_identifiers[0].hashed_email or successful_users[row].user_identifiers[1].hashed_email))
-    #         except:
-    #             sucess_hashed_email = NaN
-    #         try:
-    #             sucess_hashed_phone = str((
-    #                 successful_users[row].user_identifiers[0].hashed_phone_number or successful_users[row].user_identifiers[1].hashed_phone_number))
-    #         except:
-    #             sucess_hashed_phone = NaN
-
-    #         sucess_df.loc[row] = [sucess_conv_action, sucess_conv_date_time,
-    #                               sucess_hashed_email, sucess_hashed_phone]
-
-    #     return sucess_df
