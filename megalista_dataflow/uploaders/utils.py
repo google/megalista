@@ -120,7 +120,7 @@ def print_partial_error_messages(logger_name, action, response) -> Optional[str]
     partial_failure = getattr(response, 'partial_failure_error', None)
     if partial_failure is not None and partial_failure.message != '':
         error_message = f'Error on {action}: {partial_failure.message}.'
-        logging.get_logger(logger_name).error(error_message)
+        logging.get_logger(logger_name).info(error_message)
     results = getattr(response, 'results', [])
     for result in results:
         gclid = getattr(result, 'gclid', None)
@@ -137,8 +137,11 @@ def print_partial_error_messages(logger_name, action, response) -> Optional[str]
     return error_message
 
 def update_execution_counters(execution, elements, response):
-    validation_results = getattr(response, 'results', [])
-    failed_records = len(validation_results)
+    failed_records = 0
+    partial_failure = getattr(response, 'partial_failure_error', None)
+    if partial_failure is not None:
+        details = getattr(partial_failure, 'details', [])
+        failed_records = len(details)
     successful_records = len(elements) - failed_records
     execution.successful_records = execution.successful_records + successful_records
     execution.failed_records = execution.failed_records + failed_records
