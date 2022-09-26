@@ -77,9 +77,9 @@ def safe_process(logger):
                 return func(*args, **kwargs)
             except Exception as e:
                 self_._add_error(batch.execution, f'Error uploading data: {e}')
-                logger.error(f'Error uploading data for :{batch.elements}', execution=batch.execution)
-                logger.error(e, exc_info=True, execution=batch.execution)
-                logger.exception('Error uploading data.', execution=batch.execution)
+                logger.warning(f'Error uploading data for :{batch.elements}', execution=batch.execution)
+                logger.warning(e, exc_info=True, execution=batch.execution)
+                # logger.exception('Error uploading data.', execution=batch.execution)
 
         return inner
 
