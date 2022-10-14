@@ -25,9 +25,12 @@ from models.oauth_credentials import OAuthCredentials
 from uploaders import utils
 from uploaders.google_ads import ADS_API_VERSION
 from uploaders.uploaders import MegalistaUploader
+from google.api_core.exceptions import ResourceExhausted
+from time import sleep
 
 _DEFAULT_LOGGER: str = 'megalista.GoogleAdsCustomerMatchAbstractUploader'
-
+_DEFAULT_TIMEOUT: int = 60
+_MAX_RETRIES: int = 6
 
 class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
 
@@ -236,9 +239,26 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
             'operations': operations
         }
 
-        data_insertion_response = offline_user_data_job_service.add_offline_user_data_job_operations(
-            request=data_insertion_payload)
+        timeout_multiplier = 1
+        data_insertion_response = None
+        retry = 0
+        while data_insertion_response is None:
+            try:
+                data_insertion_response = offline_user_data_job_service.add_offline_user_data_job_operations(
+                    request=data_insertion_payload)
+            except ResourceExhausted as e:
+                if retry < _MAX_RETRIES:
+                    retry = retry + 1
+                    logging.get_logger(_DEFAULT_LOGGER).warning(
+                        f'Resource Exhausted exception: {e}. Retrying... ({retry} of {_MAX_RETRIES})', execution=execution)
+                    sleep(timeout_multiplier * _DEFAULT_TIMEOUT)
+                    timeout_multiplier = timeout_multiplier * 2
 
+                else:
+                    logging.get_logger(_DEFAULT_LOGGER).warning(
+                        f'Resource Exhausted exception: {e}. No retries left.', execution=execution)
+                    raise e
+                
         error_message = utils.print_partial_error_messages(_DEFAULT_LOGGER, 'uploading customer match',
                                                            data_insertion_response)
         if error_message:

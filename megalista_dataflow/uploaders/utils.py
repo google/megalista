@@ -21,6 +21,7 @@ from typing import Optional
 from models.execution import Batch
 from uploaders.uploaders import MegalistaUploader
 from unittest.mock import ANY, MagicMock
+from google.ads.googleads.errors import GoogleAdsException
 
 MAX_RETRIES = 3
 
@@ -78,6 +79,7 @@ def safe_process(logger):
             except Exception as e:
                 self_._add_error(batch.execution, f'Error uploading data: {e}')
                 logger.warning(f'Error uploading data for :{batch.elements}', execution=batch.execution)
+                logger.warning(f'Exception type: {type(e).__name__}', execution=batch.execution)
                 logger.warning(e, exc_info=True, execution=batch.execution)
                 # logger.exception('Error uploading data.', execution=batch.execution)
 

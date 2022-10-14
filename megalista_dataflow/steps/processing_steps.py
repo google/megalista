@@ -14,9 +14,11 @@
 
 import apache_beam as beam
 
+from typing import List
+
 from .megalista_step import MegalistaStep
 from sources.batches_from_executions import BatchesFromExecutions, TransactionalType
-from models.execution import DestinationType
+from models.execution import DestinationType, Execution
 from error.error_handling import ErrorHandler
 
 from uploaders.support.transactional_events_results_writer import TransactionalEventsResultsWriter
@@ -49,6 +51,10 @@ from config import logging
 ADS_CM_HASHER = AdsUserListPIIHashingMapper()
 DV_CM_HASHER = DVUserListPIIHashingMapper()
 
+def inform_finish_of_execution_filter(el: Execution):
+    logging.get_logger('megalista.ProcessingSteps').info('Execution finished', execution=el)
+    return el
+
 class GoogleAdsSSDStep(MegalistaStep):
     def expand(self, executions):
         return (
@@ -69,6 +75,8 @@ class GoogleAdsSSDStep(MegalistaStep):
                     ErrorHandler(DestinationType.ADS_SSD_UPLOAD, self.params.error_notifier)
                 )
             )
+            | "Finish"
+            >> beam.Filter(inform_finish_of_execution_filter)
         )
 
 
@@ -92,6 +100,8 @@ class GoogleAdsCustomerMatchMobileDeviceIdStep(MegalistaStep):
                     ErrorHandler(DestinationType.ADS_CUSTOMER_MATCH_MOBILE_DEVICE_ID_UPLOAD, self.params.error_notifier)
                 )
             )
+            | "Finish"
+            >> beam.Filter(inform_finish_of_execution_filter)
         )
 
 
@@ -115,6 +125,8 @@ class GoogleAdsCustomerMatchContactInfoStep(MegalistaStep):
                   ErrorHandler(DestinationType.ADS_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD, self.params.error_notifier)
                 )
             )
+            | "Finish"
+            >> beam.Filter(inform_finish_of_execution_filter)
         )
 
 
@@ -138,6 +150,8 @@ class GoogleAdsCustomerMatchUserIdStep(MegalistaStep):
                     ErrorHandler(DestinationType.ADS_CUSTOMER_MATCH_USER_ID_UPLOAD, self.params.error_notifier)
                 )
             )
+            | "Finish"
+            >> beam.Filter(inform_finish_of_execution_filter)
         )
 
 
@@ -164,7 +178,10 @@ class GoogleAdsOfflineConversionsStep(MegalistaStep):
             >> TransactionalEventsResultsWriter(
                 self.params._dataflow_options,
                 TransactionalType.GCLID_TIME,
-                ErrorHandler(DestinationType.ADS_OFFLINE_CONVERSION, self.params.error_notifier))
+                ErrorHandler(DestinationType.ADS_OFFLINE_CONVERSION, self.params.error_notifier)
+            )
+            | "Finish"
+            >> beam.Filter(inform_finish_of_execution_filter)
         )
 
 
@@ -191,7 +208,10 @@ class GoogleAdsOfflineConversionsCallsStep(MegalistaStep):
             >> TransactionalEventsResultsWriter(
                 self.params._dataflow_options,
                 TransactionalType.GCLID_TIME,
-                ErrorHandler(DestinationType.ADS_OFFLINE_CONVERSION_CALLS, self.params.error_notifier))
+                ErrorHandler(DestinationType.ADS_OFFLINE_CONVERSION_CALLS, self.params.error_notifier)
+            )
+            | "Finish"
+            >> beam.Filter(inform_finish_of_execution_filter)
         )
 
 
@@ -209,7 +229,10 @@ class GoogleAnalyticsUserListStep(MegalistaStep):
             | "Upload - GA user list"
             >> beam.ParDo(GoogleAnalyticsUserListUploaderDoFn(self.params._oauth_credentials,
                                                               ErrorHandler(DestinationType.GA_USER_LIST_UPLOAD,
-                                                                           self.params.error_notifier)))
+                                                                           self.params.error_notifier))
+            )
+            | "Finish"
+            >> beam.Filter(inform_finish_of_execution_filter)
         )
 
 
@@ -234,6 +257,8 @@ class GoogleAnalyticsDataImportStep(MegalistaStep):
                                                 ErrorHandler(DestinationType.GA_DATA_IMPORT,
                                                              self.params.error_notifier))
             )
+            | "Finish"
+            >> beam.Filter(inform_finish_of_execution_filter)
         )
 
 
@@ -255,7 +280,10 @@ class GoogleAnalyticsMeasurementProtocolStep(MegalistaStep):
             >> TransactionalEventsResultsWriter(
                 self.params._dataflow_options,
                 TransactionalType.UUID,
-                ErrorHandler(DestinationType.GA_MEASUREMENT_PROTOCOL, self.params.error_notifier))
+                ErrorHandler(DestinationType.GA_MEASUREMENT_PROTOCOL, self.params.error_notifier)
+            )
+            | "Finish"
+            >> beam.Filter(inform_finish_of_execution_filter)
         )
 
 
@@ -277,7 +305,10 @@ class GoogleAnalytics4MeasurementProtocolStep(MegalistaStep):
             >> TransactionalEventsResultsWriter(
                 self.params._dataflow_options,
                 TransactionalType.UUID,
-                ErrorHandler(DestinationType.GA_4_MEASUREMENT_PROTOCOL, self.params.error_notifier))
+                ErrorHandler(DestinationType.GA_4_MEASUREMENT_PROTOCOL, self.params.error_notifier)
+            )
+            | "Finish"
+            >> beam.Filter(inform_finish_of_execution_filter)
         )
 
 
@@ -302,7 +333,10 @@ class CampaignManagerConversionStep(MegalistaStep):
             >> TransactionalEventsResultsWriter(
                 self.params._dataflow_options,
                 TransactionalType.UUID,
-                ErrorHandler(DestinationType.CM_OFFLINE_CONVERSION, self.params.error_notifier))
+                ErrorHandler(DestinationType.CM_OFFLINE_CONVERSION, self.params.error_notifier)
+            )
+            | "Finish"
+            >> beam.Filter(inform_finish_of_execution_filter)
         )
 
 class DisplayVideoCustomerMatchDeviceIdStep(MegalistaStep):
@@ -325,6 +359,8 @@ class DisplayVideoCustomerMatchDeviceIdStep(MegalistaStep):
                     ErrorHandler(DestinationType.DV_CUSTOMER_MATCH_DEVICE_ID_UPLOAD, self.params.error_notifier)
                 )
             )
+            | "Finish"
+            >> beam.Filter(inform_finish_of_execution_filter)
         )
 
 
@@ -348,6 +384,8 @@ class DisplayVideoCustomerMatchContactInfoStep(MegalistaStep):
                   ErrorHandler(DestinationType.DV_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD, self.params.error_notifier)
                 )
             )
+            | "Finish"
+            >> beam.Filter(inform_finish_of_execution_filter)
         )
 
 PROCESSING_STEPS = [
