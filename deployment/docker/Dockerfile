@@ -1,36 +1,25 @@
-FROM amazonlinux:latest
+FROM python:3.9-slim
 
-# Tools
-RUN yum install -y shadow-utils curl git openssl11-devel tar gzip gcc make bzip2-devel bzip2-libs ncurses-devel ncurses-lib libffi libffi-devel readline-devel sqlite-devel pyliblzma xz xz-devel xz-libs
+# pre requirements
+RUN apt-get update
+RUN apt-get install -y curl build-essential
 
 # Worker
-RUN adduser --user-group worker
-ENV PATH="/home/worker/.local/bin:${PATH}"
+RUN adduser --gecos [] --disabled-password worker
 
-# Copy files
-RUN mkdir /app
-RUN chown -R worker:worker /app
-USER worker
+# copy files
 WORKDIR /app
 COPY --chown=worker:worker megalista_dataflow megalista_dataflow
+COPY --chown=worker:worker deployment/docker/entrypoint.sh .
+COPY --chown=worker:worker deployment/docker/service-account-file.json .
 
-# Python - virtual env
-RUN curl https://pyenv.run | bash
-RUN /home/worker/.pyenv/bin/pyenv install 3.9.9
-RUN /home/worker/.pyenv/bin/pyenv virtualenv 3.9.9 virtual_env
-RUN mv /home/worker/.pyenv/versions/virtual_env /app
-ENV VIRTUAL_ENV=/app/virtual_env
-ENV PATH="$VIRTUAL_ENV/bin:$PATH" 
-RUN env
-RUN python --version
+# pip
+USER worker
 RUN python -m ensurepip --upgrade
 RUN pip install --upgrade pip setuptools wheel
+RUN pip install --user --no-warn-script-location -r megalista_dataflow/requirements.txt
 
-# Install requirements
-RUN pip install --no-warn-script-location -r megalista_dataflow/requirements.txt
-
-COPY --chown=worker:worker deployment/docker/entrypoint.sh .
-COPY --chown=worker:worker deployment/docker/service-account-file.json ./megalista_dataflow/
-
+# set entrypoint
 RUN ["chmod", "+x", "entrypoint.sh"]
 ENTRYPOINT [ "/app/entrypoint.sh" ]
+
