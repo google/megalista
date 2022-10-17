@@ -22,9 +22,13 @@ class JsonConfig:
   def __init__(self, dataflow_options: DataflowOptions):
     self._dataflow_options = dataflow_options
 
+  def _get_json(self, url):
+    file_provider = FileProvider(url, self._dataflow_options, SourceType.FILE, "File Config (JSON)", False)
+    return file_provider.read().decode('utf-8')
+
   def parse_json_from_url(self, url):
     fileProvider = FileProvider(url, self._dataflow_options, SourceType.FILE, "File Config (JSON)", False)
-    data = json.loads(fileProvider.read().decode('utf-8'))
+    data = json.loads(self._get_json(url))
     return data
 
   def get_value(self, config_json, key):
