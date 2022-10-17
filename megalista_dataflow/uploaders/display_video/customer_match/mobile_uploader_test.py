@@ -87,7 +87,7 @@ def test_upload_add_users(mocker, uploader, error_notifier):
     uploader._get_dv_audience_service.return_value.list.assert_called_once_with(
         advertiserId='advertiser_id',
         pageSize=1,
-        filter='displayName : list_name'
+        filter='displayName : "list_name"'
     )
 
     test_create_resquest = {
@@ -122,8 +122,14 @@ def test_upload_update_users(mocker, uploader, error_notifier):
     audience.firstAndThirdPartyAudienceId = 12345
     audience.displayName = 'list_name'
 
-    audience_list = MagicMock()
-    audience_list.firstAndThirdPartyAudiences = [audience]
+    audience_list = {
+        'firstAndThirdPartyAudiences': [
+            {
+                'firstAndThirdPartyAudienceId': 12345,
+                'displayName': 'list_name'
+            }
+        ]
+    }
 
     uploader._get_dv_audience_service.return_value.list.return_value.execute.return_value = audience_list
     uploader._get_dv_audience_service.return_value.editCustomerMatchMembers.return_value = MagicMock()
@@ -154,7 +160,7 @@ def test_upload_update_users(mocker, uploader, error_notifier):
     uploader._get_dv_audience_service.return_value.list.assert_called_once_with(
         advertiserId='advertiser_id',
         pageSize=1,
-        filter='displayName : list_name'
+        filter='displayName : "list_name"'
     )
 
     test_update_resquest = {
