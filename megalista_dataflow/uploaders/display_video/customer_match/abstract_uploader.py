@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+from config import logging
 from typing import Dict, Any, List, Optional
 from apache_beam.options.value_provider import StaticValueProvider
 from google.oauth2.credentials import Credentials

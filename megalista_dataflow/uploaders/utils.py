@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import datetime
-import logging
+from config import logging
 import pytz
 import math
 

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import distutils.util
-import logging
+from config import logging
 
 from apache_beam.options.value_provider import ValueProvider
 

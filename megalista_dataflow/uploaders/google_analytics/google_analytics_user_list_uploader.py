@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-import logging
+from config import logging
 
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build

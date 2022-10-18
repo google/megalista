@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-import logging
+from config import logging
 import re
 from typing import Dict, Any
 from urllib.parse import quote

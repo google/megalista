@@ -13,7 +13,7 @@
 # limitations under the License.
 #
 
-import logging
+from config import logging
 from typing import List, Dict
 
 from google.oauth2.credentials import Credentials

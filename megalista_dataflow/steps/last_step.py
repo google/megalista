@@ -14,7 +14,7 @@
 
 from distutils.log import Log
 import apache_beam as beam
-import logging
+from config import logging
 from error.logging_handler import LoggingHandler
 from models.execution import Execution
 from .megalista_step import MegalistaStep
@@ -56,7 +56,7 @@ class PrintResultsDoFn(beam.DoFn):
         logging_handler = LoggingConfig.get_logging_handler()
         
         if logging_handler is None:
-          logging.getLogger("megalista").info(f"Clould not find error interception handler. Skipping error intereception.")
+          logging.getLogger("megalista").info(f"Could not find error interception handler. Skipping error intereception.")
         else:
           if logging_handler.has_errors:
             logging.getLogger("megalista.LOG").error(f"SUMMARY OF ERRORS:\n{LoggingHandler.format_records(logging_handler.error_records)}")

@@ -14,7 +14,7 @@
 
 
 import json
-import logging
+from config import logging
 from typing import Dict, Any, Sequence
 
 import requests

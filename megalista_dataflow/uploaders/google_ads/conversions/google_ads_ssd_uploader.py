@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import datetime
-import logging
+from config import logging
 
 from error.error_handling import ErrorHandler
 from models.execution import AccountConfig, Batch, Destination, Execution

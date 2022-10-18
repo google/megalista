@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+from config import logging
 from datetime import datetime
 
 import apache_beam as beam

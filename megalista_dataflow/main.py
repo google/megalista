@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 import warnings
 
 import apache_beam as beam
@@ -23,6 +22,7 @@ from config.version import MEGALISTA_VERSION
 
 from error.error_handling import GmailNotifier
 from config.logging import LoggingConfig
+from config import logging
 
 from models.execution import DataRowsGroupedBySource, Execution, ExecutionsGroupedBySource
 from sources.batches_from_executions import ExecutionsGroupedBySourceCoder, DataRowsGroupedBySourceCoder, ExecutionCoder

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import base64
-import logging
+from config import logging
 from email.mime.text import MIMEText
 from typing import Iterable, Optional, Dict
 
