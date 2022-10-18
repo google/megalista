@@ -117,7 +117,7 @@ class GoogleAdsECLeadsUploaderDoFn(MegalistaUploader):
         conversions = [{
             'conversion_action': conversion_resource_name,
             'conversion_date_time': utils.format_date(conversion['time']),
-            'conversion_value': int(conversion['amount']),
+            'conversion_value': float(str(conversion['amount'])),
             'user_identifiers': [{k: v} for (k, v) in conversion.items() if k in ('hashed_email', 'hashed_phone_number')]
         } for conversion in rows]
 
