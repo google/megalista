@@ -34,7 +34,9 @@ _BIGQUERY_PAGE_SIZE = 20000
 
 _LOGGER_NAME = 'megalista.BatchesFromExecutions'
 
-_INT_MAX = 2147483647
+# max int size. 
+# used for avoiding overflow when casting from str to int (underlying C code)
+_INT_MAX = 2147483647 
 
 class ExecutionCoder(coders.Coder):
     """A custom coder for the Execution class."""
@@ -74,6 +76,11 @@ class DataRowsGroupedBySourceCoder(coders.Coder):
         return True
 
     def estimate_size(self, o):
+        """Estimation of P-Collection size (in bytes).
+        - Called from Dataflow / Apache Beam
+        - Estimated size had to be truncated into _INT_MAX for 
+        avoiding overflow when casting from str to int
+        (in C underlying code)."""
         amount_of_rows = len(o.rows)
         row_size = 0
         if amount_of_rows > 0:
