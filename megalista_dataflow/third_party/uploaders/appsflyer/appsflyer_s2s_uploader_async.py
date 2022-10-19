@@ -138,6 +138,6 @@ class AppsFlyerS2SUploaderDoFn(MegalistaUploader):
     if delta_sec < min_duration_sec:
       time.sleep(min_duration_sec - delta_sec)
     logging.getLogger("megalista.AppsFlyerS2SUploader").info(
-      f"Successfully uploaded {len(success_elements)}/{len(batch.elements)} events.")
+      f"Successfully uploaded {len(success_elements)}/{len(batch.elements)} events.", execution=execution)
 
     yield Batch(execution, success_elements)

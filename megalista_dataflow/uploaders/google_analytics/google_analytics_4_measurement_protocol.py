@@ -136,5 +136,5 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
         accepted_elements.append(row)
 
     logging.getLogger(_LOGGER_NAME).info(
-      f'Successfully uploaded {len(accepted_elements)}/{len(batch.elements)} events.')
+      f'Successfully uploaded {len(accepted_elements)}/{len(batch.elements)} events.', execution=execution)
     return [Batch(execution, accepted_elements)]

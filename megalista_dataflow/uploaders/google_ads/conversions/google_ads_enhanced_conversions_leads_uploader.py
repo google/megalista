@@ -106,14 +106,14 @@ class GoogleAdsECLeadsUploaderDoFn(MegalistaUploader):
         successful_users = [
             user for user in response.results if user.ListFields()]
         logging.getLogger(_DEFAULT_LOGGER).info(
-            f'Sucessfully uploaded {len(successful_users)} conversions')
+            f'Sucessfully uploaded {len(successful_users)} conversions', execution=execution)
 
         # all uploaded results do not need to be sent again
         return [batch]
 
     def _do_upload(self, oc_service, execution, conversion_resource_name, customer_id, rows):
         logging.getLogger(_DEFAULT_LOGGER).info(
-            f'Uploading {len(rows)} offline conversions on {conversion_resource_name} to Google Ads.')
+            f'Uploading {len(rows)} offline conversions on {conversion_resource_name} to Google Ads.', execution=execution)
         conversions = [{
             'conversion_action': conversion_resource_name,
             'conversion_date_time': utils.format_date(conversion['time']),
