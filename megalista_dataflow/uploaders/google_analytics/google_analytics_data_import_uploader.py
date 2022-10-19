@@ -109,7 +109,7 @@ class GoogleAnalyticsDataImportUploaderDoFn(MegalistaUploader):
                 error_message = f'Error while uploading GA Data: {e}'
                 logging.getLogger(_LOGGER_NAME).error(error_message, execution=execution)
                 self._add_error(execution, error_message)
-                 execution.failed_records = execution.failed_records + len(rows)
+                execution.failed_records = execution.failed_records + len(rows)
             else:
                 execution.successful_records = execution.successful_records + len(rows)
         else:
