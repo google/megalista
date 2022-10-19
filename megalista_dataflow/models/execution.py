@@ -260,6 +260,9 @@ class Execution:
         self._account_config = account_config
         self._source = source
         self._destination = destination
+        self._total_records = 0
+        self._failed_records = 0
+        self._successful_records = 0
 
     @property
     def source(self) -> Source:
@@ -272,6 +275,44 @@ class Execution:
     @property
     def account_config(self) -> AccountConfig:
         return self._account_config
+
+    @property
+    def summary_of_records(self) -> dict:
+        return {
+            'total': self.total_records,
+            'successful': self.successful_records,
+            'failed': self._failed_records
+        }
+
+    @property
+    def total_records(self):
+        return self._total_records
+
+    @total_records.setter
+    def total_records(self, total_records):
+        self._total_records = total_records
+
+    @property
+    def successful_records(self):
+        return self._successful_records
+
+    @successful_records.setter
+    def successful_records(self, value):
+        self._successful_records = value
+
+    def add_successful_record(self, _):
+        self._successful_records = self._successful_records + 1
+
+    @property
+    def failed_records(self):
+        return self._failed_records
+
+    @failed_records.setter
+    def failed_records(self, value):
+        self._failed_records = value
+
+    def add_failed_record(self, _):
+        self._failed_records = self._failed_records + 1
 
     def to_dict(self):
         return {

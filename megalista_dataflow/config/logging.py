@@ -13,8 +13,9 @@
 # limitations under the License.
 
 import logging
-from optparse import Option
-import sys, io, os, traceback
+import sys
+import io
+import traceback
 from types import FrameType
 from typing import Optional, Tuple, List, Any
 
@@ -70,29 +71,31 @@ class _LogWrapper:
         self._logger = logging.getLogger(name)
 
     def debug(self, msg: str, *args, **kwargs):
-        self.log(msg, logging.DEBUG, *args, **kwargs)
+        self._log(msg, logging.DEBUG, *args, **kwargs)
     
     def info(self, msg: str, *args, **kwargs):
-        self.log(msg, logging.INFO, *args, **kwargs)
+        self._log(msg, logging.INFO, *args, **kwargs)
         
     def warning(self, msg: str, *args, **kwargs):
-        self.log(msg, logging.WARNING, *args, **kwargs)
+        self._log(msg, logging.WARNING, *args, **kwargs)
         
     def error(self, msg: str, *args, **kwargs):
-        self.log(msg, logging.ERROR, *args, **kwargs)
+        self._log(msg, logging.ERROR, *args, **kwargs)
     
     def critical(self, msg: str, *args, **kwargs):
-        self.log(msg, logging.CRITICAL, *args, **kwargs)
+        self._log(msg, logging.CRITICAL, *args, **kwargs)
 
     def exception(self, msg: str, *args, **kwargs):
-        self.log(msg, logging.CRITICAL, *args, **kwargs)
+        self._log(msg, logging.CRITICAL, *args, **kwargs)
     
-    def log(self, msg: str, level: int, *args, **kwargs):
+    def _log(self, msg: str, level: int, *args, **kwargs):
         stacklevel = self._get_stacklevel(**kwargs)
         msg = self._get_msg_execution(msg, **kwargs)
         msg = self._get_msg_context(msg, **kwargs)
         if level >= logging.ERROR:
             _add_error(self._name, msg, stacklevel, level, args)
+            if level == logging.ERROR:
+                level = logging.WARNING
         keys_to_remove = ['execution', 'context']
         for key in keys_to_remove:
             if key in kwargs:

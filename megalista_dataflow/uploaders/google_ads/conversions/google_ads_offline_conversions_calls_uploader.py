@@ -115,6 +115,8 @@ class GoogleAdsOfflineUploaderCallsDoFn(MegalistaUploader):
     if error_message:
       self._add_error(execution, error_message)
 
+    utils.update_execution_counters_ads(execution, rows, response)
+
     return response
 
   def _get_resource_name(self, customer_id: str, name: str):

@@ -135,6 +135,8 @@ class GoogleAdsECLeadsUploaderDoFn(MegalistaUploader):
             _DEFAULT_LOGGER, 'uploading enhanced conversions for leads', response)
         if error_message:
             self._add_error(execution, error_message)
+       
+        utils.update_execution_counters_ads(execution, rows, response)
 
         return response
 

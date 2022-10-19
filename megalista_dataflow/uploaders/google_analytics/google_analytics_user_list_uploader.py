@@ -24,6 +24,8 @@ from models.execution import Batch
 from uploaders import utils
 from uploaders.uploaders import MegalistaUploader
 
+_LOGGER_NAME = 'megalista.GoogleAnalyticsUserListUploader'
+
 
 class GoogleAnalyticsUserListUploaderDoFn(MegalistaUploader):
 
@@ -50,7 +52,7 @@ class GoogleAnalyticsUserListUploaderDoFn(MegalistaUploader):
         results = list(
             filter(lambda x: x['name'] == list_name, lists))
         if len(results) == 0:
-            logging.getLogger().info('%s list does not exist, creating...' % list_name)
+            logging.getLogger(_LOGGER_NAME).info('%s list does not exist, creating...' % list_name)
 
             response = analytics.management().remarketingAudience().insert(
                 accountId=ga_account_id,
@@ -65,10 +67,10 @@ class GoogleAnalyticsUserListUploaderDoFn(MegalistaUploader):
                     **list_definition
                 }).execute()
             id = response['id']
-            logging.getLogger().info('%s created with id: %s' % (list_name, id))
+            logging.getLogger(_LOGGER_NAME).info('%s created with id: %s' % (list_name, id))
         else:
             id = results[0]['id']
-            logging.getLogger().info('%s found with id: %s' % (list_name, id))
+            logging.getLogger(_LOGGER_NAME).info('%s found with id: %s' % (list_name, id))
         return id
 
     def start_bundle(self):
@@ -104,7 +106,7 @@ class GoogleAnalyticsUserListUploaderDoFn(MegalistaUploader):
                 or not destination[5]:
             raise ValueError('Missing destination information. Received {}'.format(str(destination)))
 
-    @utils.safe_process(logger=logging.getLogger("megalista.GoogleAnalyticsUserListUploader"))
+    @utils.safe_process(logger=logging.getLogger(_LOGGER_NAME))
     def process(self, batch: Batch, **kwargs):
         execution = batch.execution
         self._assert_all_list_names_are_present(execution)
@@ -149,7 +151,7 @@ class GoogleAnalyticsUserListUploaderDoFn(MegalistaUploader):
 
             id = results[0]['id']
 
-            logging.getLogger().info("Adding data to %s - %s" % (data_import_name, id))
+            logging.getLogger(_LOGGER_NAME).info("Adding data to %s - %s" % (data_import_name, id))
             body = '\n'.join([
                 '%s,%s' % (user_id_custom_dim, buyer_custom_dim),
                 *['%s,%s' % (row['user_id'], row[custom_dim_field] if custom_dim_field else 'buyer') for row in rows]
@@ -165,10 +167,17 @@ class GoogleAnalyticsUserListUploaderDoFn(MegalistaUploader):
                     customDataSourceId=id,
                     media_body=media).execute()
             except Exception as e:
-                error_message = f'Error while uploading GA Data: {e}'
-                logging.getLogger().error(error_message)
-                self._add_error(execution, error_message)
+                self._add_error(execution, f'Error uploading data: {e}')
+                logging.getLogger(_LOGGER_NAME).error(f'Error uploading data for :{batch.elements}', execution=execution)
+                logging.getLogger(_LOGGER_NAME).error(f'Exception type: {type(e).__name__}', execution=execution)
+                logging.getLogger(_LOGGER_NAME).error(e, exc_info=True, execution=execution)
+                execution.failed_records = execution.failed_records + len(rows)
+            else:
+                execution.successful_records = execution.successful_records + len(rows)
         else:
             error_message = f"{data_import_name} - data import not found, please configure it in Google Analytics"
-            logging.getLogger().error(error_message)
             self._add_error(execution, error_message)
+            logging.getLogger(_LOGGER_NAME).error(f'Error uploading data for :{batch.elements}', execution=execution)
+            logging.getLogger(_LOGGER_NAME).error(f'Exception type: {type(e).__name__}', execution=execution)
+            logging.getLogger(_LOGGER_NAME).error(e, exc_info=True, execution=execution)
+            execution.failed_records = execution.failed_records + len(rows)

@@ -69,17 +69,16 @@ def safe_process(logger):
             self_ = args[0]
             batch = args[1]
             if not batch:
-                logger.warning('Skipping upload, received no elements.')
+                logger.error('Skipping upload, received no elements.')
                 return
             logger.info(f'Uploading {len(batch.elements)} rows...')
             try:
                 return func(*args, **kwargs)
             except BaseException as e:
                 self_._add_error(batch.execution, f'Error uploading data: {e}')
-                logger.error(f'Error uploading data for :{batch.elements}')
-                logger.error(e, exc_info=True)
-                logger.exception('Error uploading data.')
-
+                logger.error(f'Error uploading data for :{batch.elements}', execution=batch.execution)
+                logger.error(f'Exception type: {type(e).__name__}', execution=batch.execution)
+                logger.error(e, exc_info=True, execution=batch.execution)
         return inner
 
     return deco
@@ -134,3 +133,14 @@ def print_partial_error_messages(logger_name, action, response) -> Optional[str]
         logging.getLogger(logger_name).debug(message)
 
     return error_message
+
+
+def update_execution_counters_ads(execution, elements, response):
+    failed_records = 0
+    partial_failure = getattr(response, 'partial_failure_error', None)
+    if partial_failure is not None:
+        details = getattr(partial_failure, 'details', [])
+        failed_records = len(details)
+    successful_records = len(elements) - failed_records
+    execution.successful_records = execution.successful_records + successful_records
+    execution.failed_records = execution.failed_records + failed_records
