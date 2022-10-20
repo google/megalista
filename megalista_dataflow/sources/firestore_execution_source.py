@@ -67,6 +67,8 @@ class FirestoreExecutionSource(BaseBoundedSource):
     if google_ads_id is not None:
       google_ads_id = utils.clean_ads_customer_id(google_ads_id)
       
+    if google_analytics_account_id is not None:
+      google_analytics_account_id = utils.google_analytics_account_id(google_analytics_account_id)
     
     account_config = AccountConfig(google_ads_id, mcc, google_analytics_account_id, campaign_manager_profile_id, app_id)
     logging.getLogger("megalista.FirestoreExecutionSource").info(f"Loaded: {account_config}")

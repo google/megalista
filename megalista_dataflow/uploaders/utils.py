@@ -138,3 +138,7 @@ def print_partial_error_messages(logger_name, action, response) -> Optional[str]
 
 def clean_ads_customer_id(customer_id: str) -> str:
     return re.sub(r'[^0-9]', '', customer_id)
+
+def google_analytics_account_id(analytics_account_id: str) -> str:
+    return re.sub(r'[^0-9]', '', analytics_account_id)
+    
