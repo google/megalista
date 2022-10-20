@@ -88,7 +88,13 @@ def test_get_cols_names(mocker):
     cols_1_filtered = ['uuid', 'gclid']
     cols_2 = ['uuid', 'gclid', 'aaa']
     cols_2_filtered = ['uuid', 'gclid']
-    
+    cols_3 = ['uuid', 'dclid']
+    cols_3_filtered = ['uuid', 'dclid']
+    cols_4 = ['uuid', 'matchId', 'quantity', 'value', 'customVariables.type', 'customVariables.value']
+    # For columns with arrays and nested fields, return the parent column only
+    cols_4_filtered = ['uuid', 'matchId', 'quantity', 'value', 'customVariables']
+
     assert DataSchemas.get_cols_names(cols_1, destination_type) == cols_1_filtered
     assert DataSchemas.get_cols_names(cols_2, destination_type) == cols_2_filtered
-    
+    assert DataSchemas.get_cols_names(cols_3, destination_type) == cols_3_filtered
+    assert DataSchemas.get_cols_names(cols_4, destination_type) == cols_4_filtered

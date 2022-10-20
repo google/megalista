@@ -30,6 +30,7 @@ _dtypes: Dict[str, Dict[str, Any]] = {
             {'name': 'mobileDeviceId', 'required': False, 'data_type': 'string'},
             {'name': 'encryptedUserId', 'required': False, 'data_type': 'string'},
             {'name': 'matchId', 'required': False, 'data_type': 'string'},
+            {'name': 'dclid', 'required': False, 'data_type': 'string'},
             {'name': 'value', 'required': False, 'data_type': 'int'},
             {'name': 'quantity', 'required': False, 'data_type': 'int'},
             {'name': 'timestamp', 'required': False, 'data_type': 'string'},
@@ -39,7 +40,7 @@ _dtypes: Dict[str, Dict[str, Any]] = {
                 'required': False, 'data_type': 'string'}
         ],
         'groups': [
-            ['gclid', 'mobileDeviceId', 'encryptedUserId', 'matchId']
+            ['gclid', 'mobileDeviceId', 'encryptedUserId', 'matchId', 'dclid']
         ]
     },
     'ADS_OFFLINE_CONVERSION': {
@@ -300,15 +301,17 @@ def get_error_message(data_cols: List[str], destination_type: DestinationType) -
 def get_cols_names(data_cols: list, destination_type: DestinationType) -> list:
     data_type = _dtypes[destination_type.name]
     data_type_cols = [col['name'] for col in data_type['columns']]
-
     filtered_cols = []
     for col in data_cols:
-        found = False
         for data_type_col in data_type_cols:
             if re.match(f'^{data_type_col}$', col) is not None:
+                nested = col.split('.')
+                # if nested, only add the parent column name
+                if len(nested) > 1:
+                    col = nested[0]
                 if col not in filtered_cols:
                     filtered_cols.append(col)
-
+                    break
     return filtered_cols
 
 # Parse columns that aren't string

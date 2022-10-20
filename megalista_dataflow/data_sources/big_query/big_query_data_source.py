@@ -184,7 +184,15 @@ class BigQueryDataSource(BaseDataSource):
 
     def _get_table_columns(self, client, table_name):
         table = client.get_table(table_name)
-        return [schema.name for schema in table.schema]
+        columns = []
+        for schema in table.schema:
+            if len(schema.fields) == 0:
+                # Add only if it is not a nested column
+                columns.append(schema.name)
+            for field in schema.fields:
+                # Nested columns will be added here
+                columns.append(f'{schema.name}.{field.name}')
+        return columns
 
     def _get_bq_client(self):
         return bigquery.Client(location=self._bq_location)
