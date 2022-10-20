@@ -12,13 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from distutils.log import Log
 import apache_beam as beam
 from config import logging
-from error.logging_handler import LoggingHandler
 from models.execution import Execution
 from .megalista_step import MegalistaStep
-from config.logging import LoggingConfig
 
 class LastStep(MegalistaStep):
     def expand(self, executions):

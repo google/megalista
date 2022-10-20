@@ -68,10 +68,10 @@ def safe_process(logger):
         def inner(*args, **kwargs):
             self_ = args[0]
             batch = args[1]
-            if not batch:
-                logger.error('Skipping upload, received no elements.')
+            if not batch or len(batch.elements) == 0:
+                logger.error('Skipping upload, received no elements.', execution=batch.execution)
                 return
-            logger.info(f'Uploading {len(batch.elements)} rows...')
+            logger.info(f'Uploading {len(batch.elements)} rows...', execution=batch.execution)
             try:
                 return func(*args, **kwargs)
             except BaseException as e:
