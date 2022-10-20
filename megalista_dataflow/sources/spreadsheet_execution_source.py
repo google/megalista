@@ -21,7 +21,7 @@ from models.execution import Destination, DestinationType
 from models.execution import Execution, AccountConfig
 from models.execution import Source, SourceType
 from models.sheets_config import SheetsConfig
-
+from uploaders import utils
 
 class SpreadsheetExecutionSource(BaseBoundedSource):
   """
@@ -55,6 +55,9 @@ class SpreadsheetExecutionSource(BaseBoundedSource):
     else:
       campaign_manager_profile_id = self._sheets_config.get_value(sheet_id, "CampaignManagerAccountId")
         
+    if google_ads_id is not None:
+      google_ads_id = utils.clean_ads_customer_id(google_ads_id)
+      
     account_config = AccountConfig(google_ads_id, mcc, google_analytics_account_id, campaign_manager_profile_id, app_id)
     logging.getLogger("megalista.SpreadsheetExecutionSource").info(f"Loaded: {account_config}")
 
