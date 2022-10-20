@@ -34,12 +34,9 @@ _BIGQUERY_PAGE_SIZE = 20000
 
 _LOGGER_NAME = 'megalista.BatchesFromExecutions'
 
-
-def _convert_row_to_dict(row):
-    dict = {}
-    for key, value in row.items():
-        dict[key] = value
-    return dict
+# max int size. 
+# used for avoiding overflow when casting from str to int (underlying C code)
+_INT_MAX = 2147483647 
 
 class ExecutionCoder(coders.Coder):
     """A custom coder for the Execution class."""
@@ -77,6 +74,23 @@ class DataRowsGroupedBySourceCoder(coders.Coder):
 
     def is_deterministic(self):
         return True
+
+    def estimate_size(self, o):
+        """Estimation of P-Collection size (in bytes).
+        - Called from Dataflow / Apache Beam
+        - Estimated size had to be truncated into _INT_MAX for 
+        avoiding overflow when casting from str to int
+        (in C underlying code)."""
+        amount_of_rows = len(o.rows)
+        row_size = 0
+        if amount_of_rows > 0:
+            row_size = len(json.dumps(o.rows[0]).encode('utf-8'))
+        estimate = amount_of_rows * row_size
+        # there is an overflow error if estimated size > _INT_MAX
+        if estimate > _INT_MAX:
+            estimate = _INT_MAX
+        return estimate
+
 
 
 class BatchesFromExecutions(beam.PTransform):
@@ -117,9 +131,13 @@ class BatchesFromExecutions(beam.PTransform):
             yield Batch(execution, batch, iteration)
 
     class _BreakIntoExecutions(beam.DoFn):
+        def __init__(self, destination_type: DestinationType):
+            self._destination_type = destination_type
+
         def process(self, el):
             for item in el:
-                yield item
+                if item[0].destination.destination_type == self._destination_type:
+                    yield item
 
     def __init__(
         self,
@@ -149,6 +167,6 @@ class BatchesFromExecutions(beam.PTransform):
             )
             | beam.ParDo(self._ReadDataSource(self._transactional_type, self._dataflow_options, self._error_handler))
             | beam.Map(lambda el: [(execution, el.rows) for execution in iter(el.executions.executions)])
-            | beam.ParDo(self._BreakIntoExecutions())
+            | beam.ParDo(self._BreakIntoExecutions(self._destination_type))
             | beam.ParDo(self._BatchElements(self._batch_size, self._error_handler))
         )
