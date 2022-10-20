@@ -52,11 +52,11 @@ def test_analytics_has_not_data_sources(mocker, eraser, caplog, error_notifier):
                           Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers']),
                           Destination('dest1', DestinationType.GA_DATA_IMPORT, ['web_property', 'data_import_name']))
     # Act
-    eraser.process(Batch(execution, []))
+    eraser.process(Batch(execution, [{}]))
 
     eraser.finish_bundle()
 
-    assert 'data_import_name - data import not found, please configure it in Google Analytics' in caplog.text
+    assert '[Execution: orig1 -> dest1] data_import_name - data import not found, please configure it in Google Analytics' in caplog.text
 
     assert error_notifier.were_errors_sent
 
@@ -75,12 +75,12 @@ def test_data_source_not_found(mocker, eraser, caplog, error_notifier):
                           Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers']),
                           Destination('dest1', DestinationType.GA_DATA_IMPORT, ['web_property', 'data_import_name']))
 
-    eraser.process(Batch(execution, []))
+    eraser.process(Batch(execution, [{}]))
 
     # Act
     eraser.finish_bundle()
 
-    assert 'data_import_name - data import not found, please configure it in Google Analytics' in caplog.text
+    assert '[Execution: orig1 -> dest1] data_import_name - data import not found, please configure it in Google Analytics' in caplog.text
 
     assert error_notifier.were_errors_sent
 
@@ -136,7 +136,7 @@ def test_files_deleted_with_success(mocker, eraser):
     service.management().uploads().deleteUploadData.side_effect = delete_call_mock
 
     # Act
-    eraser.process(Batch(execution, []))
+    eraser.process(Batch(execution, [{}]))
 
     # Called once
     delete_call_mock.assert_called_once()

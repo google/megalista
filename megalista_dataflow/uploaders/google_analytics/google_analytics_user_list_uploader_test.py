@@ -54,7 +54,7 @@ def test_list_already_exists(mocker, uploader):
         Destination('dest1', DestinationType.GA_USER_LIST_UPLOAD,
                     ['a', 'b', 'c', 'list', 'd', 'e']))
 
-    uploader.process(Batch(execution, []))
+    uploader.process(Batch(execution, [{}]))
 
     uploader._get_analytics_service().management().remarketingAudience(
     ).insert.assert_not_called()
@@ -79,7 +79,7 @@ def test_list_creation_not_mcc(mocker, uploader):
         Destination(
             'dest1', DestinationType.GA_USER_LIST_UPLOAD,
             ['web_property', 'view', 'c', 'list', 'd', 'buyers_custom_dim']))
-    uploader.process(Batch(execution, []))
+    uploader.process(Batch(execution, [{}]))
 
     service.management().remarketingAudience().insert.assert_any_call(
         accountId=ga_account_id,
@@ -126,7 +126,7 @@ def test_list_creation_mcc(mocker, uploader):
         Destination(
             'dest1', DestinationType.GA_USER_LIST_UPLOAD,
             ['web_property', 'view', 'c', 'list', 'd', 'buyers_custom_dim']))
-    uploader.process(Batch(execution, []))
+    uploader.process(Batch(execution, [{}]))
 
     service.management().remarketingAudience().insert.assert_any_call(
         accountId=ga_account_id,
