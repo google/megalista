@@ -27,8 +27,13 @@ from models.execution import SourceType
 from models.oauth_credentials import OAuthCredentials
 from uploaders.google_ads.conversions.google_ads_ssd_uploader import GoogleAdsSSDUploaderDoFn
 
-_account_config = AccountConfig('account_id', False, 'ga_account_id', '', '')
-_mcc_account_config = AccountConfig('mcc_account_id', True, 'ga_account_id', '', '')
+_ads_account_id = '1234567890'
+_ads_mcc_account_id = '0987654321'
+_ads_account_override = '12121212121'
+_ga_account_id = '3456789'
+
+_account_config = AccountConfig(_ads_account_id, False, _ga_account_id, '', '')
+_mcc_account_config = AccountConfig(_ads_mcc_account_id, True, _ga_account_id, '', '')
 
 _conversion_name = 'ssd_conversion'
 _external_upload_id = '123' #TODO(caiotomazelli): Remove, not being used
@@ -59,7 +64,7 @@ def ssd_batch():
 
 @pytest.fixture
 def ssd_batch_with_account_and_currency_override():
-    return create_batch(_account_config, 'currency_override', 'account_override')
+    return create_batch(_account_config, 'currency_override', _ads_account_override)
 
 @pytest.fixture
 def ssd_batch_with_mcc_account_override():
@@ -132,7 +137,7 @@ def test_conversion_upload(mocker, uploader, ssd_batch):
         }]
     }
 
-    uploader._get_offline_user_data_job_service.assert_called_with('account_id')
+    uploader._get_offline_user_data_job_service.assert_called_with(_ads_account_id)
     uploader._get_offline_user_data_job_service.return_value.add_offline_user_data_job_operations.assert_any_call(request = data_insertion_payload)
 
 def test_conversion_upload_account_and_currency_override(mocker, uploader, ssd_batch_with_account_and_currency_override):
@@ -174,7 +179,7 @@ def test_conversion_upload_account_and_currency_override(mocker, uploader, ssd_b
         }]
     }
 
-    uploader._get_offline_user_data_job_service.assert_called_with('account_override')
+    uploader._get_offline_user_data_job_service.assert_called_with(_ads_account_override)
     uploader._get_offline_user_data_job_service.return_value.add_offline_user_data_job_operations.assert_any_call(request = data_insertion_payload)
 
 def test_conversion_mcc_account_override(mocker, uploader, ssd_batch_with_mcc_account_override):
@@ -216,5 +221,5 @@ def test_conversion_mcc_account_override(mocker, uploader, ssd_batch_with_mcc_ac
         }]
     }
 
-    uploader._get_offline_user_data_job_service.assert_called_with('mcc_account_id')
+    uploader._get_offline_user_data_job_service.assert_called_with(_ads_mcc_account_id)
     uploader._get_offline_user_data_job_service.return_value.add_offline_user_data_job_operations.assert_any_call(request = data_insertion_payload)
