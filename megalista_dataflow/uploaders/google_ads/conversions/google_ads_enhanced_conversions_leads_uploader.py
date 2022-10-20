@@ -54,7 +54,7 @@ class GoogleAdsECLeadsUploaderDoFn(MegalistaUploader):
         """
         if len(destination.destination_metadata) >= 2 and len(destination.destination_metadata[1]) > 0:
             return utils.clean_ads_customer_id(destination.destination_metadata[1])
-        returnutils.clean_ads_customer_id(account_config.google_ads_account_id)
+        return utils.clean_ads_customer_id(account_config.google_ads_account_id)
 
     def _get_login_customer_id(self, account_config: AccountConfig, destination: Destination) -> str:
         """

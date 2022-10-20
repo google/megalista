@@ -61,8 +61,8 @@ def test_list_already_exists(mocker, uploader):
 
 
 def test_list_creation_not_mcc(mocker, uploader):
-    ads_account_id = 'xxx-yyy-zzzz'
-    ga_account_id = 'acc'
+    ads_account_id = '1234567890'
+    ga_account_id = '123456789'
 
     service = mocker.MagicMock()
 
@@ -108,8 +108,8 @@ def test_list_creation_not_mcc(mocker, uploader):
 
 
 def test_list_creation_mcc(mocker, uploader):
-    ads_account_id = 'xxx-yyy-zzzz'
-    ga_account_id = 'acc'
+    ads_account_id = '1234567890'
+    ga_account_id = '123456789'
 
     service = mocker.MagicMock()
 
@@ -155,8 +155,8 @@ def test_list_creation_mcc(mocker, uploader):
 
 
 def test_avoid_list_creation_when_name_blank(mocker, uploader):
-    ads_account_id = 'xxx-yyy-zzzz'
-    ga_account_id = 'acc'
+    ads_account_id = '1234567890'
+    ga_account_id = '123456789'
 
     service = mocker.MagicMock()
 
