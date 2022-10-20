@@ -22,8 +22,6 @@ from models.execution import Execution, AccountConfig
 from models.execution import Source, SourceType
 from models.json_config import JsonConfig
 
-from uploaders import utils
-
 class JsonExecutionSource(BaseBoundedSource):
   """
   Read Execution data from a JSON file. The URL is set-up in the parameter "setup_json_url"
@@ -50,12 +48,6 @@ class JsonExecutionSource(BaseBoundedSource):
     app_id = self._json_config.get_value(json_data, "AppId")
     google_analytics_account_id = self._json_config.get_value(json_data, "GoogleAnalyticsAccountId")
     campaign_manager_profile_id = self._json_config.get_value(json_data, "CampaignManagerProfileId")
-    
-    if google_ads_id is not None:
-      google_ads_id = utils.clean_ads_customer_id(google_ads_id)
-      
-    if google_analytics_account_id is not None:
-      google_analytics_account_id = utils.google_analytics_account_id(google_analytics_account_id)
     
     if campaign_manager_profile_id is None:
       campaign_manager_profile_id = self._json_config.get_value(json_data, "CampaignManagerAccountId")
