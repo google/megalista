@@ -30,7 +30,7 @@ do
     IFS=' '
 done
 
-export GOOGLE_APPLICATION_CREDENTIALS=/app/megalista_dataflow/service-account-file.json
+export GOOGLE_APPLICATION_CREDENTIALS=/app/service-account-file.json
 
 echo "Activating virual environment (python)"
 source virtual_env/bin/activate
