@@ -36,7 +36,7 @@ class JsonExecutionSource(BaseBoundedSource):
   def _do_count(self):
     json_url = self._setup_json_url.get()
     json_data = self._json_config.parse_json_from_url(json_url)
-    return len(json_data)
+    return len(json_data['Connections'])
 
   def read(self, range_tracker):
     json_url = self._setup_json_url.get()
