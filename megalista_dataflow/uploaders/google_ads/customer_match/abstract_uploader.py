@@ -145,15 +145,15 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
           If the customer_id is present on the destination, returns it, otherwise defaults to the account_config info.
         """
         if len(destination.destination_metadata) >= 5 and len(destination.destination_metadata[4]) > 0:
-            return Utils.clean_ads_customer_id(destination.destination_metadata[4])
-        return Utils.clean_ads_customer_id(account_config.google_ads_account_id)
+            return Utils.filter_text_only_numbers(destination.destination_metadata[4])
+        return Utils.filter_text_only_numbers(account_config.google_ads_account_id)
 
     def _get_login_customer_id(self, account_config: AccountConfig, destination: Destination) -> str:
         """
           If the customer_id in account_config is a mcc, then login with the mcc account id, otherwise use the customer id.
         """
         if account_config._mcc:
-            return Utils.clean_ads_customer_id(account_config.google_ads_account_id)
+            return Utils.filter_text_only_numbers(account_config.google_ads_account_id)
         
         return self._get_customer_id(account_config, destination)
 

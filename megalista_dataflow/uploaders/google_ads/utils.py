@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from google.ads.googleads.client import GoogleAdsClient
-from google.ads.googleads import oauth2
 import logging
 from typing import Optional
 
@@ -23,6 +21,9 @@ class Utils(BaseUtils):
     
     @staticmethod
     def get_ads_client(oauth_credentials, developer_token, customer_id):
+        from google.ads.googleads.client import GoogleAdsClient
+        from google.ads.googleads import oauth2
+
         oauth2_client = oauth2.get_installed_app_credentials(
             oauth_credentials.get_client_id(), oauth_credentials.get_client_secret(),
             oauth_credentials.get_refresh_token())
@@ -34,7 +35,7 @@ class Utils(BaseUtils):
     @staticmethod
     def get_ads_service(service_name, version, oauth_credentials, developer_token,
                         customer_id):
-        return get_ads_client(oauth_credentials, developer_token, customer_id).get_service(service_name, version=version)
+        return Utils.get_ads_client(oauth_credentials, developer_token, customer_id).get_service(service_name, version=version)
 
     @staticmethod
     def print_partial_error_messages(logger_name, action, response) -> Optional[str]:

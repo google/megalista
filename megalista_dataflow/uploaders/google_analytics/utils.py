@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from config.utils import Utils as BaseUtils
+from uploaders.utils import Utils as BaseUtils
 
 class Utils(BaseUtils):
     pass
