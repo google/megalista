@@ -17,7 +17,7 @@ import logging
 
 from error.error_handling import ErrorHandler
 from models.execution import AccountConfig, Batch, Destination, Execution
-from uploaders import utils
+from uploaders.utils import Utils
 from uploaders.google_ads import ADS_API_VERSION
 from uploaders.uploaders import MegalistaUploader
 
@@ -31,7 +31,7 @@ class GoogleAdsSSDUploaderDoFn(MegalistaUploader):
         self.active = developer_token is not None
 
     def _get_offline_user_data_job_service(self, customer_id):
-        return utils.get_ads_service('OfflineUserDataJobService', ADS_API_VERSION,
+        return Utils.get_ads_service('OfflineUserDataJobService', ADS_API_VERSION,
                                          self.oauth_credentials,
                                          self.developer_token.get(),
                                          customer_id)
@@ -43,7 +43,7 @@ class GoogleAdsSSDUploaderDoFn(MegalistaUploader):
             raise ValueError(
                 f'Missing destination information. Received {len(metadata)} entry(ies)')
 
-    @utils.safe_process(
+    @Utils.safe_process(
         logger=logging.getLogger('megalista.GoogleAdsSSDUploader'))
     def process(self, batch: Batch, **kwargs):
         execution = batch.execution
@@ -101,7 +101,7 @@ class GoogleAdsSSDUploaderDoFn(MegalistaUploader):
                         'conversion_action': conversion_action_resource_name,
                         'currency_code': currency_code,
                         'transaction_amount_micros': conversion['amount'],
-                        'transaction_date_time': utils.format_date(conversion['time'])
+                        'transaction_date_time': Utils.format_date(conversion['time'])
                     }
                 }
             } for conversion in rows]
@@ -109,7 +109,7 @@ class GoogleAdsSSDUploaderDoFn(MegalistaUploader):
 
         data_insertion_response = offline_user_data_job_service.add_offline_user_data_job_operations(request = data_insertion_payload)
 
-        error_message = utils.print_partial_error_messages(logger, 'uploading customer match',
+        error_message = Utils.print_partial_error_messages(logger, 'uploading customer match',
                                                            data_insertion_response)
         if error_message:
             self._add_error(execution, error_message)
@@ -130,20 +130,20 @@ class GoogleAdsSSDUploaderDoFn(MegalistaUploader):
           If the customer_id is present on the destination, returns it, otherwise defaults to the account_config info.
         """
         if len(destination.destination_metadata) >= 5 and len(destination.destination_metadata[4]) > 0:
-            return utils.clean_ads_customer_id(destination.destination_metadata[4])
-        return utils.clean_ads_customer_id(account_config.google_ads_account_id)
+            return Utils.clean_ads_customer_id(destination.destination_metadata[4])
+        return Utils.clean_ads_customer_id(account_config.google_ads_account_id)
 
     def _get_login_customer_id(self, account_config: AccountConfig, destination: Destination) -> str:
         """
           If the customer_id in account_config is a mcc, then login with the mcc account id, otherwise use the customer id.
         """
         if account_config._mcc:
-            return utils.clean_ads_customer_id(account_config.google_ads_account_id)
+            return Utils.clean_ads_customer_id(account_config.google_ads_account_id)
         
         return self._get_customer_id(account_config, destination)
 
     def _get_ads_service(self, customer_id: str):
-      return utils.get_ads_service('GoogleAdsService', ADS_API_VERSION,
+      return Utils.get_ads_service('GoogleAdsService', ADS_API_VERSION,
                                        self.oauth_credentials,
                                        self.developer_token.get(),
                                        customer_id)

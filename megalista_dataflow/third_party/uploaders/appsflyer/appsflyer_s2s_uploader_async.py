@@ -22,7 +22,7 @@ from aiohttp import ClientSession, ClientTimeout
 
 from error.error_handling import ErrorHandler
 from models.execution import Batch
-from uploaders import utils
+from uploaders.utils import Utils
 from uploaders.uploaders import MegalistaUploader
 
 
@@ -118,7 +118,7 @@ class AppsFlyerS2SUploaderDoFn(MegalistaUploader):
       payload[name] = row[row_key]
 
 
-  @utils.safe_process(logger=logging.getLogger("megalista.AppsFlyerS2SUploader"))
+  @Utils.safe_process(logger=logging.getLogger("megalista.AppsFlyerS2SUploader"))
   def process(self, batch: Batch, **kwargs):
     success_elements: List[Any] = []
     start_datetime = datetime.now()

@@ -22,7 +22,7 @@ import requests
 
 from error.error_handling import ErrorHandler
 from models.execution import Batch
-from uploaders import utils
+from uploaders.google_analytics.utils import Utils
 from uploaders.uploaders import MegalistaUploader
 
 
@@ -95,7 +95,7 @@ class GoogleAnalyticsMeasurementProtocolUploaderDoFn(MegalistaUploader):
 
     return payload
 
-  @utils.safe_process(logger=logging.getLogger("megalista.GoogleAnalyticsMeasurementProtocolUploader"))
+  @Utils.safe_process(logger=logging.getLogger("megalista.GoogleAnalyticsMeasurementProtocolUploader"))
   def process(self, batch: Batch, **kwargs):
     rows = batch.elements
 

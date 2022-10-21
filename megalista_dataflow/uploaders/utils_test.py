@@ -16,7 +16,7 @@ import logging
 from error.error_handling import ErrorHandler
 from error.error_handling_test import MockErrorNotifier
 from models.execution import Batch, DestinationType, Destination, Source, SourceType, Execution, AccountConfig
-from uploaders import utils
+from uploaders.utils import Utils
 from uploaders.uploaders import MegalistaUploader
 
 error_message = 'Test error message'
@@ -26,7 +26,7 @@ class MockUploader(MegalistaUploader):
   def __init__(self, error_handler: ErrorHandler):
     super().__init__(error_handler)
 
-  @utils.safe_process(logger=logging.getLogger('megalista.UtilsTest'))
+  @Utils.safe_process(logger=logging.getLogger('megalista.UtilsTest'))
   def process(self, batch: Batch, **kwargs):
     self._add_error(batch.execution, error_message)
 

@@ -26,6 +26,8 @@ MAX_RETRIES = 3
 
 timezone = pytz.timezone('America/Sao_Paulo')
 
+from config.utils import Utils as BaseUtils
+
 
 def get_ads_client(oauth_credentials, developer_token, customer_id):
     from google.ads.googleads.client import GoogleAdsClient
@@ -142,3 +144,71 @@ def clean_ads_customer_id(customer_id: str) -> str:
 def google_analytics_account_id(analytics_account_id: str) -> str:
     return re.sub(r'[^0-9]', '', analytics_account_id)
     
+    
+class Utils(BaseUtils):
+    _TIMEZONE = pytz.timezone('America/Sao_Paulo')
+    _MAX_RETRIES = 3
+    
+    @staticmethod
+    def format_date(date):
+        if isinstance(date, datetime.datetime):
+            pdate = date
+        else:
+            pdate = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%f')
+
+        pdate = _TIMEZONE.localize(pdate)
+        str_timezone = pdate.strftime("%z")
+        return f'{datetime.datetime.strftime(pdate, "%Y-%m-%d %H:%M:%S")}{str_timezone[-5:-2]}:{str_timezone[-2:]}'
+
+    @staticmethod
+    def get_timestamp_micros(date):
+        if isinstance(date, datetime.datetime):
+            pdate = date
+        else:
+            pdate = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%f')
+
+        return math.floor(pdate.timestamp() * 10e5)
+        
+    
+    @staticmethod
+    def safe_process(logger):
+        def deco(func):
+            def inner(*args, **kwargs):
+                self_ = args[0]
+                batch = args[1]
+                if not batch:
+                    logger.warning('Skipping upload, received no elements.')
+                    return
+                logger.info(f'Uploading {len(batch.elements)} rows...')
+                try:
+                    return func(*args, **kwargs)
+                except BaseException as e:
+                    self_._add_error(batch.execution, f'Error uploading data: {e}')
+                    logger.error(f'Error uploading data for :{batch.elements}')
+                    logger.error(e, exc_info=True)
+                    logger.exception('Error uploading data.')
+
+            return inner
+
+        return deco
+
+    @staticmethod
+    def safe_call_api(function, logger, *args, **kwargs):
+        current_retry = 1
+        _do_safe_call_api(function, logger, current_retry, *args, **kwargs)
+
+    @staticmethod
+    def _do_safe_call_api(function, logger, current_retry, *args, **kwargs):
+        try:
+            return function(*args, *kwargs)
+        except Exception as e:
+            if current_retry < Utils._MAX_RETRIES:
+                logger.exception(
+                    f'Fail number {current_retry}. Stack track follows. Trying again.')
+                current_retry += 1
+                return _do_safe_call_api(function, logger, current_retry, *args, **kwargs)
+
+    @staticmethod
+    def convert_datetime_tz(dt, origin_tz, destination_tz):
+        datetime_obj = pytz.timezone(origin_tz).localize(dt)
+        return datetime_obj.astimezone(pytz.timezone(destination_tz))

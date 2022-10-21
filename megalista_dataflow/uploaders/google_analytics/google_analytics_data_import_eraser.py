@@ -19,7 +19,7 @@ from googleapiclient.discovery import build
 
 from error.error_handling import ErrorHandler
 from models.execution import Batch
-from uploaders import utils
+from uploaders.google_analytics.utils import Utils
 from uploaders.uploaders import MegalistaUploader
 
 
@@ -59,7 +59,7 @@ class GoogleAnalyticsDataImportEraser(MegalistaUploader):
         if not destination[0] or not destination[1]:
             raise ValueError('Missing destination information. Received {}'.format(str(destination)))
 
-    @utils.safe_process(
+    @Utils.safe_process(
         logger=logging.getLogger('megalista.GoogleAnalyticsDataImportUploader'))
     def process(self, batch: Batch, **kwargs):
         execution = batch.execution
