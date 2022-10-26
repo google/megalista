@@ -16,7 +16,7 @@ FROM python:3.9-slim
 
 # pre requirements
 RUN apt-get update
-RUN apt-get install -y curl build-essential
+RUN apt-get install -y curl build-essential jq
 
 # Worker
 RUN adduser --gecos [] --disabled-password worker
@@ -24,6 +24,7 @@ RUN adduser --gecos [] --disabled-password worker
 # copy files
 WORKDIR /app
 COPY --chown=worker:worker megalista_dataflow megalista_dataflow
+COPY --chown=worker:worker .git .git
 COPY --chown=worker:worker deployment/docker/entrypoint.sh .
 COPY --chown=worker:worker deployment/docker/service-account-file.json .
 
@@ -32,6 +33,9 @@ USER worker
 RUN python -m ensurepip --upgrade
 RUN pip install --upgrade pip setuptools wheel
 RUN pip install --user --no-warn-script-location -r megalista_dataflow/requirements.txt
+
+# updates megalista version
+RUN sed -i "s/MEGALISTA_VERSION\s*=.*/MEGALISTA_VERSION = '$(git rev-parse HEAD)'/" megalista_dataflow/config/version.py
 
 # set entrypoint
 RUN ["chmod", "+x", "entrypoint.sh"]

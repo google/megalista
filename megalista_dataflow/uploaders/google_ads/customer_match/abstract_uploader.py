@@ -194,7 +194,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
     @utils.safe_process(logger=logging.getLogger(_DEFAULT_LOGGER))
     def process(self, batch: Batch, **kwargs):
         if not self.active:
-            logging.getLogger(_DEFAULT_LOGGER).warning(
+            logging.getLogger(_DEFAULT_LOGGER).info(
                 'Skipping upload to ads, parameters not configured.')
             return
 
