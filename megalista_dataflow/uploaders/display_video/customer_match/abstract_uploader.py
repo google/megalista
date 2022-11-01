@@ -161,7 +161,7 @@ class DisplayVideoCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
         if not self.active:
             logging.getLogger(_DEFAULT_LOGGER).info(
                 'Skipping upload to DV, parameters not configured.', execution=execution)
-            return
+            return [execution]
 
         self._assert_execution_is_valid(execution)
 
