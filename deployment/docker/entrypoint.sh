@@ -30,10 +30,12 @@ do
     IFS=' '
 done
 
-export GOOGLE_APPLICATION_CREDENTIALS=/app/service-account-file.json
+# Checks if the service-account file is filled 
+if [ ! -z "$(cat service-account-file.json | jq -r '.project_id')" ]; then
+   export GOOGLE_APPLICATION_CREDENTIALS=/app/service-account-file.json
+   echo "Service Account configuration being used"
+fi
 
-echo "Activating virual environment (python)"
-source virtual_env/bin/activate
 echo "Running Megalista"
 python megalista_dataflow/main.py \
     --runner DirectRunner \
