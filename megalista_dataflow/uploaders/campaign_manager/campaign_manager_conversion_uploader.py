@@ -45,7 +45,7 @@ class CampaignManagerConversionUploaderDoFn(MegalistaUploader):
             'https://www.googleapis.com/auth/dfatrafficking',
             'https://www.googleapis.com/auth/ddmconversions'])
 
-    return build('dfareporting', 'v3.5', credentials=credentials)
+    return build('dfareporting', 'v4', credentials=credentials)
 
   def start_bundle(self):
     pass
@@ -107,6 +107,8 @@ class CampaignManagerConversionUploaderDoFn(MegalistaUploader):
         to_upload['mobileDeviceId'] = conversion['mobileDeviceId']
       elif 'matchId' in conversion and conversion['matchId']:
         to_upload['matchId'] = conversion['matchId']
+      elif 'dclid' in conversion and conversion['dclid']:
+        to_upload['dclid'] = conversion['dclid']
 
       if 'value' in conversion:
         to_upload['value'] = float(conversion['value'])

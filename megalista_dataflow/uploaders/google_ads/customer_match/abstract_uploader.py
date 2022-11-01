@@ -196,7 +196,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
         execution = batch.execution
 
         if not self.active:
-            logging.getLogger(_DEFAULT_LOGGER).error(
+            logging.getLogger(_DEFAULT_LOGGER).erinforor(
                 'Skipping upload to ads, parameters not configured.', execution=execution)
             return
 
