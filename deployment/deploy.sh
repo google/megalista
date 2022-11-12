@@ -64,7 +64,7 @@ function create_bq_ops_dataset() {
 
 function create_bucket() {
     start_message "Creating bucket ${BUCKET_NAME}..."
-    gsutil mb -p $GOOGLE_CLOUD_PROJECT -l $LOCATION gs://$BUCKET_NAME
+    gsutil mb -p $GOOGLE_CLOUD_PROJECT -l $REGION gs://$BUCKET_NAME
     gsutil uniformbucketlevelaccess set on gs://$BUCKET_NAME
     echo
 }
@@ -96,10 +96,10 @@ function  create_scheduler() {
     start_message "Creating the new Cloud Scheduler ${SCHEDULER_NAME}..."
     gcloud scheduler jobs create http $SCHEDULER_NAME \
     --schedule "0 0 * * *" \
-    --uri "https://dataflow.googleapis.com/v1b3/projects/${GOOGLE_CLOUD_PROJECT}/locations/${LOCATION}/templates:launch?gcsPath=gs://${BUCKET_NAME}/templates/megalista" \
+    --uri "https://dataflow.googleapis.com/v1b3/projects/${GOOGLE_CLOUD_PROJECT}/locations/${REGION}/templates:launch?gcsPath=gs://${BUCKET_NAME}/templates/megalista" \
     --description "Daily Runner for Megalista" \
     --time-zone "Etc/UTC" \
-    --location ${LOCATION} \
+    --location ${REGION} \
     --attempt-deadline 320s \
     --http-method POST \
     --oauth-service-account-email ${SERVICE_ACCOUNT} \
@@ -127,7 +127,7 @@ function  create_scheduler() {
 
 function pause_scheduler() {
     start_message "Pausing scheduler $1..."
-    gcloud scheduler jobs pause --location=$LOCATION $1
+    gcloud scheduler jobs pause --location=$REGION $1
     echo
 }
 
@@ -141,7 +141,7 @@ function grant_permissions_to_active_account() {
 }
 
 function check_valid_parameters() {
-    if [ -z "${SERVICE_ACCOUNT_NAME}" ] || [ -z "${BUCKET_NAME}" ] || [ -z "${SCHEDULER_NAME_PREFIX}" ] || [ -z "${LOCATION}" ] || [ -z "${BQ_OPS_DATASET_NAME}" ] || [ -z "${CLIENT_ID}" ] || [ -z "${CLIENT_SECRET}" ] || [ -z "${ACCESS_TOKEN}" ] || [ -z "${REFRESH_TOKEN}" ]; then
+    if [ -z "${SERVICE_ACCOUNT_NAME}" ] || [ -z "${BUCKET_NAME}" ] || [ -z "${SCHEDULER_NAME_PREFIX}" ] || [ -z "${LOCATION}" ] || [ -z "${REGION}" ] || [ -z "${BQ_OPS_DATASET_NAME}" ] || [ -z "${CLIENT_ID}" ] || [ -z "${CLIENT_SECRET}" ] || [ -z "${ACCESS_TOKEN}" ] || [ -z "${REFRESH_TOKEN}" ]; then
         show_message "${bold}${text_red}ERROR: Some required parameters are missing. Please check your config.json file.${reset}"
         exit
     fi
@@ -191,6 +191,7 @@ function init() {
         SCHEDULER_NAME_PREFIX=$(cat config.json | jq -r '.scheduler_name')
         SCHEDULER_NAME=$SCHEDULER_NAME_PREFIX"_"$CURRENT_DATE
         LOCATION=$(cat config.json | jq -r '.location')
+        REGION=$(cat config.json | jq -r '.region')
         BQ_OPS_DATASET_NAME=$(cat config.json | jq -r '.bq_ops_dataset')
         DEVELOPER_TOKEN=$(cat config.json | jq -r '.developer_token')
         CLIENT_ID=$(cat config.json | jq -r '.client_id')
@@ -212,6 +213,7 @@ function init() {
         echo "${bold}${text_green}Cloud Scheduler: ${SCHEDULER_NAME}${reset}"
         echo "${bold}${text_green}BigQuery Dataset: ${BQ_OPS_DATASET_NAME}${reset}"
         echo "${bold}${text_green}Location: ${LOCATION}${reset}"
+        echo "${bold}${text_green}Region: ${REGION}${reset}"
         echo
         if ask "Do you want to continue?"; then
             echo
@@ -240,9 +242,10 @@ function init() {
             else
                 show_message "${text_yellow}WARNING: Skipping service account creation. Service account '${SERVICE_ACCOUNT_NAME}' already exists.${reset}"
             fi
-            EXISTING_SCHEDULERS=$(gcloud scheduler jobs list --location="${LOCATION}" --filter="${SCHEDULER_NAME_PREFIX}" --format="value(ID)")
+            EXISTING_SCHEDULERS=$(gcloud scheduler jobs list --location="${REGION}" --filter="${SCHEDULER_NAME_PREFIX}" --format="value(ID)")
             if [ ! -z "${EXISTING_SCHEDULERS}" ]; then
                 show_message "Some Cloud Schedulers with the prefix '${SCHEDULER_NAME_PREFIX}' already exist. Pausing existing Cloud Schedulers..."
+                show_message "${text_yellow}WARNING: If the scheduler name or region changed, please make sure to disable them directly in the UI.${reset}"
                 for scheduler in $(echo $EXISTING_SCHEDULERS | tr " " "\n")
                 do
                     pause_scheduler $scheduler
@@ -253,7 +256,7 @@ function init() {
             # Build metadata and copy it to Cloud Storage
             start_message "Building Dataflow metadata..."
             cd ..
-            sh ./deployment/deploy_cloud.sh ${GOOGLE_CLOUD_PROJECT} ${BUCKET_NAME} ${LOCATION} ${SERVICE_ACCOUNT}
+            sh ./deployment/deploy_cloud.sh ${GOOGLE_CLOUD_PROJECT} ${BUCKET_NAME} ${REGION} ${SERVICE_ACCOUNT}
             echo
 
             echo "✅ ${bold}${text_green} Done!${reset}"
