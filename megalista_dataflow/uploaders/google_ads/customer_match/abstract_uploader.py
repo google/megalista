@@ -50,7 +50,8 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
             logging.getLogger(_DEFAULT_LOGGER).info(f"Running job {job_definition['job_resource_name']}")
             self._get_offline_user_data_job_service(job_definition['login_customer_id']).run_offline_user_data_job(
                 resource_name=job_definition['job_resource_name'])
-
+        # Since these jobs have been sent, we can safely remove them from cache 
+        self._job_cache = {}
         super().finish_bundle()
 
     def _create_list_if_it_does_not_exist(self,
@@ -59,13 +60,14 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
                                           list_name: str,
                                           list_definition: Dict[str, Any]) -> str:
 
-        # TODO (antoniomoreira): include account id on the cache
-        if self._user_list_id_cache.get(list_name) is None:
-            self._user_list_id_cache[list_name] = \
+        # To avoid list name collision with different customer_ids, lets add the customer_id to the cache key
+        list_key = f"{list_name}-{customer_id}"
+        if self._user_list_id_cache.get(list_key) is None:
+            self._user_list_id_cache[list_key] = \
                 self._do_create_list_if_it_does_not_exist(
                     customer_id, login_customer_id, list_name, list_definition)
 
-        return self._user_list_id_cache[list_name]
+        return self._user_list_id_cache[list_key]
 
     def _do_create_list_if_it_does_not_exist(self,
                                              customer_id: str,
