@@ -57,14 +57,13 @@ function create_bq_ops_dataset() {
     bq --location=$LOCATION mk \
     --dataset \
     --description="Auxiliary BigQuery dataset for Megalista operations" \
-    --label=name:$BQ_OPS_DATASET_NAME \
     $GOOGLE_CLOUD_PROJECT:$BQ_OPS_DATASET_NAME
     echo
 }
 
 function create_bucket() {
     start_message "Creating bucket ${BUCKET_NAME}..."
-    gsutil mb -p $GOOGLE_CLOUD_PROJECT -l $REGION gs://$BUCKET_NAME
+    gsutil mb -p $GOOGLE_CLOUD_PROJECT -l $LOCATION gs://$BUCKET_NAME
     gsutil uniformbucketlevelaccess set on gs://$BUCKET_NAME
     echo
 }
@@ -224,10 +223,14 @@ function init() {
             EXITING_BUCKET=$(gsutil ls -b -p ${GOOGLE_CLOUD_PROJECT} gs://${BUCKET_NAME} 2>&1)
             if [[ $EXITING_BUCKET == *"BucketNotFoundException: 404"* ]]; then
                 create_bucket
-            elif [[ $EXITING_BUCKET == *"${BUCKET_NAME}"* ]]; then
+            elif [[ $EXITING_BUCKET == "gs://${BUCKET_NAME}/" ]]; then
                 show_message "${text_yellow}WARNING: The bucket '${BUCKET_NAME}' already exists. Please verify that the bucket exists in this Google Cloud project '${GOOGLE_CLOUD_PROJECT}'.${reset}"
             elif [[ $EXITING_BUCKET == *"AccessDeniedException: 403"* ]]; then
                 show_message "${bold}${text_red}ERROR: The bucket '${BUCKET_NAME}' already exists and you don't have access to it. Try another name and execute the deployment script again.${reset}"
+                exit
+            else
+                # Show any other message
+                show_message "${text_yellow}Something unexpected happened during the Cloud Bucket creation: $EXITING_BUCKET. Please address the issue and execute the deployment script again.${reset}"
                 exit
             fi
             EXISTING_BQ_OPS_DATASET=$(bq ls ${GOOGLE_CLOUD_PROJECT}:${BQ_OPS_DATASET_NAME} 2>&1)
@@ -245,7 +248,7 @@ function init() {
             EXISTING_SCHEDULERS=$(gcloud scheduler jobs list --location="${REGION}" --filter="${SCHEDULER_NAME_PREFIX}" --format="value(ID)")
             if [ ! -z "${EXISTING_SCHEDULERS}" ]; then
                 show_message "Some Cloud Schedulers with the prefix '${SCHEDULER_NAME_PREFIX}' already exist. Pausing existing Cloud Schedulers..."
-                show_message "${text_yellow}WARNING: If the scheduler name or region changed, please make sure to disable them directly in the UI.${reset}"
+                show_message "${text_yellow}WARNING: If the scheduler name or region changed, please make sure to disable the existing schedulers directly in the UI.${reset}"
                 for scheduler in $(echo $EXISTING_SCHEDULERS | tr " " "\n")
                 do
                     pause_scheduler $scheduler
