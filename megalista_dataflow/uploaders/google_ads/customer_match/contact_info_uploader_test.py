@@ -71,7 +71,7 @@ def test_upload_add_users(mocker, uploader, error_notifier):
   uploader.finish_bundle()
 
   data_insertion_payload = {
-    'enable_partial_failure': False,
+    'enable_partial_failure': True,
     'operations': [
       {'create': {'user_identifiers': [{'hashed_email': 'email1'}]}},
       {'create': {'user_identifiers': [{'address_info': {
@@ -121,7 +121,7 @@ def test_upload_replace_users(mocker, uploader, error_notifier):
   uploader.finish_bundle()
 
   data_insertion_payload = {
-    'enable_partial_failure': False,
+    'enable_partial_failure': True,
     'operations': [
       {'remove_all': True},
       {'create': {'user_identifiers': [{'hashed_email': 'email1'}]}},
@@ -202,7 +202,7 @@ def test_upload_add_users_with_ads_account_override(mocker, uploader):
   uploader.process(batch)
 
   data_insertion_payload = {
-    'enable_partial_failure': False,
+    'enable_partial_failure': True,
     'operations': [
       {'create': {'user_identifiers': [{'hashed_email': 'email1'}]}},
       {'create': {'user_identifiers': [{'address_info': {
@@ -245,7 +245,7 @@ def test_upload_add_users_with_mcc_account_override(mocker, uploader):
   uploader.process(batch)
 
   data_insertion_payload = {
-    'enable_partial_failure': False,
+    'enable_partial_failure': True,
     'operations': [
       {'create': {'user_identifiers': [{'hashed_email': 'email1'}]}},
       {'create': {'user_identifiers': [{'address_info': {

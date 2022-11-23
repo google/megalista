@@ -237,7 +237,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
 
         data_insertion_payload = {
             'resource_name': job_resource_name,
-            'enable_partial_failure': False,
+            'enable_partial_failure': True,
             'operations': operations
         }
 
