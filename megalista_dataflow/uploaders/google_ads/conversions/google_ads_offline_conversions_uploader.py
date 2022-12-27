@@ -20,7 +20,7 @@ from error.error_handling import ErrorHandler
 from models.execution import Batch, Execution, AccountConfig, Destination
 from models.oauth_credentials import OAuthCredentials
 from uploaders import utils
-from utils import BaseUtils
+from utils import Utils
 from uploaders.google_ads import ADS_API_VERSION
 from uploaders.uploaders import MegalistaUploader
 
@@ -54,15 +54,15 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
       If the customer_id is present on the destination, returns it, otherwise defaults to the account_config info.
     """
     if len(destination.destination_metadata) >= 2 and len(destination.destination_metadata[1]) > 0:
-      return BaseUtils.filter_text_only_numbers(destination.destination_metadata[1])
-    return BaseUtils.filter_text_only_numbers(account_config.google_ads_account_id)
+      return Utils.filter_text_only_numbers(destination.destination_metadata[1])
+    return account_config.google_ads_account_id
 
   def _get_login_customer_id(self, account_config: AccountConfig, destination: Destination) -> str:
     """
       If the customer_id in account_config is a mcc, then login with the mcc account id, otherwise use the customer id.
     """
     if account_config._mcc:
-        return BaseUtils.filter_text_only_numbers(account_config.google_ads_account_id)
+        return account_config.google_ads_account_id
     
     return self._get_customer_id(account_config, destination)
 
