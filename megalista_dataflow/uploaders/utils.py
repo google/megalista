@@ -22,6 +22,8 @@ from typing import Optional
 from models.execution import Batch
 from uploaders.uploaders import MegalistaUploader
 
+from utils import BaseUtils
+
 MAX_RETRIES = 3
 
 timezone = pytz.timezone('America/Sao_Paulo')
@@ -135,10 +137,4 @@ def print_partial_error_messages(logger_name, action, response) -> Optional[str]
         logging.getLogger(logger_name).debug(message)
 
     return error_message
-
-def clean_ads_customer_id(customer_id: str) -> str:
-    return re.sub(r'[^0-9]', '', customer_id)
-
-def google_analytics_account_id(analytics_account_id: str) -> str:
-    return re.sub(r'[^0-9]', '', analytics_account_id)
     
