@@ -93,19 +93,64 @@ def test_conversion_upload(mocker, uploader):
             'floodlightActivityId': floodlight_activity_id,
             'floodlightConfigurationId': floodlight_configuration_id,
             'ordinal': math.floor(current_time * 10e5),
-            'timestampMicros': timestamp_micros
+            'timestampMicros': timestamp_micros,
+            'quantity': 1
         }, {
             'gclid': '456',
             'floodlightActivityId': floodlight_activity_id,
             'floodlightConfigurationId': floodlight_configuration_id,
             'ordinal': math.floor(current_time * 10e5),
-            'timestampMicros': math.floor(current_time * 10e5)
+            'timestampMicros': math.floor(current_time * 10e5),
+            'quantity': 1
         }],
     }
 
     uploader._get_dcm_service().conversions().batchinsert.assert_any_call(
         profileId=_dcm_profile_id, body=expected_body)
 
+def test_conversion_upload_with_quantity(mocker, uploader):
+    mocker.patch.object(uploader, '_get_dcm_service')
+    floodlight_activity_id = 'floodlight_activity_id'
+    floodlight_configuration_id = 'floodlight_configuration_id'
+    source = Source('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'))
+    destination = Destination(
+        'dest1',
+        DestinationType.CM_OFFLINE_CONVERSION,
+        (floodlight_activity_id, floodlight_configuration_id))
+    execution = Execution(_account_config, source, destination)
+    current_time = time.time()
+    uploader._do_process(Batch(execution, [{
+        'gclid': '123',
+        'timestamp': '2021-11-30T12:00:00.000',
+        'quantity': 50
+    }, {
+        'gclid': '456',
+        'quantity': 200
+    }]), current_time)
+
+    # convert 2021-11-30T12:00:00.000 to timestampMicros
+    timestamp_micros = math.floor(datetime.strptime('2021-11-30T12:00:00.000', '%Y-%m-%dT%H:%M:%S.%f').timestamp() * 10e5)
+
+    expected_body = {
+        'conversions': [{
+            'gclid': '123',
+            'floodlightActivityId': floodlight_activity_id,
+            'floodlightConfigurationId': floodlight_configuration_id,
+            'ordinal': math.floor(current_time * 10e5),
+            'timestampMicros': timestamp_micros,
+            'quantity': 50
+        }, {
+            'gclid': '456',
+            'floodlightActivityId': floodlight_activity_id,
+            'floodlightConfigurationId': floodlight_configuration_id,
+            'ordinal': math.floor(current_time * 10e5),
+            'timestampMicros': math.floor(current_time * 10e5),
+            'quantity': 200
+        }],
+    }
+
+    uploader._get_dcm_service().conversions().batchinsert.assert_any_call(
+        profileId='dcm_profile_id', body=expected_body)
 
 def test_conversion_upload_match_id(mocker, uploader):
     mocker.patch.object(uploader, '_get_dcm_service', autospec=True)
@@ -132,7 +177,8 @@ def test_conversion_upload_match_id(mocker, uploader):
             'floodlightActivityId': floodlight_activity_id,
             'floodlightConfigurationId': floodlight_configuration_id,
             'ordinal': math.floor(current_time * 10e5),
-            'timestampMicros': math.floor(current_time * 10e5)
+            'timestampMicros': math.floor(current_time * 10e5),
+            'quantity': 1
         }],
     }
 
@@ -227,6 +273,7 @@ def test_conversion_upload_decimal_value(mocker, uploader):
             'ordinal': math.floor(current_time * 10e5),
             'timestampMicros': math.floor(current_time * 10e5),
             'value': 540.12,
+            'quantity': 1
         }],
     }
 
