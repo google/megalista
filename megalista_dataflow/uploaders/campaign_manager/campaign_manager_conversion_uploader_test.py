@@ -150,7 +150,7 @@ def test_conversion_upload_with_quantity(mocker, uploader):
     }
 
     uploader._get_dcm_service().conversions().batchinsert.assert_any_call(
-        profileId='dcm_profile_id', body=expected_body)
+        profileId=_dcm_profile_id, body=expected_body)
 
 def test_conversion_upload_match_id(mocker, uploader):
     mocker.patch.object(uploader, '_get_dcm_service', autospec=True)
