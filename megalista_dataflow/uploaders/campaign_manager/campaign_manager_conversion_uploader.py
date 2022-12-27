@@ -114,6 +114,8 @@ class CampaignManagerConversionUploaderDoFn(MegalistaUploader):
         to_upload['value'] = float(conversion['value'])
       if 'quantity' in conversion:
         to_upload['quantity'] = conversion['quantity']
+      else:
+        to_upload['quantity'] = 1
       if 'customVariables' in conversion:
         custom_variables = []
         for r in conversion['customVariables']:
