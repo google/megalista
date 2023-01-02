@@ -22,7 +22,7 @@ from models.execution import AccountConfig, Destination
 from models.execution import Batch
 from models.execution import DestinationType
 from models.oauth_credentials import OAuthCredentials
-from uploaders import utils
+from uploaders.google_ads.utils import Utils
 from uploaders.google_ads import ADS_API_VERSION
 from uploaders.uploaders import MegalistaUploader
 
@@ -117,19 +117,19 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
 
     # just to facilitate mocking
     def _get_ads_service(self, customer_id: str):
-        return utils.get_ads_service('GoogleAdsService', ADS_API_VERSION,
+        return Utils.get_ads_service('GoogleAdsService', ADS_API_VERSION,
                                      self.oauth_credentials,
                                      self.developer_token.get(),
                                      customer_id)
 
     def _get_user_list_service(self, customer_id: str):
-        return utils.get_ads_service('UserListService', ADS_API_VERSION,
+        return Utils.get_ads_service('UserListService', ADS_API_VERSION,
                                      self.oauth_credentials,
                                      self.developer_token.get(),
                                      customer_id)
 
     def _get_offline_user_data_job_service(self, customer_id: str):
-        return utils.get_ads_service('OfflineUserDataJobService', ADS_API_VERSION,
+        return Utils.get_ads_service('OfflineUserDataJobService', ADS_API_VERSION,
                                      self.oauth_credentials,
                                      self.developer_token.get(),
                                      customer_id)
@@ -147,15 +147,15 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
           If the customer_id is present on the destination, returns it, otherwise defaults to the account_config info.
         """
         if len(destination.destination_metadata) >= 5 and len(destination.destination_metadata[4]) > 0:
-            return destination.destination_metadata[4].replace('-', '')
-        return account_config.google_ads_account_id.replace('-', '')
+            return Utils.filter_text_only_numbers(destination.destination_metadata[4])
+        return Utils.filter_text_only_numbers(account_config.google_ads_account_id)
 
     def _get_login_customer_id(self, account_config: AccountConfig, destination: Destination) -> str:
         """
           If the customer_id in account_config is a mcc, then login with the mcc account id, otherwise use the customer id.
         """
         if account_config._mcc:
-            return account_config.google_ads_account_id.replace('-', '')
+            return Utils.filter_text_only_numbers(account_config.google_ads_account_id)
         
         return self._get_customer_id(account_config, destination)
 
@@ -193,7 +193,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
     def get_filtered_rows(self, rows: List[Any], keys: List[str]) -> List[Dict[str, Any]]:
         return [{key: row.get(key) for key in keys if key in row} for row in rows]
 
-    @utils.safe_process(logger=logging.getLogger(_DEFAULT_LOGGER))
+    @Utils.safe_process(logger=logging.getLogger(_DEFAULT_LOGGER))
     def process(self, batch: Batch, **kwargs):
         if not self.active:
             logging.getLogger(_DEFAULT_LOGGER).info(
@@ -244,7 +244,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
         data_insertion_response = offline_user_data_job_service.add_offline_user_data_job_operations(
             request=data_insertion_payload)
 
-        error_message = utils.print_partial_error_messages(_DEFAULT_LOGGER, 'uploading customer match',
+        error_message = Utils.print_partial_error_messages(_DEFAULT_LOGGER, 'uploading customer match',
                                                            data_insertion_response)
         if error_message:
             self._add_error(execution, error_message)

@@ -19,7 +19,7 @@ from apache_beam.options.value_provider import ValueProvider
 from error.error_handling import ErrorHandler
 from models.execution import Batch, Execution, AccountConfig, Destination
 from models.oauth_credentials import OAuthCredentials
-from uploaders import utils
+from uploaders.google_ads.utils import Utils
 from uploaders.google_ads import ADS_API_VERSION
 from uploaders.uploaders import MegalistaUploader
 
@@ -34,13 +34,13 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     self.developer_token = developer_token
 
   def _get_ads_service(self, customer_id: str):
-    return utils.get_ads_service('GoogleAdsService', ADS_API_VERSION,
+    return Utils.get_ads_service('GoogleAdsService', ADS_API_VERSION,
                                      self.oauth_credentials,
                                      self.developer_token.get(),
                                      customer_id)
 
   def _get_oc_service(self, customer_id):
-    return utils.get_ads_service('ConversionUploadService', ADS_API_VERSION,
+    return Utils.get_ads_service('ConversionUploadService', ADS_API_VERSION,
                                      self.oauth_credentials,
                                      self.developer_token.get(),
                                      customer_id)
@@ -53,15 +53,15 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
       If the customer_id is present on the destination, returns it, otherwise defaults to the account_config info.
     """
     if len(destination.destination_metadata) >= 2 and len(destination.destination_metadata[1]) > 0:
-      return destination.destination_metadata[1].replace('-', '')
-    return account_config.google_ads_account_id.replace('-', '')
+      return Utils.filter_text_only_numbers(destination.destination_metadata[1])
+    return Utils.filter_text_only_numbers(account_config.google_ads_account_id)
 
   def _get_login_customer_id(self, account_config: AccountConfig, destination: Destination) -> str:
     """
       If the customer_id in account_config is a mcc, then login with the mcc account id, otherwise use the customer id.
     """
     if account_config._mcc:
-        return account_config.google_ads_account_id.replace('-', '')
+        return Utils.filter_text_only_numbers(account_config.google_ads_account_id)
     
     return self._get_customer_id(account_config, destination)
 
@@ -76,7 +76,7 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
       raise ValueError('Missing destination information. Received {}'.format(
           str(destination)))
 
-  @utils.safe_process(
+  @Utils.safe_process(
       logger=logging.getLogger('megalista.GoogleAdsOfflineUploader'))
   def process(self, batch: Batch, **kwargs):
     execution = batch.execution
@@ -107,7 +107,7 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     logging.getLogger(_DEFAULT_LOGGER).info(f'Uploading {len(rows)} offline conversions on {conversion_resource_name} to Google Ads.')
     conversions = [{
           'conversion_action': conversion_resource_name,
-          'conversion_date_time': utils.format_date(conversion['time']),
+          'conversion_date_time': Utils.format_date(conversion['time']),
           'conversion_value': float(str(conversion['amount'])),
           'gclid': conversion['gclid']
     } for conversion in rows]
@@ -121,7 +121,7 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
 
     response = oc_service.upload_click_conversions(request=upload_data)
 
-    error_message = utils.print_partial_error_messages(_DEFAULT_LOGGER, 'uploading offline conversions', response)
+    error_message = Utils.print_partial_error_messages(_DEFAULT_LOGGER, 'uploading offline conversions', response)
     if error_message:
       self._add_error(execution, error_message)
 

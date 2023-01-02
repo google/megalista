@@ -22,7 +22,6 @@ from models.execution import Destination, DestinationType
 from models.execution import Execution, AccountConfig
 from models.execution import Source, SourceType
 
-
 class FirestoreExecutionSource(BaseBoundedSource):
   """
   Read Execution data from a Firestore collection. The collection name is set-up in the parameter "setup_firestore_collection"

@@ -21,7 +21,7 @@ from googleapiclient.discovery import build
 
 from error.error_handling import ErrorHandler
 from models.execution import Batch
-from uploaders import utils
+from uploaders.campaign_manager.utils import Utils
 from uploaders.uploaders import MegalistaUploader
 
 _LOGGER_NAME: str = 'megalista.CampaignManagerConversionsUploader'
@@ -62,7 +62,7 @@ class CampaignManagerConversionUploaderDoFn(MegalistaUploader):
       raise ValueError(
           f'Missing destination information. Received {str(destination)}')
 
-  @utils.safe_process(logger=logging.getLogger(_LOGGER_NAME))
+  @Utils.safe_process(logger=logging.getLogger(_LOGGER_NAME))
   def process(self, batch: Batch, **kwargs):
     self._do_process(batch, time.time())
     return [batch]
@@ -128,7 +128,7 @@ class CampaignManagerConversionUploaderDoFn(MegalistaUploader):
         to_upload['customVariables'] = custom_variables
 
       if 'timestamp' in conversion:
-        to_upload['timestampMicros'] = utils.get_timestamp_micros(conversion['timestamp'])
+        to_upload['timestampMicros'] = Utils.get_timestamp_micros(conversion['timestamp'])
 
       conversions.append(to_upload)
 

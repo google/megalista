@@ -18,7 +18,7 @@ from datetime import datetime
 import apache_beam as beam
 from mappers.batches_grouped_by_source_mapper import BatchesGroupedBySourceCombineFn, BatchesGroupedBySourceMapper
 
-from uploaders import utils
+from uploaders.utils import Utils
 from models.execution import Batch, BatchesGroupedBySource, ExecutionsGroupedBySource
 from models.options import DataflowOptions
 from data_sources.data_source import DataSource
@@ -38,7 +38,7 @@ class TransactionalEventsResultsWriter(beam.PTransform):
       self._dataflow_options = dataflow_options
       self._transactional_type = transactional_type
       
-    @utils.safe_process(logger=logging.getLogger("megalista.TransactionalEventsResultsWriter"))
+    @Utils.safe_process(logger=logging.getLogger("megalista.TransactionalEventsResultsWriter"))
     def process(self, batch: Batch, *args, **kwargs):
       self._do_process(batch)
       return [batch.execution]

@@ -21,7 +21,7 @@ import requests
 
 from error.error_handling import ErrorHandler
 from models.execution import Batch
-from uploaders import utils
+from uploaders.google_analytics.utils import Utils
 from uploaders.uploaders import MegalistaUploader
 
 
@@ -46,11 +46,11 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
   def _validate_param(key: str, value: Any, reserved_keys: Sequence[str]) -> bool:
     return key not in reserved_keys and value is not None and value != ''
 
-  @utils.safe_process(logger=logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader'))
+  @Utils.safe_process(logger=logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader'))
   def process(self, batch: Batch, **kwargs):
     return self.do_process(batch)
 
-  # Created to facilitate testing without going into @utils.safe_process
+  # Created to facilitate testing without going into @Utils.safe_process
   def do_process(self, batch: Batch):
     execution = batch.execution
 

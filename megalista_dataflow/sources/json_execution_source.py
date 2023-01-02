@@ -22,7 +22,6 @@ from models.execution import Execution, AccountConfig
 from models.execution import Source, SourceType
 from models.json_config import JsonConfig
 
-
 class JsonExecutionSource(BaseBoundedSource):
   """
   Read Execution data from a JSON file. The URL is set-up in the parameter "setup_json_url"

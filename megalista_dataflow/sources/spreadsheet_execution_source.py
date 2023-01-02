@@ -22,7 +22,6 @@ from models.execution import Execution, AccountConfig
 from models.execution import Source, SourceType
 from models.sheets_config import SheetsConfig
 
-
 class SpreadsheetExecutionSource(BaseBoundedSource):
   """
   Read Execution data from a sheet. The sheet id is set-up in the parameter "setup_sheet_id"

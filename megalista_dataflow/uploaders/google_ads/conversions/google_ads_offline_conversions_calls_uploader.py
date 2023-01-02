@@ -19,7 +19,7 @@ from apache_beam.options.value_provider import ValueProvider
 from error.error_handling import ErrorHandler
 from models.execution import Batch, Execution, AccountConfig, Destination
 from models.oauth_credentials import OAuthCredentials
-from uploaders import utils
+from uploaders.google_ads.utils import Utils
 from uploaders.google_ads import ADS_API_VERSION
 from uploaders.uploaders import MegalistaUploader
 from typing import Any, List, Dict, Union
@@ -35,19 +35,19 @@ class GoogleAdsOfflineUploaderCallsDoFn(MegalistaUploader):
     self.developer_token = developer_token
 
   def _get_ads_service(self, customer_id: str):
-    return utils.get_ads_service('GoogleAdsService', ADS_API_VERSION,
+    return Utils.get_ads_service('GoogleAdsService', ADS_API_VERSION,
                                      self.oauth_credentials,
                                      self.developer_token.get(),
                                      customer_id)
 
   def _get_oc_service(self, customer_id: str):
-    return utils.get_ads_service('ConversionUploadService', ADS_API_VERSION,
+    return Utils.get_ads_service('ConversionUploadService', ADS_API_VERSION,
                                      self.oauth_credentials,
                                      self.developer_token.get(),
                                      customer_id)
 
   def _get_oc_action_service(self, customer_id: str):
-    return utils.get_ads_service('ConversionActionService', ADS_API_VERSION,
+    return Utils.get_ads_service('ConversionActionService', ADS_API_VERSION,
                                      self.oauth_credentials,
                                      self.developer_token.get(),
                                      customer_id)
@@ -60,8 +60,8 @@ class GoogleAdsOfflineUploaderCallsDoFn(MegalistaUploader):
       If the customer_id is present on the destination, returns it, otherwise defaults to the account_config info.
     """
     if len(destination.destination_metadata) >= 2 and len(destination.destination_metadata[1]) > 0:
-      return destination.destination_metadata[1].replace('-', '')
-    return account_config.google_ads_account_id.replace('-', '')
+      return Utils.filter_text_only_numbers(destination.destination_metadata[1])
+    return Utils.filter_text_only_numbers(account_config.google_ads_account_id)
 
 
   @staticmethod
@@ -75,7 +75,7 @@ class GoogleAdsOfflineUploaderCallsDoFn(MegalistaUploader):
       raise ValueError('Missing destination information. Received {}'.format(
           str(destination)))
 
-  @utils.safe_process(
+  @Utils.safe_process(
       logger=logging.getLogger('megalista.GoogleAdsOfflineUploader'))
   def process(self, batch: Batch, **kwargs):
     execution = batch.execution
@@ -97,8 +97,8 @@ class GoogleAdsOfflineUploaderCallsDoFn(MegalistaUploader):
     conversions = [{
           'conversion_action': conversion_resource_name,
           'caller_id': conversion['caller_id'],
-          'call_start_date_time': utils.format_date(conversion['call_time']),
-          'conversion_date_time': utils.format_date(conversion['time']),
+          'call_start_date_time': Utils.format_date(conversion['call_time']),
+          'conversion_date_time': Utils.format_date(conversion['time']),
           'conversion_value': float(str(conversion['amount']))
     } for conversion in rows]
 
@@ -111,7 +111,7 @@ class GoogleAdsOfflineUploaderCallsDoFn(MegalistaUploader):
 
     response = oc_service.upload_call_conversions(request=upload_data)
 
-    error_message = utils.print_partial_error_messages(_DEFAULT_LOGGER, 'uploading offline conversions (calls)', response)
+    error_message = Utils.print_partial_error_messages(_DEFAULT_LOGGER, 'uploading offline conversions (calls)', response)
     if error_message:
       self._add_error(execution, error_message)
 

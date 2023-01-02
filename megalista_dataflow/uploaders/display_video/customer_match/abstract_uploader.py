@@ -24,7 +24,7 @@ from models.execution import AccountConfig, Destination, Execution
 from models.execution import Batch
 from models.execution import DestinationType
 from models.oauth_credentials import OAuthCredentials
-from uploaders import utils
+from uploaders.display_video.utils import Utils
 from uploaders.display_video import DV_API_VERSION
 from uploaders.uploaders import MegalistaUploader
 
@@ -154,7 +154,7 @@ class DisplayVideoCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
     def get_filtered_rows(self, rows: List[Any], keys: List[str]) -> List[Dict[str, Any]]:
         return [{key: row.get(key) for key in keys if key in row} for row in rows]
 
-    @utils.safe_process(logger=logging.getLogger(_DEFAULT_LOGGER))
+    @Utils.safe_process(logger=logging.getLogger(_DEFAULT_LOGGER))
     def process(self, batch: Batch, **kwargs) -> List[Execution]:
         if not self.active:
             logging.getLogger(_DEFAULT_LOGGER).info(

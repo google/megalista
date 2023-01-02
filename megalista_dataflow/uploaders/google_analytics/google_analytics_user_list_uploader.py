@@ -21,7 +21,7 @@ from googleapiclient.http import MediaInMemoryUpload
 
 from error.error_handling import ErrorHandler
 from models.execution import Batch
-from uploaders import utils
+from uploaders.google_analytics.utils import Utils
 from uploaders.uploaders import MegalistaUploader
 
 
@@ -104,7 +104,7 @@ class GoogleAnalyticsUserListUploaderDoFn(MegalistaUploader):
                 or not destination[5]:
             raise ValueError('Missing destination information. Received {}'.format(str(destination)))
 
-    @utils.safe_process(logger=logging.getLogger("megalista.GoogleAnalyticsUserListUploader"))
+    @Utils.safe_process(logger=logging.getLogger("megalista.GoogleAnalyticsUserListUploader"))
     def process(self, batch: Batch, **kwargs):
         execution = batch.execution
         self._assert_all_list_names_are_present(execution)
