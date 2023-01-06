@@ -18,7 +18,7 @@ import logging
 from error.error_handling import ErrorHandler
 from models.execution import AccountConfig, Batch, Destination, Execution
 from uploaders import utils
-from utils import Utils
+from utils.utils import Utils
 from uploaders.google_ads import ADS_API_VERSION
 from uploaders.uploaders import MegalistaUploader
 

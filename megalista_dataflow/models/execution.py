@@ -16,7 +16,7 @@ from enum import Enum
 from typing import Dict, List, Union, Any
 import logging
 from apache_beam.typehints.decorators import with_output_types
-from utils import Utils
+from utils.utils import Utils
 
 class DestinationType(Enum):
     (

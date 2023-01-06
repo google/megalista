@@ -22,7 +22,7 @@ from typing import Optional
 from models.execution import Batch
 from uploaders.uploaders import MegalistaUploader
 
-from utils import BaseUtils
+from utils.utils import BaseUtils
 
 MAX_RETRIES = 3
 

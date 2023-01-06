@@ -25,7 +25,7 @@ class BaseUtils:
 
     @staticmethod
     def trim_items_array(array: List[Any]) -> List[Any]:
-        return [BaseUtils.trim(item) if item is str else item for item in array]
+        return [BaseUtils.trim(item) if type(item) is str else item for item in array]
 
 class Utils(BaseUtils):
     pass
