@@ -12,6 +12,7 @@ aiohttp==3.6.2
 # Their versions are fixed here to improove resolution time.
 google_auth==1.35.0
 fasteners==0.17.3
+google-apitools==0.5.32
 
 # Test deps
 mypy==0.790
