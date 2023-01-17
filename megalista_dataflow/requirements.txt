@@ -1,5 +1,5 @@
-apache-beam[gcp]==2.38.0
-google-ads==15.1.1
+apache-beam==2.38.0
+google-ads==17.0.0
 google-api-python-client==2.65.0
 google-cloud-bigquery==2.34.3
 google-cloud-firestore==2.4.0
@@ -12,7 +12,7 @@ aiohttp==3.6.2
 # Their versions are fixed here to improove resolution time.
 google_auth==1.35.0
 fasteners==0.17.3
-google_api_core==1.31.5
+google-apitools==0.5.32
 
 # Test deps
 mypy==0.790
