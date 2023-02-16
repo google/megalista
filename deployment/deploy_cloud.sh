@@ -42,7 +42,14 @@ python3 -m main \
     --num_workers 1 \
     --autoscaling_algorithm=NONE \
     --service_account_email "$4" \
-    --collect_usage_stats "$5"
+    --collect_usage_stats "$5" \
+    --experiments=use_runner_v2 \
+    --requirements_file=./requirements.txt \
+    --prebuild_sdk_container_engine=cloud_build \
+    --docker_registry_push_url="gcr.io/$1/megalista" \
+    --sdk_location=container
+    
+echo "Create pipeline - This may take awhile"
 echo "Copy megalista_medata to bucket $2"
 gsutil cp megalista_metadata "gs://$2/templates/megalista_metadata"
 echo "Cleanup"
