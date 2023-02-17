@@ -143,7 +143,7 @@ class BigQueryDataSource(BaseDataSource):
         query = Template(template).substitute(uploaded_table_name=uploaded_table_name)
 
         logging.getLogger(_LOGGER_NAME).info(
-            f"Creating table `{uploaded_table_name}` if it doesn't exist")
+            f"Creating table `{uploaded_table_name}` if it doesn't exist: {query}")
 
         client.query(query).result()
 
