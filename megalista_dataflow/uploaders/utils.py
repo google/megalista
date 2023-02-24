@@ -71,7 +71,7 @@ def safe_process(logger):
         def inner(*args, **kwargs):
             self_ = args[0]
             batch = args[1]
-            if not batch:
+            if not batch or not batch.elements:
                 logger.info('Skipping upload, received no elements.')
                 return
             logger.info(f'Uploading {len(batch.elements)} rows...')
