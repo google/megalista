@@ -21,7 +21,7 @@ setuptools.setup(
     author_email='megalista-admin@google.com',
     url='https://github.com/google/megalista/',
     install_requires=[
-        'google-ads==17.0.0', 
+         #'google-ads @ git+ssh://git@github.com/Mr-Lopes/google-ads-python@last_stable#egg=google-ads', 
         'google-api-python-client==2.77.0',
         'google-cloud-bigquery==2.34.3',
         'aiohttp==3.8.3',
@@ -29,7 +29,7 @@ setuptools.setup(
         'google-cloud-firestore==2.4.0',
         'protobuf==3.20.0',
         'pandas==1.5.3', 
-        'boto3==1.21.4'
+        'boto3==1.26.66'
     ],
     packages=setuptools.find_packages(),
 )
