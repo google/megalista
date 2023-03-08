@@ -1,4 +1,4 @@
-apache-beam==2.45.0
+apache-beam==2.40.0
 git+https://github.com/Mr-Lopes/google-ads-python@last_stable#egg=google-ads
 google-api-python-client==2.77.0
 google-cloud-bigquery==2.34.3
