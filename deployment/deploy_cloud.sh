@@ -28,7 +28,21 @@ python3 -m pip install --user -q -r requirements.txt
 echo $4
 echo "Update commit info inside code"
 sed -i "s/MEGALISTA_VERSION\s*=.*/MEGALISTA_VERSION = '$(git rev-parse HEAD)'/" ./config/version.py
-python3 -m main --runner DataflowRunner --project "$1" --gcp_project_id "$1" --temp_location "gs://$2/tmp/" --region "$3" --setup_file ./setup.py --template_location "gs://$2/templates/megalista" --num_workers 1 --autoscaling_algorithm=NONE --service_account_email "$4"
+echo "Create pipeline - This may take awhile"
+python3 -m main\
+ --runner DataflowRunner\
+ --project "$1"\
+ --temp_location "gs://$2/tmp/"\
+ --region "$3"\
+ --setup_file ./setup.py\
+ --template_location "gs://$2/templates/megalista"\
+ --num_workers 1\
+ --service_account_email "$4"\
+ --experiments use_runner_v2\
+ --requirements_file ./requirements.txt\
+ --prebuild_sdk_container_engine local_docker\
+ --docker_registry_push_url "gcr.io/$1/megalista"\
+ --sdk_location container
 echo "Copy megalista_medata to bucket $2"
 gsutil cp megalista_metadata "gs://$2/templates/megalista_metadata"
 echo "Cleanup"
