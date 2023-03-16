@@ -72,24 +72,48 @@ class SpreadsheetExecutionSource(BaseBoundedSource):
 
   @staticmethod
   def _read_sources(sheets_config, sheet_id):
-    range = sheets_config.get_range(sheet_id, 'SourcesRange')
-    sources = {}
-    if 'values' in range:
-      for row in range['values']:
-        source = Source(row[0], SourceType[row[1]], row[2:])
-        sources[source.source_name] = source
-    else:
-      logging.getLogger("megalista.SpreadsheetExecutionSource").warn("No sources found!")
-    return sources
+    # TODO Create a test file for spreadsheet_execution_source
+    # TODO Segment different types of error instead of only Exception
+    try:
+      range = sheets_config.get_range(sheet_id, 'SourcesRange')
+      sources = {}
+      if 'values' in range:
+        for row in range['values']:
+          source = Source(row[0], SourceType[row[1]], row[2:])
+          sources[source.source_name] = source
+      else:
+        logging.getLogger("megalista.SpreadsheetExecutionSource").warn("No sources found!")
+      return sources
+    except:
+      raise Exception(
+          """
+          Megalista encountered a error in the Sources Configuration Tab inside 
+          your Spreadsheet. The error is likely caused by one of the following:
+            - The SourcesRange might be missing.
+            - The Sources Tab row does not have data or have invalid data. Please check for these issues and try again.    
+          """
+      )
 
   @staticmethod
   def _read_destination(sheets_config, sheet_id):
-    range = sheets_config.get_range(sheet_id, 'DestinationsRange')
-    destinations = {}
-    if 'values' in range:
-      for row in range['values']:
-        destination = Destination(row[0], DestinationType[row[1]], row[2:])
-        destinations[destination.destination_name] = destination
-    else:
-      logging.getLogger("megalista.SpreadsheetExecutionSource").warn("No destinations found!")
-    return destinations
+    # TODO Create a test file for spreadsheet_execution_source
+    # TODO Segment different types of error instead of only Exception
+    try:
+      range = sheets_config.get_range(sheet_id, 'DestinationsRange')
+      destinations = {}
+      if 'values' in range:
+        for row in range['values']:
+          destination = Destination(row[0], DestinationType[row[1]], row[2:])
+          destinations[destination.destination_name] = destination
+      else:
+        logging.getLogger("megalista.SpreadsheetExecutionSource").warn("No destinations found!")
+      return destinations
+    except:
+      raise Exception(
+          """
+          Megalista encountered a error in the Destinations Configuration Tab inside 
+          your Spreadsheet. The error is likely caused by one of the following:
+            - The DestinationsRange might be missing.
+            - The Destinations Tab row does not have data or have invalid data. Please check for these issues and try again.    
+          """
+      )
