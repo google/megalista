@@ -71,6 +71,8 @@ class SpreadsheetExecutionSource(BaseBoundedSource):
             yield Execution(account_config, sources[schedule[1]], destinations[schedule[2]])
       else:
         logging.getLogger("megalista.SpreadsheetExecutionSource").warn("No schedules found!")
+    except ValueError as ex:
+      raise ex
     except:
       raise Exception("""
           Megalista encountered a error in your Spreadsheet Configuration,
@@ -97,7 +99,7 @@ class SpreadsheetExecutionSource(BaseBoundedSource):
         logging.getLogger("megalista.SpreadsheetExecutionSource").warn("No sources found!")
       return sources
     except:
-      raise Exception(
+      raise ValueError(
           """
           Megalista encountered a error in the Sources Configuration Tab inside 
           your Spreadsheet. The error is likely caused by one of the following:
@@ -121,7 +123,7 @@ class SpreadsheetExecutionSource(BaseBoundedSource):
         logging.getLogger("megalista.SpreadsheetExecutionSource").warn("No destinations found!")
       return destinations
     except:
-      raise Exception(
+      raise ValueError(
           """
           Megalista encountered a error in the Destinations Configuration Tab inside 
           your Spreadsheet. The error is likely caused by one of the following:
