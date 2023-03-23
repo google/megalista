@@ -41,55 +41,93 @@ class SpreadsheetExecutionSource(BaseBoundedSource):
     return 3
 
   def read(self, range_tracker):
-    sheet_id = self._setup_sheet_id.get()
-    logging.getLogger("megalista.SpreadsheetExecutionSource").info(f"Loading configuration sheet {sheet_id}...")
-    google_ads_id = self._sheets_config.get_value(sheet_id, "GoogleAdsAccountId")
-    mcc_trix = self._sheets_config.get_value(sheet_id, "GoogleAdsMCC")
-    mcc = False if mcc_trix is None else bool(distutils.util.strtobool(mcc_trix))
-    app_id = self._sheets_config.get_value(sheet_id, "AppId")
-    google_analytics_account_id = self._sheets_config.get_value(sheet_id, "GoogleAnalyticsAccountId")
+    # TODO decouple SchedulesRange to be like _read_sources and _read_destination
+    try:
+      sheet_id = self._setup_sheet_id.get()
+      logging.getLogger("megalista.SpreadsheetExecutionSource").info(f"Loading configuration sheet {sheet_id}...")
+      google_ads_id = self._sheets_config.get_value(sheet_id, "GoogleAdsAccountId")
+      mcc_trix = self._sheets_config.get_value(sheet_id, "GoogleAdsMCC")
+      mcc = False if mcc_trix is None else bool(distutils.util.strtobool(mcc_trix))
+      app_id = self._sheets_config.get_value(sheet_id, "AppId")
+      google_analytics_account_id = self._sheets_config.get_value(sheet_id, "GoogleAnalyticsAccountId")
 
-    if self._sheets_config.check_if_range_exists(sheet_id, "CampaignManagerProfileId"):
-      campaign_manager_profile_id = self._sheets_config.get_value(sheet_id, "CampaignManagerProfileId")
-    else:
-      campaign_manager_profile_id = self._sheets_config.get_value(sheet_id, "CampaignManagerAccountId")
-        
-    account_config = AccountConfig(google_ads_id, mcc, google_analytics_account_id, campaign_manager_profile_id, app_id)
-    logging.getLogger("megalista.SpreadsheetExecutionSource").info(f"Loaded: {account_config}")
+      if self._sheets_config.check_if_range_exists(sheet_id, "CampaignManagerProfileId"):
+        campaign_manager_profile_id = self._sheets_config.get_value(sheet_id, "CampaignManagerProfileId")
+      else:
+        campaign_manager_profile_id = self._sheets_config.get_value(sheet_id, "CampaignManagerAccountId")
 
-    sources = self._read_sources(self._sheets_config, sheet_id)
-    destinations = self._read_destination(self._sheets_config, sheet_id)
+      account_config = AccountConfig(google_ads_id, mcc, google_analytics_account_id, campaign_manager_profile_id, app_id)
+      logging.getLogger("megalista.SpreadsheetExecutionSource").info(f"Loaded: {account_config}")
 
-    schedules_range = self._sheets_config.get_range(sheet_id, 'SchedulesRange')
-    if 'values' in schedules_range:
-      for schedule in schedules_range['values']:
-        if schedule[0] == 'YES':
-          logging.getLogger("megalista.SpreadsheetExecutionSource").info(
-            f"Executing step Source:{sources[schedule[1]].source_name} -> Destination:{destinations[schedule[2]].destination_name}")
-          yield Execution(account_config, sources[schedule[1]], destinations[schedule[2]])
-    else:
-      logging.getLogger("megalista.SpreadsheetExecutionSource").warn("No schedules found!")
+      sources = self._read_sources(self._sheets_config, sheet_id)
+      destinations = self._read_destination(self._sheets_config, sheet_id)
+
+      schedules_range = self._sheets_config.get_range(sheet_id, 'SchedulesRange')
+      if 'values' in schedules_range:
+        for schedule in schedules_range['values']:
+          if schedule[0] == 'YES':
+            logging.getLogger("megalista.SpreadsheetExecutionSource").info(
+              f"Executing step Source:{sources[schedule[1]].source_name} -> Destination:{destinations[schedule[2]].destination_name}")
+            yield Execution(account_config, sources[schedule[1]], destinations[schedule[2]])
+      else:
+        logging.getLogger("megalista.SpreadsheetExecutionSource").warn("No schedules found!")
+    except IndexError as ex:
+      raise ex
+    except:
+      raise Exception("""
+          Megalista encountered a error in your Spreadsheet Configuration,
+          please check:
+          - Intro tab for any missing required data: This may include account details
+          - SchedulesRange and the Connect Tab for any missing required data: This may include enabled, source and destination columns
+          - SourcesRange and Sources Tab for any missing required data
+          - DestinationsRange and Destinations Tab for any missing required data
+          """
+      )
 
   @staticmethod
   def _read_sources(sheets_config, sheet_id):
-    range = sheets_config.get_range(sheet_id, 'SourcesRange')
-    sources = {}
-    if 'values' in range:
-      for row in range['values']:
-        source = Source(row[0], SourceType[row[1]], row[2:])
-        sources[source.source_name] = source
-    else:
-      logging.getLogger("megalista.SpreadsheetExecutionSource").warn("No sources found!")
-    return sources
+    # TODO Create a test file for spreadsheet_execution_source
+    # TODO Segment different types of error instead of only Exception
+    try:
+      range = sheets_config.get_range(sheet_id, 'SourcesRange')
+      sources = {}
+      if 'values' in range:
+        for row in range['values']:
+          source = Source(row[0], SourceType[row[1]], row[2:])
+          sources[source.source_name] = source
+      else:
+        logging.getLogger("megalista.SpreadsheetExecutionSource").warn("No sources found!")
+      return sources
+    except:
+      raise IndexError(
+          """
+          Megalista encountered a error in the Sources Configuration Tab inside 
+          your Spreadsheet. The error is likely caused by one of the following:
+            - The SourcesRange might be missing.
+            - The Sources Tab row does not have data or have invalid data. Please check for these issues and try again.    
+          """
+      )
 
   @staticmethod
   def _read_destination(sheets_config, sheet_id):
-    range = sheets_config.get_range(sheet_id, 'DestinationsRange')
-    destinations = {}
-    if 'values' in range:
-      for row in range['values']:
-        destination = Destination(row[0], DestinationType[row[1]], row[2:])
-        destinations[destination.destination_name] = destination
-    else:
-      logging.getLogger("megalista.SpreadsheetExecutionSource").warn("No destinations found!")
-    return destinations
+    # TODO Create a test file for spreadsheet_execution_source
+    # TODO Segment different types of error instead of only Exception
+    try:
+      range = sheets_config.get_range(sheet_id, 'DestinationsRange')
+      destinations = {}
+      if 'values' in range:
+        for row in range['values']:
+          destination = Destination(row[0], DestinationType[row[1]], row[2:])
+          destinations[destination.destination_name] = destination
+      else:
+        logging.getLogger("megalista.SpreadsheetExecutionSource").warn("No destinations found!")
+      return destinations
+    except:
+      raise IndexError(
+          """
+          Megalista encountered a error in the Destinations Configuration Tab inside 
+          your Spreadsheet. The error is likely caused by one of the following:
+            - The DestinationsRange might be missing.
+            - The Destinations Tab row does not have data or have invalid data. Please check for these issues and try again.    
+          """
+      )
