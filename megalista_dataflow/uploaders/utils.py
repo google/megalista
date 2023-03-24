@@ -16,10 +16,13 @@ import datetime
 from config import logging
 import pytz
 import math
+import re
 
 from typing import Optional
 from models.execution import Batch
 from uploaders.uploaders import MegalistaUploader
+
+from utils.utils import BaseUtils
 
 MAX_RETRIES = 3
 
@@ -68,7 +71,7 @@ def safe_process(logger):
         def inner(*args, **kwargs):
             self_ = args[0]
             batch = args[1]
-            if not batch:
+            if not batch or not batch.elements:
                 logger.info('Skipping upload, received no elements.', execution=batch.execution)
                 return
             logger.info(f'Uploading {len(batch.elements)} rows...', execution=batch.execution)

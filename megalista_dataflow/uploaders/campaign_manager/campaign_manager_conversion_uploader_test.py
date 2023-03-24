@@ -32,8 +32,10 @@ from models.execution import SourceType
 from models.oauth_credentials import OAuthCredentials
 from uploaders.campaign_manager.campaign_manager_conversion_uploader import CampaignManagerConversionUploaderDoFn
 
+
+_dcm_profile_id = '123456789'
 _account_config = AccountConfig(mcc=False,
-                                campaign_manager_profile_id='dcm_profile_id',
+                                campaign_manager_profile_id=_dcm_profile_id,
                                 google_ads_account_id='',
                                 google_analytics_account_id='',
                                 app_id='')
@@ -104,7 +106,7 @@ def test_conversion_upload(mocker, uploader):
     }
 
     uploader._get_dcm_service().conversions().batchinsert.assert_any_call(
-        profileId='dcm_profile_id', body=expected_body)
+        profileId=_dcm_profile_id, body=expected_body)
 
 def test_conversion_upload_with_quantity(mocker, uploader):
     mocker.patch.object(uploader, '_get_dcm_service')
@@ -148,7 +150,7 @@ def test_conversion_upload_with_quantity(mocker, uploader):
     }
 
     uploader._get_dcm_service().conversions().batchinsert.assert_any_call(
-        profileId='dcm_profile_id', body=expected_body)
+        profileId=_dcm_profile_id, body=expected_body)
 
 def test_conversion_upload_match_id(mocker, uploader):
     mocker.patch.object(uploader, '_get_dcm_service', autospec=True)
@@ -181,7 +183,7 @@ def test_conversion_upload_match_id(mocker, uploader):
     }
 
     uploader._get_dcm_service().conversions().batchinsert.assert_any_call(
-        profileId='dcm_profile_id', body=expected_body)
+        profileId=_dcm_profile_id, body=expected_body)
 
 
 def test_conversion_upload_match_id_additional_fields(mocker, uploader):
@@ -238,7 +240,7 @@ def test_conversion_upload_match_id_additional_fields(mocker, uploader):
     uploader._do_process(Batch(execution, conversions_input), current_time)
 
     uploader._get_dcm_service().conversions().batchinsert.assert_any_call(
-        profileId='dcm_profile_id', body=expected_body)
+        profileId=_dcm_profile_id, body=expected_body)
 
 
 def test_conversion_upload_decimal_value(mocker, uploader):
@@ -278,7 +280,7 @@ def test_conversion_upload_decimal_value(mocker, uploader):
     uploader._do_process(Batch(execution, conversions_input), current_time)
 
     uploader._get_dcm_service().conversions().batchinsert.assert_any_call(
-        profileId='dcm_profile_id', body=expected_body)
+        profileId=_dcm_profile_id, body=expected_body)
 
 
 def test_error_on_api_call(mocker, uploader, caplog, error_notifier):

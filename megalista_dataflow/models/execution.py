@@ -15,7 +15,7 @@
 from enum import Enum
 from typing import Dict, List, Union, Any
 from apache_beam.typehints.decorators import with_output_types
-
+from utils.utils import Utils
 
 class DestinationType(Enum):
     (
@@ -77,6 +77,13 @@ class AccountConfig:
         self._google_analytics_account_id = google_analytics_account_id
         self._campaign_manager_profile_id = campaign_manager_profile_id
         self._app_id = app_id
+
+        if self._google_ads_account_id is not None:
+            self._google_ads_account_id = Utils.filter_text_only_numbers(self._google_ads_account_id)
+        if self._google_analytics_account_id is not None:
+            self._google_analytics_account_id = Utils.filter_text_only_numbers(self._google_analytics_account_id)
+        if self._campaign_manager_profile_id is not None:
+            self._campaign_manager_profile_id = Utils.filter_text_only_numbers(self._campaign_manager_profile_id)
 
     @property
     def google_ads_account_id(self) -> str:
@@ -150,9 +157,9 @@ class Source:
     def __init__(
         self, source_name: str, source_type: SourceType, source_metadata: List[str]
     ):
-        self._source_name = source_name
+        self._source_name = Utils.trim(source_name)
         self._source_type = source_type
-        self._source_metadata = source_metadata
+        self._source_metadata = Utils.trim_items_array(source_metadata)
 
     @property
     def source_name(self) -> str:
@@ -206,9 +213,9 @@ class Destination:
         destination_type: DestinationType,
         destination_metadata: List[str],
     ):
-        self._destination_name = destination_name
+        self._destination_name = Utils.trim(destination_name)
         self._destination_type = destination_type
-        self._destination_metadata = destination_metadata
+        self._destination_metadata = Utils.trim_items_array(destination_metadata)
 
     @property
     def destination_name(self) -> str:

@@ -102,6 +102,7 @@ In order to create it, follow these steps:
    -  The user who opened the generated link and clicked on *Allow* must have access to the platforms that Megalista will integrate, including the configuration Sheet, if this is the chosen method for configuration.
 
 ### Deploying Pipeline
+- Download the latest Megalista code.
 To deploy the full Megalista pipeline, use the following command from the deployment folder:
 `./deploy.sh`
 The script will require some parameters, please add them to the config.json file. Some parameters have default values and can be

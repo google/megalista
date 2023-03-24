@@ -86,11 +86,11 @@ class BigQueryDataSource(BaseDataSource):
             template = None
             if self._transactional_type == TransactionalType.UUID:
                 template = "SELECT $query_cols FROM `$table_name` AS data \
-                                LEFT JOIN $uploaded_table_name AS uploaded USING(uuid) \
+                                LEFT JOIN `$uploaded_table_name` AS uploaded USING(uuid) \
                                 WHERE uploaded.uuid IS NULL;"
             elif self._transactional_type == TransactionalType.GCLID_TIME:
                 template = "SELECT $query_cols FROM `$table_name` AS data \
-                                LEFT JOIN $uploaded_table_name AS uploaded USING(gclid, time) \
+                                LEFT JOIN `$uploaded_table_name` AS uploaded USING(gclid, time) \
                                 WHERE uploaded.gclid IS NULL;"
             else:
                 raise Exception(f'Unrecognized TransactionalType: {self._transactional_type}. Source="{self._source_name}". Destination="{self._destination_name}"')

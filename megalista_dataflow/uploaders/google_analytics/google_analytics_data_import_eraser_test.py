@@ -107,7 +107,7 @@ def test_no_files_found(mocker, eraser):
     service.management().uploads().deleteUploadData.side_effect = delete_call_mock
 
     # Act
-    eraser.process(Batch(execution, []))
+    eraser.process(Batch(execution, ['']))
 
     # Called once
     delete_call_mock.assert_not_called()
