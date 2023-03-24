@@ -25,7 +25,7 @@ from typing import Any, List, Iterable, Tuple, Dict
 from apache_beam.typehints.decorators import with_output_types
 import numpy as np
 
-import logging
+from config import logging
 
 from models.execution import SourceType, DestinationType, Execution, Batch, TransactionalType, ExecutionsGroupedBySource, DataRowsGroupedBySource
 from models.options import DataflowOptions

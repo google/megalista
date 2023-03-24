@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import base64
-import logging
+from config import logging
 from email.mime.text import MIMEText
 from typing import Iterable, Optional, Dict
 
@@ -163,7 +163,7 @@ class ErrorHandler:
 
     if execution.destination.destination_type != self._destination_type:
       raise ValueError(
-        f'Received a error of destination type: {execution.destination.destination_type}'
+        f'Received an error of destination type: {execution.destination.destination_type}'
         f' but this error handler is initialized with {self._destination_type} destination type')
 
     error = Error(execution, error_message)

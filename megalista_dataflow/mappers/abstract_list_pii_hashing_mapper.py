@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import hashlib
-import logging
+from config import logging
 import re
 
 from models.execution import Batch

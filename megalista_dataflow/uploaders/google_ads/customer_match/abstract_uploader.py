@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+from config import logging
 from typing import Dict, Any, List, Optional, Union
 
 from apache_beam.options.value_provider import StaticValueProvider
@@ -196,12 +196,13 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
 
     @utils.safe_process(logger=logging.getLogger(_DEFAULT_LOGGER))
     def process(self, batch: Batch, **kwargs):
+        execution = batch.execution
+
         if not self.active:
-            logging.getLogger(_DEFAULT_LOGGER).info(
-                'Skipping upload to ads, parameters not configured.')
+            logging.getLogger(_DEFAULT_LOGGER).erinforor(
+                'Skipping upload to ads, parameters not configured.', execution=execution)
             return
 
-        execution = batch.execution
 
         self._assert_execution_is_valid(execution)
 
@@ -249,6 +250,8 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
                                                            data_insertion_response)
         if error_message:
             self._add_error(execution, error_message)
+
+        utils.update_execution_counters_ads(execution, batch.elements, data_insertion_response)
 
         return [execution]
 

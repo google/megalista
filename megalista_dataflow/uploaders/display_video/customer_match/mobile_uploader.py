@@ -14,7 +14,6 @@
 
 from functools import reduce
 import apache_beam as beam
-import logging
 
 from typing import List, Dict, Any
 

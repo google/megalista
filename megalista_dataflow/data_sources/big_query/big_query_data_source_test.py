@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import datetime
+import pytest
 
 from models.execution import AccountConfig, ExecutionsGroupedBySource
 from models.execution import Destination
@@ -20,8 +21,6 @@ from models.execution import DestinationType
 from models.execution import Execution
 from models.execution import Source
 from models.execution import SourceType
-from models.execution import Batch
-import pytest
 
 from models.execution import TransactionalType
 

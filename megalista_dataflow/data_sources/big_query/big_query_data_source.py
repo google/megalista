@@ -16,7 +16,7 @@ from datetime import datetime
 from string import Template
 
 import apache_beam as beam
-import logging
+from config import logging
 from google.cloud import bigquery
 from google.cloud.bigquery import SchemaField, Client
 from apache_beam.io.gcp.bigquery import ReadFromBigQueryRequest

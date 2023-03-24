@@ -20,7 +20,7 @@ This module is responsible for handling file operatios. As of now, it handles th
 """
 
 import io
-import logging
+from config import logging
 from os.path import exists
 from urllib.parse import ParseResultBytes
 

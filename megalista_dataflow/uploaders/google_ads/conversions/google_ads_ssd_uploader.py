@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import datetime
-import logging
+from config import logging
 
 from error.error_handling import ErrorHandler
 from models.execution import AccountConfig, Batch, Destination, Execution
@@ -114,6 +114,8 @@ class GoogleAdsSSDUploaderDoFn(MegalistaUploader):
                                                            data_insertion_response)
         if error_message:
             self._add_error(execution, error_message)
+
+        utils.update_execution_counters_ads(execution, rows, data_insertion_response)
 
         # 3. Runs the Job
         offline_user_data_job_service.run_offline_user_data_job(resource_name = job_resource_name)

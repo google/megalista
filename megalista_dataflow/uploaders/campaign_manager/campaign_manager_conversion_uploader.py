@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
+from config import logging
 import math
 import time
 
@@ -136,14 +136,14 @@ class CampaignManagerConversionUploaderDoFn(MegalistaUploader):
       'conversions': conversions,
     }
 
-    logger.info(f'Conversions: \n{conversions}')
+    logger.info(f'Conversions: \n{conversions}', execution=execution)
 
     request = service.conversions().batchinsert(
         profileId=campaign_manager_profile_id, body=request_body)
     response = request.execute()
 
     if response['hasFailures']:
-      logger.error(f'Error(s) inserting conversions:\n{response}')
+      logger.error(f'Error(s) inserting conversions:\n{response}', execution=execution)
       conversions_status = response['status']
       error_messages = []
 
@@ -153,5 +153,5 @@ class CampaignManagerConversionUploaderDoFn(MegalistaUploader):
             error_messages.append('[{}]: {}'.format(error['code'], error['message']))
 
       final_error_message = 'Errors from API:\n{}'.format('\n'.join(error_messages))
-      logger.error(final_error_message)
+      logger.error(final_error_message, execution=execution)
       self._add_error(execution, final_error_message)

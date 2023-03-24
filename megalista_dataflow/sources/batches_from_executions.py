@@ -14,7 +14,6 @@
 from enum import Enum
 
 import apache_beam as beam
-import logging
 import json
 import functools
 

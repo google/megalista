@@ -14,7 +14,7 @@
 
 
 import json
-import logging
+from config import logging
 from typing import Dict, Any, Sequence
 
 import requests
@@ -24,6 +24,7 @@ from models.execution import Batch
 from uploaders import utils
 from uploaders.uploaders import MegalistaUploader
 
+_LOGGER_NAME = 'megalista.GoogleAnalytics4MeasurementProtocolUploader'
 
 class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
   def __init__(self, error_handler: ErrorHandler):
@@ -46,7 +47,7 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
   def _validate_param(key: str, value: Any, reserved_keys: Sequence[str]) -> bool:
     return key not in reserved_keys and value is not None and value != ''
 
-  @utils.safe_process(logger=logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader'))
+  @utils.safe_process(logger=logging.getLogger(_LOGGER_NAME))
   def process(self, batch: Batch, **kwargs):
     return self.do_process(batch)
 
@@ -129,11 +130,11 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
       response = requests.post(url,data=json.dumps(payload))
       if response.status_code != 204:
         error_message = f'Error calling GA4 MP {response.status_code}: {str(response.content)}'
-        logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').error(error_message)
+        logging.getLogger(_LOGGER_NAME).error(error_message, execution=execution)
         self._add_error(execution, error_message)
       else:
         accepted_elements.append(row)
 
-    logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(
-      f'Successfully uploaded {len(accepted_elements)}/{len(batch.elements)} events.')
+    logging.getLogger(_LOGGER_NAME).info(
+      f'Successfully uploaded {len(accepted_elements)}/{len(batch.elements)} events.', execution=execution)
     return [Batch(execution, accepted_elements)]

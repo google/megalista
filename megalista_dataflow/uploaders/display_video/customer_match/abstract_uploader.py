@@ -156,12 +156,12 @@ class DisplayVideoCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
 
     @utils.safe_process(logger=logging.getLogger(_DEFAULT_LOGGER))
     def process(self, batch: Batch, **kwargs) -> List[Execution]:
+        execution = batch.execution
+
         if not self.active:
             logging.getLogger(_DEFAULT_LOGGER).info(
-                'Skipping upload to DV, parameters not configured.')
-            return []
-
-        execution = batch.execution
+                'Skipping upload to DV, parameters not configured.', execution=execution)
+            return [execution]
 
         self._assert_execution_is_valid(execution)
 
@@ -205,6 +205,8 @@ class DisplayVideoCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
                 body=updated_list_definition
             ).execute()
 
+        execution.successful_records = execution.successful_records + len(rows)
+        
         return [execution]
         
     def get_list_definition(self, account_config: AccountConfig,
