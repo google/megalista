@@ -79,10 +79,6 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
           raise ValueError(
             'GA4 MP should be called either for sending events or a user properties')        
     
-    payload: Dict[str, Any] = {
-      'nonPersonalizedAds': non_personalized_ads
-    }
-
     accepted_elements = []
 
     for row in batch.elements:
@@ -90,6 +86,10 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
       client_id = row.get('client_id')
       user_id = row.get('user_id')
       timestamp_micros = row.get('timestamp_micros')
+
+      payload: Dict[str, Any] = {
+        'nonPersonalizedAds': non_personalized_ads
+      }
 
       if not self._exactly_one_of(app_instance_id, client_id):
         raise ValueError(
