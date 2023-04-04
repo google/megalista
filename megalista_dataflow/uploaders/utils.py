@@ -26,7 +26,7 @@ from utils.utils import BaseUtils
 
 MAX_RETRIES = 3
 
-timezone = pytz.timezone('America/Sao_Paulo')
+timezone = pytz.timezone("America/Sao_Paulo")
 
 
 def get_ads_client(oauth_credentials, developer_token, customer_id):
@@ -34,37 +34,43 @@ def get_ads_client(oauth_credentials, developer_token, customer_id):
     from google.ads.googleads import oauth2
 
     oauth2_client = oauth2.get_installed_app_credentials(
-        oauth_credentials.get_client_id(), oauth_credentials.get_client_secret(),
-        oauth_credentials.get_refresh_token())
+        oauth_credentials.get_client_id(),
+        oauth_credentials.get_client_secret(),
+        oauth_credentials.get_refresh_token(),
+    )
 
     return GoogleAdsClient(
-        oauth2_client, developer_token,
-        login_customer_id=customer_id)
+        oauth2_client, developer_token, login_customer_id=customer_id
+    )
 
 
-def get_ads_service(service_name, version, oauth_credentials, developer_token,
-                    customer_id):
-    return get_ads_client(oauth_credentials, developer_token, customer_id).get_service(service_name, version=version)
+def get_ads_service(
+    service_name, version, oauth_credentials, developer_token, customer_id
+):
+    return get_ads_client(oauth_credentials, developer_token, customer_id).get_service(
+        service_name, version=version
+    )
 
 
 def format_date(date):
     if isinstance(date, datetime.datetime):
         pdate = date
     else:
-        pdate = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%f')
+        pdate = datetime.datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.%f")
 
     pdate = timezone.localize(pdate)
     str_timezone = pdate.strftime("%z")
     return f'{datetime.datetime.strftime(pdate, "%Y-%m-%d %H:%M:%S")}{str_timezone[-5:-2]}:{str_timezone[-2:]}'
 
+
 def get_timestamp_micros(date):
     if isinstance(date, datetime.datetime):
         pdate = date
     else:
-        pdate = datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%f')
+        pdate = datetime.datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.%f")
 
     return math.floor(pdate.timestamp() * 10e5)
-    
+
 
 def safe_process(logger):
     def deco(func):
@@ -72,16 +78,18 @@ def safe_process(logger):
             self_ = args[0]
             batch = args[1]
             if not batch or not batch.elements:
-                logger.info('Skipping upload, received no elements.')
+                logger.info("Skipping upload, received no elements.")
                 return
-            logger.info(f'Uploading {len(batch.elements)} rows...')
+            logger.info(f"Uploading {len(batch.elements)} rows...")
             try:
                 return func(*args, **kwargs)
             except BaseException as e:
-                self_._add_error(batch.execution, f'Error uploading data: {e}')
-                logger.error(f'Error uploading data for :{batch.execution.destination.destination_name}')
+                self_._add_error(batch.execution, f"Error uploading data: {e}")
+                logger.error(
+                    f"Error uploading data for :{batch.execution.destination.destination_name}"
+                )
                 logger.error(e, exc_info=True)
-                logger.exception('Error uploading data.')
+                logger.exception("Error uploading data.")
 
         return inner
 
@@ -99,7 +107,8 @@ def _do_safe_call_api(function, logger, current_retry, *args, **kwargs):
     except Exception as e:
         if current_retry < MAX_RETRIES:
             logger.exception(
-                f'Fail number {current_retry}. Stack track follows. Trying again.')
+                f"Fail number {current_retry}. Stack track follows. Trying again."
+            )
             current_retry += 1
             return _do_safe_call_api(function, logger, current_retry, *args, **kwargs)
 
@@ -119,22 +128,21 @@ def print_partial_error_messages(logger_name, action, response) -> Optional[str]
     """
     error_message = None
 
-    partial_failure = getattr(response, 'partial_failure_error', None)
-    if partial_failure is not None and partial_failure.message != '':
-        error_message = f'Error on {action}: {partial_failure.message}.'
-        logging.getLogger(logger_name).error(error_message)
-    results = getattr(response, 'results', [])
+    partial_failure = getattr(response, "partial_failure_error", None)
+    if partial_failure is not None and partial_failure.message != "":
+        error_message = f"Error on {action}: {partial_failure.message}."
+        logging.getLogger(logger_name).warning(error_message)
+    results = getattr(response, "results", [])
     for result in results:
-        gclid = getattr(result, 'gclid', None)
-        caller_id = getattr(result, 'caller_id', None)
+        gclid = getattr(result, "gclid", None)
+        caller_id = getattr(result, "caller_id", None)
         if gclid is not None:
-            message = f'gclid {result.gclid} uploaded.'
+            message = f"gclid {result.gclid} uploaded."
         elif caller_id is not None:
-            message = f'caller_id {result.caller_id} uploaded.'
+            message = f"caller_id {result.caller_id} uploaded."
         else:
-            message = f'item {result} uploaded.'
+            message = f"item {result} uploaded."
 
         logging.getLogger(logger_name).debug(message)
 
     return error_message
-    
