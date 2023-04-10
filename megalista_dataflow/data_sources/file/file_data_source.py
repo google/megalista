@@ -105,8 +105,6 @@ class FileDataSource(BaseDataSource):
             new_df = pd.DataFrame([{'uuid': row['uuid'], 'timestamp': now} for row in rows])
         elif self._transactional_type == TransactionalType.GCLID_TIME:
             new_df = pd.DataFrame({'gclid': row['gclid'], 'time': row['time'], 'timestamp': now} for row in rows)
-        elif self._transactional_type == TransactionalType.ORDER_ID_TIME:
-            new_df = pd.DataFrame({'order_id': row['order_id'], 'timestamp': now} for row in rows)
         df = pd.concat([df, new_df], ignore_index=True)
         # Upload file
         # Add _uploaded into path
