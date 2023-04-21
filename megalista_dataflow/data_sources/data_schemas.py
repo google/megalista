@@ -55,19 +55,13 @@ _dtypes: Dict[str, Dict[str, Any]] = {
         ],
         'groups': []
     },
-    'ADS_OFFLINE_CONVERSION_ADJUSTMENT_GCLID': {
+    'ADS_OFFLINE_CONVERSION_ADJUSTMENT': {
         'columns': [
             {'name': 'gclid', 'required': True, 'data_type': 'string'},
             {'name': 'time', 'required': True, 'data_type': 'string'},
-            {'name': 'conversion_time', 'required': True, 'data_type': 'string'},
-            {'name': 'amount', 'required': False, 'data_type': 'string'}
-        ],
-        'groups': []
-    },
-    'ADS_OFFLINE_CONVERSION_ADJUSTMENT_ORDER_ID': {
-        'columns': [
-            {'name': 'order_id', 'required': True, 'data_type': 'string'},
-            {'name': 'time', 'required': True, 'data_type': 'string'},
+            {'name': 'adjustment_time', 'required': True, 'data_type': 'string'},
+            {'name': 'adjustment_type', 'required': True, 'data_type': 'string'},
+            {'name': 'order_id', 'required': False, 'data_type': 'string'},
             {'name': 'amount', 'required': False, 'data_type': 'string'}
         ],
         'groups': []
@@ -267,11 +261,12 @@ _dtypes: Dict[str, Dict[str, Any]] = {
         ],
         'groups': []
     },
-    'UPLOADED_ORDER_ID': {
+    'UPLOADED_GCLID_TIME_ORDER_ID': {
         'columns': [
             {'name': 'timestamp', 'required': True, 'data_type': 'string'},
+            {'name': 'gclid', 'required': True, 'data_type': 'string'},
+            {'name': 'time', 'required': True, 'data_type': 'string'},
             {'name': 'order_id', 'required': True, 'data_type': 'string'},
-            {'name': 'time', 'required': True, 'data_type': 'string'}
         ],
         'groups': []
     },

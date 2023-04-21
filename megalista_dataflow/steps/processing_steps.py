@@ -335,7 +335,34 @@ class GoogleAdsOfflineConversionAdjustmentsOrderIdStep(MegalistaStep):
                 ),
             )
         )
-
+    
+class GoogleAdsOfflineConversionAdjustmentsStep(MegalistaStep):
+    def expand(self, executions):
+        return (
+            executions
+            | "Load Data - GoogleAdsOfflineConversionAdjustments"
+            >> BatchesFromExecutions(
+                ErrorHandler(DestinationType.ADS_OFFLINE_CONVERSION_ADJUSTMENT,
+                             self.params.error_notifier),
+                self.params.dataflow_options,
+                DestinationType.ADS_OFFLINE_CONVERSION_ADJUSTMENT,
+                2000,
+                TransactionalType.GCLID_TIME_ORDER_ID)
+            | "Upload - GoogleAdsOfflineConversionAdjustments"
+            >> beam.ParDo(
+                GoogleAdsOfflineAdjustmentUploaderDoFn(
+                    self.params._oauth_credentials,
+                    self.params._dataflow_options.developer_token,
+                    ErrorHandler(DestinationType.ADS_OFFLINE_CONVERSION_ADJUSTMENT,
+                                 self.params.error_notifier)
+                )
+            )
+            | "Persist results - GoogleAdsOfflineConversions"
+            >> TransactionalEventsResultsWriter(
+                self.params._dataflow_options,
+                TransactionalType.GCLID_TIME_ORDER_ID,
+                ErrorHandler(DestinationType.ADS_OFFLINE_CONVERSION_ADJUSTMENT, self.params.error_notifier))
+        )
 
 class GoogleAdsOfflineConversionsCallsStep(MegalistaStep):
     def expand(self, executions):
@@ -645,8 +672,7 @@ PROCESSING_STEPS = [
     ["Ads Audiences User ID", GoogleAdsCustomerMatchUserIdStep],
     ["Ads OCI (Click)", GoogleAdsOfflineConversionsStep],
     ["Ads OCI (Calls)", GoogleAdsOfflineConversionsCallsStep],
-    ["Ads OCA (gclid)", GoogleAdsOfflineConversionAdjustmentsGclidStep],
-    ["Ads OCA (order id)", GoogleAdsOfflineConversionAdjustmentsOrderIdStep],
+    ["Ads OCA", GoogleAdsOfflineConversionAdjustmentsStep],
     ["Ads ECLeads", GoogleAdsECLeadsStep],
     ["GA 360 User List", GoogleAnalyticsUserListStep],
     ["GA 360 Data Import", GoogleAnalyticsDataImportStep],

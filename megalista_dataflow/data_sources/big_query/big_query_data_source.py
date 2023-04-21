@@ -94,10 +94,10 @@ class BigQueryDataSource(BaseDataSource):
                 template = "SELECT $query_cols FROM `$table_name` AS data \
                                 LEFT JOIN `$uploaded_table_name` AS uploaded USING(gclid, time) \
                                 WHERE uploaded.gclid IS NULL;"
-            elif self._transactional_type == TransactionalType.ORDER_ID_TIME:
+            elif self._transactional_type == TransactionalType.GCLID_TIME_ORDER_ID:
                 template = "SELECT $query_cols FROM `$table_name` AS data \
-                                LEFT JOIN `$uploaded_table_name` AS uploaded USING(order_id, time) \
-                                WHERE uploaded.order_id IS NULL;"
+                                LEFT JOIN `$uploaded_table_name` AS uploaded USING(gclid, order_id, time) \
+                                WHERE uploaded.gclid IS NULL AND uploaded.order_id IS NULL;"
             else:
                 raise Exception(f'Unrecognized TransactionalType: {self._transactional_type}. Source="{self._source_name}". Destination="{self._destination_name}"')
 
@@ -137,6 +137,14 @@ class BigQueryDataSource(BaseDataSource):
                             time STRING OPTIONS(description= 'Adjustment time')) \
                             PARTITION BY _PARTITIONDATE \
                             OPTIONS(partition_expiration_days=15)"
+        elif self._transactional_type == TransactionalType.GCLID_TIME_ORDER_ID:
+            template = "CREATE TABLE IF NOT EXISTS `$uploaded_table_name` ( \
+                            timestamp TIMESTAMP OPTIONS(description= 'Event timestamp'), \
+                            gclid STRING OPTIONS(description= 'Original gclid'), \
+                            time STRING OPTIONS(description= 'Original time'), \
+                            order_id STRING OPTIONS(description= 'Order Id (transaction Id)')) \
+                            PARTITION BY _PARTITIONDATE \
+                            OPTIONS(partition_expiration_days=15)"
         else:
             raise Exception(f'Unrecognized TransactionalType: {self._transactional_type}. Source="{self._source_name}". Destination="{self._destination_name}"')
 
@@ -163,7 +171,8 @@ class BigQueryDataSource(BaseDataSource):
                 bq_rows = all_bq_rows[i: i + _BIGQUERY_PAGE_SIZE]
                 partial_results.append(client.insert_rows(table,
                     bq_rows,
-                    self._get_schema_fields()))
+                    self._get_schema_fields(),
+                    retry=Retry(deadline=120)))
 
             for results in partial_results:
                 for result in results:
@@ -188,8 +197,8 @@ class BigQueryDataSource(BaseDataSource):
             return SchemaField("uuid", "string"), SchemaField("timestamp", "timestamp")
         if self._transactional_type == TransactionalType.GCLID_TIME:
             return SchemaField("gclid", "string"), SchemaField("time", "string"), SchemaField("timestamp", "timestamp")
-        if self._transactional_type == TransactionalType.ORDER_ID_TIME:
-            return SchemaField("order_id", "string"), SchemaField("time", "string"), SchemaField("timestamp", "timestamp")
+        if self._transactional_type == TransactionalType.GCLID_TIME_ORDER_ID:
+            return SchemaField("gclid", "string"), SchemaField("time", "string"), SchemaField("order_id", "string"), SchemaField("timestamp", "timestamp")
         raise Exception(f'Unrecognized TransactionalType: {self._transactional_type}. Source="{self._source_name}". Destination="{self._destination_name}"')
 
     def _get_bq_rows(self, rows, now):
@@ -197,8 +206,8 @@ class BigQueryDataSource(BaseDataSource):
             return [{'uuid': row['uuid'], 'timestamp': now} for row in rows]
         if self._transactional_type == TransactionalType.GCLID_TIME:
             return [{'gclid': row['gclid'], 'time': row['time'], 'timestamp': now} for row in rows]
-        if self._transactional_type == TransactionalType.ORDER_ID_TIME:
-            return [{'order_id': row['order_id'], 'time': row['time'], 'timestamp': now} for row in rows]
+        if self._transactional_type == TransactionalType.GCLID_TIME_ORDER_ID:
+            return [{'gclid': row['gclid'], 'time': row['time'], 'order_id':row['order_id'], 'timestamp': now} for row in rows]
         raise Exception(f'Unrecognized TransactionalType: {self._transactional_type}. Source="{self._source_name}". Destination="{self._destination_name}"')
 
     def _get_table_columns(self, client, table_name):

@@ -24,7 +24,7 @@ from utils.utils import Utils
 from uploaders.google_ads import ADS_API_VERSION
 from uploaders.uploaders import MegalistaUploader
 
-_DEFAULT_LOGGER: str = 'megalista.GoogleAdsOfflineConversionsUploader'
+_DEFAULT_LOGGER: str = 'megalista.GoogleAdsOfflineConversionAdjustmentsUploader'
 
 
 class GoogleAdsOfflineAdjustmentUploaderDoFn(MegalistaUploader):
@@ -93,40 +93,49 @@ class GoogleAdsOfflineAdjustmentUploaderDoFn(MegalistaUploader):
     ads_service = self._get_ads_service(login_customer_id)
     
     resource_name = self._get_resource_name(ads_service, customer_id, execution.destination.destination_metadata[0])
-
+    
     response = self._do_upload(oca_service,
                     execution,
                     resource_name,
                     customer_id,
                     batch.elements)
-
+    
     batch_with_successful_gclids = self._get_new_batch_with_successfully_uploaded_gclids(batch, response)
     if len(batch_with_successful_gclids.elements) > 0:
       return [batch_with_successful_gclids]
 
   def _do_upload(self, oca_service, execution, conversion_resource_name, customer_id, rows):
     logging.getLogger(_DEFAULT_LOGGER).info(f'Uploading {len(rows)} offline conversions adjustments on {conversion_resource_name} to Google Ads.')
-    conversion_adjustments = [{
-          'gclid_date_time_pair': {
-            'gclid': conversion['gclid'],
-            'conversion_date_time': utils.format_date(conversion['conversion_time'])
+    conversion_adjustments = []
+    for conversion in rows:
+      adjustment = {
+        'adjustment_type': conversion['adjustment_type'],
+          'restatement_value': {
+            'adjusted_value': float(str(conversion['amount'])) if conversion['adjustment_type'] == 'RESTATEMENT' else None,
+            'currency_code': None # defaults to account currency
           },
-          'adjustment_type': conversion['adjustment_type'],
-          'restatement_value': float(str(conversion['amount'])) if conversion['adjustment_type'] == 'RESTATE' else None,
-          'order_id': conversion['order_id'],
           'conversion_action': conversion_resource_name,
           'adjustment_date_time': utils.format_date(conversion['adjustment_time'])
-    } for conversion in rows]
-
+      }
+      # If order_id is present it takes precedence over the gclid-date_time pair
+      if conversion['order_id']:
+        adjustment['order_id'] = conversion['order_id']
+      else:
+        adjustment['gclid_date_time_pair'] = {
+            'gclid': conversion['gclid'],
+            'conversion_date_time': utils.format_date(conversion['time'])
+          }
+      conversion_adjustments.append(adjustment)
+    
     upload_data = {
       'customer_id': customer_id,
       'partial_failure': True,
       'validate_only': False,
-      'conversions': conversion_adjustments
+      'conversion_adjustments': conversion_adjustments
     }
 
     response = oca_service.upload_conversion_adjustments(request=upload_data)
-
+    
     error_message = utils.print_partial_error_messages(_DEFAULT_LOGGER, 'uploading offline conversion adjustments', response)
     if error_message:
       self._add_error(execution, error_message)
@@ -143,9 +152,14 @@ class GoogleAdsOfflineAdjustmentUploaderDoFn(MegalistaUploader):
 
   @staticmethod
   def _get_new_batch_with_successfully_uploaded_gclids(batch: Batch, response):
-    def gclid_lambda(result): return result.gclid
+    def gclid_lambda(result): return result.gclid_date_time_pair.gclid
+    def order_id_lambda(result): return result.order_id
 
     successful_gclids = list(map(gclid_lambda, filter(gclid_lambda, response.results)))
-    successful_elements = list(filter(lambda element: element['gclid'] in successful_gclids, batch.elements))
+    successful_order_ids = list(map(order_id_lambda, filter(order_id_lambda, response.results)))
+
+    successful_elements = list(filter(lambda element: element['gclid'] in successful_gclids, batch.elements)) + \
+      list(filter(lambda element: element['order_id'] in successful_order_ids, batch.elements))
+
 
     return Batch(batch.execution, successful_elements)
