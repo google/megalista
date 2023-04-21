@@ -22,6 +22,7 @@ class DestinationType(Enum):
     (
         CM_OFFLINE_CONVERSION,
         ADS_OFFLINE_CONVERSION,
+        ADS_OFFLINE_CONVERSION_ADJUSTMENT,
         ADS_OFFLINE_CONVERSION_CALLS,
         ADS_SSD_UPLOAD,
         ADS_ENHANCED_CONVERSION,
@@ -38,7 +39,7 @@ class DestinationType(Enum):
         DV_CUSTOMER_MATCH_DEVICE_ID_UPLOAD,
         UPLOADED_UUID,  # schema verification purposes
         UPLOADED_GCLID_TIME  # schema verification purposes
-    ) = range(18)
+    ) = range(19)
 
     def __eq__(self, other):
         if other is None:
@@ -61,7 +62,8 @@ class TransactionalType(Enum):
         NOT_TRANSACTIONAL,
         UUID,
         GCLID_TIME,
-    ) = range(3)
+        GCLID_TIME_ORDER_ID
+    ) = range(4)
 
 
 class AccountConfig:

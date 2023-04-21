@@ -23,6 +23,7 @@ from uploaders.support.transactional_events_results_writer import TransactionalE
 from uploaders.campaign_manager.campaign_manager_conversion_uploader import CampaignManagerConversionUploaderDoFn
 from uploaders.google_ads.conversions.google_ads_offline_conversions_calls_uploader import GoogleAdsOfflineUploaderCallsDoFn
 from uploaders.google_ads.conversions.google_ads_offline_conversions_uploader import GoogleAdsOfflineUploaderDoFn
+from uploaders.google_ads.conversions.google_ads_offline_conversion_adjustments_uploader import GoogleAdsOfflineAdjustmentUploaderDoFn
 from uploaders.google_ads.conversions.google_ads_enhanced_conversions_leads_uploader import GoogleAdsECLeadsUploaderDoFn
 from uploaders.google_ads.conversions.google_ads_ssd_uploader import GoogleAdsSSDUploaderDoFn
 from uploaders.google_ads.customer_match.contact_info_uploader import GoogleAdsCustomerMatchContactInfoUploaderDoFn
@@ -176,7 +177,34 @@ class GoogleAdsOfflineConversionsStep(MegalistaStep):
                 TransactionalType.GCLID_TIME,
                 ErrorHandler(DestinationType.ADS_OFFLINE_CONVERSION, self.params.error_notifier))
         )
-
+    
+class GoogleAdsOfflineConversionAdjustmentsStep(MegalistaStep):
+    def expand(self, executions):
+        return (
+            executions
+            | "Load Data - GoogleAdsOfflineConversionAdjustments"
+            >> BatchesFromExecutions(
+                ErrorHandler(DestinationType.ADS_OFFLINE_CONVERSION_ADJUSTMENT,
+                             self.params.error_notifier),
+                self.params.dataflow_options,
+                DestinationType.ADS_OFFLINE_CONVERSION_ADJUSTMENT,
+                2000,
+                TransactionalType.GCLID_TIME_ORDER_ID)
+            | "Upload - GoogleAdsOfflineConversionAdjustments"
+            >> beam.ParDo(
+                GoogleAdsOfflineAdjustmentUploaderDoFn(
+                    self.params._oauth_credentials,
+                    self.params._dataflow_options.developer_token,
+                    ErrorHandler(DestinationType.ADS_OFFLINE_CONVERSION_ADJUSTMENT,
+                                 self.params.error_notifier)
+                )
+            )
+            | "Persist results - GoogleAdsOfflineConversions"
+            >> TransactionalEventsResultsWriter(
+                self.params._dataflow_options,
+                TransactionalType.GCLID_TIME_ORDER_ID,
+                ErrorHandler(DestinationType.ADS_OFFLINE_CONVERSION_ADJUSTMENT, self.params.error_notifier))
+        )
 
 class GoogleAdsOfflineConversionsCallsStep(MegalistaStep):
     def expand(self, executions):
@@ -412,6 +440,7 @@ PROCESSING_STEPS = [
     ["Ads Audiences User ID", GoogleAdsCustomerMatchUserIdStep],
     ["Ads OCI (Click)", GoogleAdsOfflineConversionsStep],
     ["Ads OCI (Calls)", GoogleAdsOfflineConversionsCallsStep],
+    ["Ads OCA", GoogleAdsOfflineConversionAdjustmentsStep],
     ["Ads ECLeads", GoogleAdsECLeadsStep],
     ["GA 360 User List", GoogleAnalyticsUserListStep],
     ["GA 360 Data Import", GoogleAnalyticsDataImportStep],
