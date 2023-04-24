@@ -96,7 +96,7 @@ class BigQueryDataSource(BaseDataSource):
                                 WHERE uploaded.gclid IS NULL;"
             elif self._transactional_type == TransactionalType.GCLID_TIME_ORDER_ID:
                 template = "SELECT $query_cols FROM `$table_name` AS data \
-                                LEFT JOIN `$uploaded_table_name` AS uploaded USING(gclid, order_id, time) \
+                                LEFT JOIN `$uploaded_table_name` AS uploaded USING(gclid, order_id, adjustment_time) \
                                 WHERE uploaded.gclid IS NULL AND uploaded.order_id IS NULL;"
             else:
                 raise Exception(f'Unrecognized TransactionalType: {self._transactional_type}. Source="{self._source_name}". Destination="{self._destination_name}"')
@@ -142,7 +142,8 @@ class BigQueryDataSource(BaseDataSource):
                             timestamp TIMESTAMP OPTIONS(description= 'Event timestamp'), \
                             gclid STRING OPTIONS(description= 'Original gclid'), \
                             time STRING OPTIONS(description= 'Original time'), \
-                            order_id STRING OPTIONS(description= 'Order Id (transaction Id)')) \
+                            order_id STRING OPTIONS(description= 'Order Id (transaction Id)'), \
+                            adjustment_time STRING OPTIONS(description= 'Adjustment time')) \
                             PARTITION BY _PARTITIONDATE \
                             OPTIONS(partition_expiration_days=15)"
         else:
@@ -198,7 +199,7 @@ class BigQueryDataSource(BaseDataSource):
         if self._transactional_type == TransactionalType.GCLID_TIME:
             return SchemaField("gclid", "string"), SchemaField("time", "string"), SchemaField("timestamp", "timestamp")
         if self._transactional_type == TransactionalType.GCLID_TIME_ORDER_ID:
-            return SchemaField("gclid", "string"), SchemaField("time", "string"), SchemaField("order_id", "string"), SchemaField("timestamp", "timestamp")
+            return SchemaField("gclid", "string"), SchemaField("time", "string"), SchemaField("order_id", "string"), SchemaField("adjustment_time", "string"), SchemaField("timestamp", "timestamp")
         raise Exception(f'Unrecognized TransactionalType: {self._transactional_type}. Source="{self._source_name}". Destination="{self._destination_name}"')
 
     def _get_bq_rows(self, rows, now):
@@ -207,7 +208,7 @@ class BigQueryDataSource(BaseDataSource):
         if self._transactional_type == TransactionalType.GCLID_TIME:
             return [{'gclid': row['gclid'], 'time': row['time'], 'timestamp': now} for row in rows]
         if self._transactional_type == TransactionalType.GCLID_TIME_ORDER_ID:
-            return [{'gclid': row['gclid'], 'time': row['time'], 'order_id':row['order_id'], 'timestamp': now} for row in rows]
+            return [{'gclid': row['gclid'], 'time': row['time'], 'order_id':row['order_id'], 'adjustment_time':row['adjustment_time'], 'timestamp': now} for row in rows]
         raise Exception(f'Unrecognized TransactionalType: {self._transactional_type}. Source="{self._source_name}". Destination="{self._destination_name}"')
 
     def _get_table_columns(self, client, table_name):
