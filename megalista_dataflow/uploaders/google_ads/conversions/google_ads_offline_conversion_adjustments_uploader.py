@@ -133,7 +133,7 @@ class GoogleAdsOfflineAdjustmentUploaderDoFn(MegalistaUploader):
       'validate_only': False,
       'conversion_adjustments': conversion_adjustments
     }
-
+    
     response = oca_service.upload_conversion_adjustments(request=upload_data)
     
     error_message = utils.print_partial_error_messages(_DEFAULT_LOGGER, 'uploading offline conversion adjustments', response)
