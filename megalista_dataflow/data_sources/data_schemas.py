@@ -66,6 +66,23 @@ _dtypes: Dict[str, Dict[str, Any]] = {
         ],
         'groups': []
     },
+    'ADS_OFFLINE_CONVERSION_ADJUSTMENT_GCLID': {
+        'columns': [
+            {'name': 'gclid', 'required': True, 'data_type': 'string'},
+            {'name': 'time', 'required': True, 'data_type': 'string'},
+            {'name': 'conversion_time', 'required': True, 'data_type': 'string'},
+            {'name': 'amount', 'required': False, 'data_type': 'string'}
+        ],
+        'groups': []
+    },
+    'ADS_OFFLINE_CONVERSION_ADJUSTMENT_ORDER_ID': {
+        'columns': [
+            {'name': 'order_id', 'required': True, 'data_type': 'string'},
+            {'name': 'time', 'required': True, 'data_type': 'string'},
+            {'name': 'amount', 'required': False, 'data_type': 'string'}
+        ],
+        'groups': []
+    },
     'ADS_ENHANCED_CONVERSION_LEADS': {
         'columns': [
             {'name': 'uuid', 'required': True, 'data_type': 'string'},
@@ -261,11 +278,18 @@ _dtypes: Dict[str, Dict[str, Any]] = {
         ],
         'groups': []
     },
-    'UPLOADED_GCLID_TIME_ORDER_ID': {
+    'UPLOADED_GCLID_TIME_ORDER_ID': { #TODO(cymbaum) remove
         'columns': [
             {'name': 'timestamp', 'required': True, 'data_type': 'string'},
             {'name': 'gclid', 'required': True, 'data_type': 'string'},
             {'name': 'time', 'required': True, 'data_type': 'string'},
+            {'name': 'order_id', 'required': True, 'data_type': 'string'},
+        ],
+        'groups': []
+    },
+    'UPLOADED_ORDER_ID': {
+        'columns': [
+            {'name': 'timestamp', 'required': True, 'data_type': 'string'},
             {'name': 'order_id', 'required': True, 'data_type': 'string'},
         ],
         'groups': []

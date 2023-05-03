@@ -22,7 +22,8 @@ class DestinationType(Enum):
     (
         CM_OFFLINE_CONVERSION,
         ADS_OFFLINE_CONVERSION,
-        ADS_OFFLINE_CONVERSION_ADJUSTMENT,
+        ADS_OFFLINE_CONVERSION_ADJUSTMENT_GCLID,
+        ADS_OFFLINE_CONVERSION_ADJUSTMENT_ORDER_ID,
         ADS_OFFLINE_CONVERSION_CALLS,
         ADS_SSD_UPLOAD,
         ADS_SSI_UPLOAD,
@@ -39,8 +40,9 @@ class DestinationType(Enum):
         DV_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD,
         DV_CUSTOMER_MATCH_DEVICE_ID_UPLOAD,
         UPLOADED_UUID,  # schema verification purposes
+        UPLOADED_GCLID_TIME,  # TODO(cymbaum) REMOVE
         UPLOADED_ORDER_ID
-    ) = range(20)
+    ) = range(21)
 
     def __eq__(self, other):
         if other is None:
@@ -58,14 +60,15 @@ class TransactionalType(Enum):
         NOT_TRANSACTION: don't handle.
         UUID: Expect a 'uuid' field in the source table as a unique identifier to each row.
         GCLID_DATE_TIME: Expect 'gclid' and 'time' fields in the source table as unique identifiers to each row.
-        ORDER_ID_TIME: Expect an 'order_id' and 'time' filed in the source table as an unique identifier for each row.
+        ORDER_ID: Expect an 'order_id' filed in the source table as an unique identifier for each row.
     """
     (
         NOT_TRANSACTIONAL,
         UUID,
         GCLID_TIME,
-        GCLID_TIME_ORDER_ID
-    ) = range(4)
+        ORDER_ID,
+        GCLID_TIME_ORDER_ID # TODO(cymbaum) REMOVE
+    ) = range(5)
 
 
 class AccountConfig:

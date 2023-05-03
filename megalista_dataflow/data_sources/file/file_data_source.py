@@ -105,7 +105,9 @@ class FileDataSource(BaseDataSource):
             new_df = pd.DataFrame([{'uuid': row['uuid'], 'timestamp': now} for row in rows])
         elif self._transactional_type == TransactionalType.GCLID_TIME:
             new_df = pd.DataFrame({'gclid': row['gclid'], 'time': row['time'], 'timestamp': now} for row in rows)
-        elif self._transactional_type == TransactionalType.GCLID_TIME_ORDER_ID:
+        elif self._transactional_type == TransactionalType.ORDER_ID:
+            new_df = pd.DataFrame({'order_id': row['order_id'], 'timestamp': now} for row in rows)
+        elif self._transactional_type == TransactionalType.GCLID_TIME_ORDER_ID: # TODO(cymbaum) REMOVE
             new_df = pd.DataFrame({'gclid': row['gclid'], 'time': row['time'], 'order_id': row['order_id'], 'adjustment_time': row['adjustment_time'], 'timestamp': now} for row in rows)
         df = pd.concat([df, new_df], ignore_index=True)
         # Upload file
@@ -130,6 +132,8 @@ class FileDataSource(BaseDataSource):
                     return pd.DataFrame({'uuid': [], 'timestamp': []})
                 elif self._transactional_type == TransactionalType.GCLID_TIME:
                     return pd.DataFrame({'gclid': [], 'time': [], 'timestamp': []})
+                elif self._transactional_type == TransactionalType.ORDER_ID:
+                    return pd.DataFrame({'order_id': [], 'timestamp': []})
                 elif self._transactional_type == TransactionalType.GCLID_TIME_ORDER_ID: #TODO
                     return pd.DataFrame({'gclid': [], 'time': [], 'timestamp': []}) #TODO
                 else:
