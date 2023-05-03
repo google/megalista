@@ -55,17 +55,6 @@ _dtypes: Dict[str, Dict[str, Any]] = {
         ],
         'groups': []
     },
-    'ADS_OFFLINE_CONVERSION_ADJUSTMENT': {
-        'columns': [
-            {'name': 'gclid', 'required': True, 'data_type': 'string'},
-            {'name': 'time', 'required': True, 'data_type': 'string'},
-            {'name': 'adjustment_time', 'required': True, 'data_type': 'string'},
-            {'name': 'adjustment_type', 'required': True, 'data_type': 'string'},
-            {'name': 'order_id', 'required': False, 'data_type': 'string'},
-            {'name': 'amount', 'required': False, 'data_type': 'string'}
-        ],
-        'groups': []
-    },
     'ADS_OFFLINE_CONVERSION_ADJUSTMENT_GCLID': {
         'columns': [
             {'name': 'gclid', 'required': True, 'data_type': 'string'},
