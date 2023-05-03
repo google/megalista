@@ -87,21 +87,21 @@ class GoogleAdsOfflineAdjustmentUploaderDoFn(MegalistaUploader):
     @staticmethod
     def _assert_valid_destination(execution: Execution):
         destination = execution.destination.destination_metadata
-        if len(destination) == 0:
+        # Metadada 1 (conversion name) and Metadata 3 (adjustment type) are both required.
+        if len(destination) <= 2:
             raise ValueError(
-                'Missing destination information. Found {}'.format(len(destination))
+                'Missing destination information. Found {} Metadata. Metadata 1 and Metadata 3 are mandatory'.format(len(destination))
             )
 
         if not destination[0]:
             raise ValueError(
-                'Missing destination information. Received {}'.format(str(destination))
+                'Missing Metadata 1. Received {}'.format(str(destination))
             )
         
         if not destination[2]:
             raise ValueError(
-                'Missing destination information "Adjustment Type". Received {}'.format(str(destination))
+                'Missing Metadata 3. Received {}'.format(str(destination))
             )
-        # TODO(cymbaum) validate adjustment types
 
     @utils.safe_process(logger=logging.getLogger('megalista.GoogleAdsOfflineUploader'))
     def process(self, batch: Batch, **kwargs):

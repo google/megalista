@@ -107,8 +107,6 @@ class FileDataSource(BaseDataSource):
             new_df = pd.DataFrame({'gclid': row['gclid'], 'time': row['time'], 'timestamp': now} for row in rows)
         elif self._transactional_type == TransactionalType.ORDER_ID:
             new_df = pd.DataFrame({'order_id': row['order_id'], 'timestamp': now} for row in rows)
-        elif self._transactional_type == TransactionalType.GCLID_TIME_ORDER_ID: # TODO(cymbaum) REMOVE
-            new_df = pd.DataFrame({'gclid': row['gclid'], 'time': row['time'], 'order_id': row['order_id'], 'adjustment_time': row['adjustment_time'], 'timestamp': now} for row in rows)
         df = pd.concat([df, new_df], ignore_index=True)
         # Upload file
         # Add _uploaded into path
@@ -134,8 +132,6 @@ class FileDataSource(BaseDataSource):
                     return pd.DataFrame({'gclid': [], 'time': [], 'timestamp': []})
                 elif self._transactional_type == TransactionalType.ORDER_ID:
                     return pd.DataFrame({'order_id': [], 'timestamp': []})
-                elif self._transactional_type == TransactionalType.GCLID_TIME_ORDER_ID: #TODO
-                    return pd.DataFrame({'gclid': [], 'time': [], 'timestamp': []}) #TODO
                 else:
                     raise NotImplementedError(f'Transactional type not defined: {self._transactional_type.name}. Source="{self._source_name}". Destination="{self._destination_name}"')
             else:

@@ -231,7 +231,7 @@ class GoogleAdsOfflineConversionAdjustmentsOrderIdStep(MegalistaStep):
             | "Persist results - GoogleAdsOfflineConversions"
             >> TransactionalEventsResultsWriter(
                 self.params._dataflow_options,
-                TransactionalType.OR,
+                TransactionalType.ORDER_ID,
                 ErrorHandler(DestinationType.ADS_OFFLINE_CONVERSION_ADJUSTMENT_ORDER_ID, self.params.error_notifier))
         )
 
@@ -470,6 +470,7 @@ PROCESSING_STEPS = [
     ["Ads OCI (Click)", GoogleAdsOfflineConversionsStep],
     ["Ads OCI (Calls)", GoogleAdsOfflineConversionsCallsStep],
     ["Ads OCA (gclid)", GoogleAdsOfflineConversionAdjustmentsGclidStep],
+    ["Ads OCA (order id)", GoogleAdsOfflineConversionAdjustmentsOrderIdStep],
     ["Ads ECLeads", GoogleAdsECLeadsStep],
     ["GA 360 User List", GoogleAnalyticsUserListStep],
     ["GA 360 Data Import", GoogleAnalyticsDataImportStep],

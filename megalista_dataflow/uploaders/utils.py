@@ -79,7 +79,7 @@ def safe_process(logger):
                 return func(*args, **kwargs)
             except BaseException as e:
                 self_._add_error(batch.execution, f'Error uploading data: {e}')
-                logger.error(f'Error uploading data for :{batch.execution.destination.destination_name}')
+                logger.error(f'Error uploading data for: {batch.execution.destination.destination_name}')
                 logger.error(e, exc_info=True)
                 logger.exception('Error uploading data.')
 
