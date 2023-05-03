@@ -278,15 +278,6 @@ _dtypes: Dict[str, Dict[str, Any]] = {
         ],
         'groups': []
     },
-    'UPLOADED_GCLID_TIME_ORDER_ID': { #TODO(cymbaum) remove
-        'columns': [
-            {'name': 'timestamp', 'required': True, 'data_type': 'string'},
-            {'name': 'gclid', 'required': True, 'data_type': 'string'},
-            {'name': 'time', 'required': True, 'data_type': 'string'},
-            {'name': 'order_id', 'required': True, 'data_type': 'string'},
-        ],
-        'groups': []
-    },
     'UPLOADED_ORDER_ID': {
         'columns': [
             {'name': 'timestamp', 'required': True, 'data_type': 'string'},

@@ -26,8 +26,11 @@ from models.execution import Execution
 from models.execution import Source
 from models.execution import SourceType
 from models.oauth_credentials import OAuthCredentials
-from uploaders.google_ads.conversions.google_ads_offline_conversion_adjustments_uploader import (
-    GoogleAdsOfflineAdjustmentUploaderDoFn,
+from uploaders.google_ads.conversions.google_ads_offline_conversion_adjustments_uploader_gclid import (
+    GoogleAdsOfflineAdjustmentGclidUploaderDoFn,
+)
+from uploaders.google_ads.conversions.google_ads_offline_conversion_adjustments_uploader_order_id import (
+    GoogleAdsOfflineAdjustmentOrderIdUploaderDoFn,
 )
 
 _account_config = AccountConfig('123-45567-890', False, 'ga_account_id', '', '')
@@ -47,10 +50,30 @@ def uploader(mocker, error_notifier):
     access = StaticValueProvider(str, 'access')
     refresh = StaticValueProvider(str, 'refresh')
     credentials = OAuthCredentials(credential_id, secret, access, refresh)
-    return GoogleAdsOfflineAdjustmentUploaderDoFn(
+    return GoogleAdsOfflineAdjustmentGclidUploaderDoFn(
         credentials,
         StaticValueProvider(str, 'devtoken'),
-        ErrorHandler(DestinationType.ADS_OFFLINE_CONVERSION_ADJUSTMENT, error_notifier),
+        ErrorHandler(
+            DestinationType.ADS_OFFLINE_CONVERSION_ADJUSTMENT_GCLID, error_notifier
+        ),
+    )
+
+
+@pytest.fixture
+def uploader_order_id(mocker, error_notifier):
+    mocker.patch('google.ads.googleads.client.GoogleAdsClient')
+    mocker.patch('google.ads.googleads.oauth2')
+    credential_id = StaticValueProvider(str, 'id')
+    secret = StaticValueProvider(str, 'secret')
+    access = StaticValueProvider(str, 'access')
+    refresh = StaticValueProvider(str, 'refresh')
+    credentials = OAuthCredentials(credential_id, secret, access, refresh)
+    return GoogleAdsOfflineAdjustmentOrderIdUploaderDoFn(
+        credentials,
+        StaticValueProvider(str, 'devtoken'),
+        ErrorHandler(
+            DestinationType.ADS_OFFLINE_CONVERSION_ADJUSTMENT_GCLID, error_notifier
+        ),
     )
 
 
@@ -84,7 +107,9 @@ def test_conversion_upload_with_gclids(mocker, uploader):
     mocker.patch.object(uploader, '_get_oca_service')
     conversion_name = 'user_list'
     destination = Destination(
-        'dest1', DestinationType.ADS_OFFLINE_CONVERSION_ADJUSTMENT, ['user_list']
+        'dest1',
+        DestinationType.ADS_OFFLINE_CONVERSION_ADJUSTMENT_GCLID,
+        ['user_list', '', 'RESTATEMENT'],
     )
     source = Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers'])
     execution = Execution(_account_config, source, destination)
@@ -102,19 +127,15 @@ def test_conversion_upload_with_gclids(mocker, uploader):
     time4_result = '2023-04-04 13:13:55-03:00'
 
     element1 = {
-        'order_id': '',
         'gclid': '123',
-        'time': time1,
-        'adjustment_time': time2,
-        'adjustment_type': 'RESTATEMENT',
+        'conversion_time': time1,
+        'time': time2,
         'amount': '456',
     }
     element2 = {
-        'order_id': '',
         'gclid': '789',
-        'time': time3,
-        'adjustment_time': time4,
-        'adjustment_type': 'RESTATEMENT',
+        'conversion_time': time3,
+        'time': time4,
         'amount': '101',
     }
 
@@ -182,17 +203,19 @@ def test_conversion_upload_with_gclids(mocker, uploader):
     )
 
 
-def test_conversion_upload_with_order_ids(mocker, uploader):
+def test_conversion_upload_with_order_ids(mocker, uploader_order_id):
     # arrange
     conversion_resource_name = 'user_list_resouce'
     arrange_conversion_resource_name_api_call(
-        mocker, uploader, conversion_resource_name
+        mocker, uploader_order_id, conversion_resource_name
     )
 
-    mocker.patch.object(uploader, '_get_oca_service')
+    mocker.patch.object(uploader_order_id, '_get_oca_service')
     conversion_name = 'user_list'
     destination = Destination(
-        'dest1', DestinationType.ADS_OFFLINE_CONVERSION_ADJUSTMENT, ['user_list']
+        'dest1',
+        DestinationType.ADS_OFFLINE_CONVERSION_ADJUSTMENT_GCLID,
+        ['user_list', '', 'RESTATEMENT'],
     )
     source = Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers'])
     execution = Execution(_account_config, source, destination)
@@ -205,17 +228,15 @@ def test_conversion_upload_with_order_ids(mocker, uploader):
 
     element1 = {
         'order_id': 'AAA123',
-        'gclid': '',
-        'time': '',
-        'adjustment_time': time2,
+        'conversion_time': '',
+        'time': time2,
         'adjustment_type': 'RESTATEMENT',
         'amount': '456',
     }
     element2 = {
         'order_id': 'AAA456',
-        'gclid': '',
-        'time': '',
-        'adjustment_time': time4,
+        'conversion_time': '',
+        'time': time4,
         'adjustment_type': 'RESTATEMENT',
         'amount': '101',
     }
@@ -230,24 +251,24 @@ def test_conversion_upload_with_order_ids(mocker, uploader):
 
     upload_return_mock = MagicMock()
     upload_return_mock.results = [order_id_result_mock1, order_id_result_mock2]
-    uploader._get_oca_service.return_value.upload_conversion_adjustments.return_value = (
+    uploader_order_id._get_oca_service.return_value.upload_conversion_adjustments.return_value = (
         upload_return_mock
     )
 
     # act
-    successful_uploaded_gclids_batch = uploader.process(batch)[0]
-    uploader.finish_bundle()
+    successful_uploaded_gclids_batch = uploader_order_id.process(batch)[0]
+    uploader_order_id.finish_bundle()
 
     # assert
     assert len(successful_uploaded_gclids_batch.elements) == 1
     assert successful_uploaded_gclids_batch.elements[0] == element2
 
-    uploader._get_ads_service.return_value.search_stream.assert_called_once_with(
+    uploader_order_id._get_ads_service.return_value.search_stream.assert_called_once_with(
         customer_id='12345567890',
         query=f"SELECT conversion_action.resource_name FROM conversion_action WHERE conversion_action.name = '{conversion_name}'",
     )
 
-    uploader._get_oca_service.return_value.upload_conversion_adjustments.assert_called_once_with(
+    uploader_order_id._get_oca_service.return_value.upload_conversion_adjustments.assert_called_once_with(
         request={
             'customer_id': '12345567890',
             'partial_failure': True,
@@ -278,109 +299,6 @@ def test_conversion_upload_with_order_ids(mocker, uploader):
     )
 
 
-def test_conversion_upload_with_mixed_ids(mocker, uploader):
-    # arrange
-    conversion_resource_name = 'user_list_resouce'
-    arrange_conversion_resource_name_api_call(
-        mocker, uploader, conversion_resource_name
-    )
-
-    mocker.patch.object(uploader, '_get_oca_service')
-    conversion_name = 'user_list'
-    destination = Destination(
-        'dest1', DestinationType.ADS_OFFLINE_CONVERSION_ADJUSTMENT, ['user_list']
-    )
-    source = Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers'])
-    execution = Execution(_account_config, source, destination)
-
-    time1 = '2023-04-01T14:13:55.0005'
-    time1_result = '2023-04-01 14:13:55-03:00'
-
-    time2 = '2023-04-02T14:13:55.0005'
-    time2_result = '2023-04-02 14:13:55-03:00'
-
-    time4 = '2023-04-04T13:13:55.0005'
-    time4_result = '2023-04-04 13:13:55-03:00'
-
-    element1 = {
-        'order_id': 'AAA123',
-        'gclid': '',
-        'time': '',
-        'adjustment_time': time2,
-        'adjustment_type': 'RESTATEMENT',
-        'amount': '456',
-    }
-    element2 = {
-        'order_id': '',
-        'gclid': '123',
-        'time': time1,
-        'adjustment_time': time4,
-        'adjustment_type': 'RESTATEMENT',
-        'amount': '101',
-    }
-
-    batch = Batch(execution, [element1, element2])
-
-    order_id_result_mock1 = MagicMock()
-    order_id_result_mock1.order_id = 'AAA123'
-
-    order_id_result_mock2 = MagicMock()
-    order_id_result_mock2.gclid_date_time_pair.gclid = '123'
-
-    upload_return_mock = MagicMock()
-    upload_return_mock.results = [order_id_result_mock1, order_id_result_mock2]
-    uploader._get_oca_service.return_value.upload_conversion_adjustments.return_value = (
-        upload_return_mock
-    )
-
-    # act
-    successful_uploaded_gclids_batch = uploader.process(batch)[0]
-    uploader.finish_bundle()
-
-    # assert
-    assert len(successful_uploaded_gclids_batch.elements) == 2
-    assert successful_uploaded_gclids_batch.elements[0] == element2
-    assert successful_uploaded_gclids_batch.elements[1] == element1
-
-    uploader._get_ads_service.return_value.search_stream.assert_called_once_with(
-        customer_id='12345567890',
-        query=f"SELECT conversion_action.resource_name FROM conversion_action WHERE conversion_action.name = '{conversion_name}'",
-    )
-
-    uploader._get_oca_service.return_value.upload_conversion_adjustments.assert_called_once_with(
-        request={
-            'customer_id': '12345567890',
-            'partial_failure': True,
-            'validate_only': False,
-            'conversion_adjustments': [
-                {
-                    'adjustment_type': 'RESTATEMENT',
-                    'restatement_value': {
-                        'adjusted_value': 456.0,
-                        'currency_code': None,
-                    },
-                    'conversion_action': conversion_resource_name,
-                    'adjustment_date_time': time2_result,
-                    'order_id': 'AAA123',
-                },
-                {
-                    'adjustment_type': 'RESTATEMENT',
-                    'restatement_value': {
-                        'adjusted_value': 101.0,
-                        'currency_code': None,
-                    },
-                    'conversion_action': conversion_resource_name,
-                    'adjustment_date_time': time4_result,
-                    'gclid_date_time_pair': {
-                        'gclid': '123',
-                        'conversion_date_time': time1_result,
-                    },
-                },
-            ],
-        }
-    )
-
-
 def test_upload_with_ads_account_override(mocker, uploader):
     # arrange
     conversion_resource_name = 'user_list_resouce'
@@ -392,8 +310,8 @@ def test_upload_with_ads_account_override(mocker, uploader):
     conversion_name = 'user_list'
     destination = Destination(
         'dest1',
-        DestinationType.ADS_OFFLINE_CONVERSION_ADJUSTMENT,
-        ['user_list', '987-7654-123'],
+        DestinationType.ADS_OFFLINE_CONVERSION_ADJUSTMENT_GCLID,
+        ['user_list', '987-7654-123', 'RESTATEMENT'],
     )
     source = Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers'])
     execution = Execution(_account_config, source, destination)
@@ -413,16 +331,16 @@ def test_upload_with_ads_account_override(mocker, uploader):
     element1 = {
         'order_id': '',
         'gclid': '123',
-        'time': time1,
-        'adjustment_time': time2,
+        'conversion_time': time1,
+        'time': time2,
         'adjustment_type': 'RESTATEMENT',
         'amount': '456',
     }
     element2 = {
         'order_id': '',
         'gclid': '789',
-        'time': time3,
-        'adjustment_time': time4,
+        'conversion_time': time3,
+        'time': time4,
         'adjustment_type': 'RESTATEMENT',
         'amount': '101',
     }
@@ -503,7 +421,9 @@ def test_should_not_notify_errors_when_api_call_is_successful(
     mocker.patch.object(uploader, '_get_oca_service')
     conversion_name = 'user_list'
     destination = Destination(
-        'dest1', DestinationType.ADS_OFFLINE_CONVERSION_ADJUSTMENT, ['user_list']
+        'dest1',
+        DestinationType.ADS_OFFLINE_CONVERSION_ADJUSTMENT_GCLID,
+        ['user_list', '', 'RESTATEMENT'],
     )
     source = Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers'])
     execution = Execution(_account_config, source, destination)
@@ -513,8 +433,8 @@ def test_should_not_notify_errors_when_api_call_is_successful(
     element1 = {
         'order_id': '',
         'gclid': '123',
+        'conversion_time': time1,
         'time': time1,
-        'adjustment_time': time1,
         'adjustment_type': 'RESTATEMENT',
         'amount': '456',
     }
@@ -552,7 +472,9 @@ def test_error_notification(mocker, uploader, error_notifier):
 
     mocker.patch.object(uploader, '_get_oca_service')
     destination = Destination(
-        'dest1', DestinationType.ADS_OFFLINE_CONVERSION_ADJUSTMENT, ['user_list']
+        'dest1',
+        DestinationType.ADS_OFFLINE_CONVERSION_ADJUSTMENT_GCLID,
+        ['user_list', '', 'RESTATEMENT'],
     )
     source = Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers'])
     execution = Execution(_account_config, source, destination)
@@ -561,8 +483,8 @@ def test_error_notification(mocker, uploader, error_notifier):
     element1 = {
         'order_id': '',
         'gclid': '123',
+        'conversion_time': time1,
         'time': time1,
-        'adjustment_time': time1,
         'adjustment_type': 'RESTATEMENT',
         'amount': '456',
     }
@@ -583,7 +505,7 @@ def test_error_notification(mocker, uploader, error_notifier):
     assert error_notifier.were_errors_sent is True
     assert (
         error_notifier.destination_type
-        is DestinationType.ADS_OFFLINE_CONVERSION_ADJUSTMENT
+        is DestinationType.ADS_OFFLINE_CONVERSION_ADJUSTMENT_GCLID
     )
     assert error_notifier.errors_sent == {
         execution: f'Error on uploading offline conversion adjustments: {error_message}.'
@@ -604,7 +526,9 @@ def test_conversion_upload_and_error_notification(mocker, uploader, error_notifi
     mocker.patch.object(uploader, '_get_oca_service')
     conversion_name = 'user_list'
     destination = Destination(
-        'dest1', DestinationType.ADS_OFFLINE_CONVERSION_ADJUSTMENT, ['user_list']
+        'dest1',
+        DestinationType.ADS_OFFLINE_CONVERSION_ADJUSTMENT_GCLID,
+        ['user_list', '', 'RESTATEMENT'],
     )
     source = Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers'])
     execution = Execution(_account_config, source, destination)
@@ -624,16 +548,16 @@ def test_conversion_upload_and_error_notification(mocker, uploader, error_notifi
     element1 = {
         'order_id': '',
         'gclid': '123',
-        'time': time1,
-        'adjustment_time': time2,
+        'conversion_time': time1,
+        'time': time2,
         'adjustment_type': 'RESTATEMENT',
         'amount': '456',
     }
     element2 = {
         'order_id': '',
         'gclid': '789',
-        'time': time3,
-        'adjustment_time': time4,
+        'conversion_time': time3,
+        'time': time4,
         'adjustment_type': 'RESTATEMENT',
         'amount': '101',
     }
@@ -707,7 +631,7 @@ def test_conversion_upload_and_error_notification(mocker, uploader, error_notifi
     assert error_notifier.were_errors_sent is True
     assert (
         error_notifier.destination_type
-        is DestinationType.ADS_OFFLINE_CONVERSION_ADJUSTMENT
+        is DestinationType.ADS_OFFLINE_CONVERSION_ADJUSTMENT_GCLID
     )
     assert error_notifier.errors_sent == {
         execution: f'Error on uploading offline conversion adjustments: {error_message}.'

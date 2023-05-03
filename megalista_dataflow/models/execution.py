@@ -40,9 +40,8 @@ class DestinationType(Enum):
         DV_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD,
         DV_CUSTOMER_MATCH_DEVICE_ID_UPLOAD,
         UPLOADED_UUID,  # schema verification purposes
-        UPLOADED_GCLID_TIME,  # TODO(cymbaum) REMOVE
         UPLOADED_ORDER_ID
-    ) = range(21)
+    ) = range(20)
 
     def __eq__(self, other):
         if other is None:
@@ -66,9 +65,8 @@ class TransactionalType(Enum):
         NOT_TRANSACTIONAL,
         UUID,
         GCLID_TIME,
-        ORDER_ID,
-        GCLID_TIME_ORDER_ID # TODO(cymbaum) REMOVE
-    ) = range(5)
+        ORDER_ID
+    ) = range(4)
 
 
 class AccountConfig:
