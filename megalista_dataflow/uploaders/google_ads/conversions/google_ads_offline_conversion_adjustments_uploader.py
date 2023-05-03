@@ -14,10 +14,11 @@
 
 import logging
 
+from typing import Any, Dict, List, Optional
 from apache_beam.options.value_provider import ValueProvider
 
 from error.error_handling import ErrorHandler
-from models.execution import Batch, Execution, AccountConfig, Destination
+from models.execution import Batch, Execution, AccountConfig, Destination, DestinationType
 from models.oauth_credentials import OAuthCredentials
 from uploaders import utils
 from utils.utils import Utils
@@ -84,7 +85,7 @@ class GoogleAdsOfflineAdjustmentUploaderDoFn(MegalistaUploader):
         return self._get_customer_id(account_config, destination)
 
     @staticmethod
-    def _assert_conversion_name_is_present(execution: Execution):
+    def _assert_valid_destination(execution: Execution):
         destination = execution.destination.destination_metadata
         if len(destination) == 0:
             raise ValueError(
@@ -95,11 +96,17 @@ class GoogleAdsOfflineAdjustmentUploaderDoFn(MegalistaUploader):
             raise ValueError(
                 'Missing destination information. Received {}'.format(str(destination))
             )
+        
+        if not destination[2]:
+            raise ValueError(
+                'Missing destination information "Adjustment Type". Received {}'.format(str(destination))
+            )
+        # TODO(cymbaum) validate adjustment types
 
     @utils.safe_process(logger=logging.getLogger('megalista.GoogleAdsOfflineUploader'))
     def process(self, batch: Batch, **kwargs):
         execution = batch.execution
-        self._assert_conversion_name_is_present(execution)
+        self._assert_valid_destination(execution)
 
         customer_id = self._get_customer_id(
             execution.account_config, execution.destination
@@ -122,43 +129,20 @@ class GoogleAdsOfflineAdjustmentUploaderDoFn(MegalistaUploader):
             oca_service, execution, resource_name, customer_id, batch.elements
         )
 
-        batch_with_successful_gclids = (
-            self._get_new_batch_with_successfully_uploaded_gclids(batch, response)
-        )
-        if len(batch_with_successful_gclids.elements) > 0:
-            return [batch_with_successful_gclids]
-
+        batch_with_successful_elements = self._get_new_batch_with_successfully_uploaded_elements(batch, response)
+        
+        if len(batch_with_successful_elements.elements) > 0:
+            return [batch_with_successful_elements]
+    
     def _do_upload(
         self, oca_service, execution, conversion_resource_name, customer_id, rows
     ):
         logging.getLogger(_DEFAULT_LOGGER).info(
             f'Uploading {len(rows)} offline conversions adjustments on {conversion_resource_name} to Google Ads.'
         )
-        conversion_adjustments = []
-        for conversion in rows:
-            adjustment = {
-                'adjustment_type': conversion['adjustment_type'],
-                'restatement_value': {
-                    'adjusted_value': float(str(conversion['amount']))
-                    if conversion['adjustment_type'] == 'RESTATEMENT'
-                    else None,
-                    'currency_code': None,  # defaults to account currency
-                },
-                'conversion_action': conversion_resource_name,
-                'adjustment_date_time': utils.format_date(
-                    conversion['adjustment_time']
-                ),
-            }
-            # If order_id is present it takes precedence over the gclid-date_time pair
-            if conversion['order_id']:
-                adjustment['order_id'] = conversion['order_id']
-            else:
-                adjustment['gclid_date_time_pair'] = {
-                    'gclid': conversion['gclid'],
-                    'conversion_date_time': utils.format_date(conversion['time']),
-                }
-            conversion_adjustments.append(adjustment)
-
+        
+        conversion_adjustments = self.populate_adjustments(rows, conversion_resource_name, execution.destination.destination_metadata[2])
+        
         upload_data = {
             'customer_id': customer_id,
             'partial_failure': True,
@@ -167,7 +151,7 @@ class GoogleAdsOfflineAdjustmentUploaderDoFn(MegalistaUploader):
         }
 
         response = oca_service.upload_conversion_adjustments(request=upload_data)
-
+        
         error_message = utils.print_partial_error_messages(
             _DEFAULT_LOGGER, 'uploading offline conversion adjustments', response
         )
@@ -186,30 +170,8 @@ class GoogleAdsOfflineAdjustmentUploaderDoFn(MegalistaUploader):
             f'Conversion "{name}" could not be found on account {customer_id}'
         )
 
-    @staticmethod
-    def _get_new_batch_with_successfully_uploaded_gclids(batch: Batch, response):
-        def gclid_lambda(result):
-            return result.gclid_date_time_pair.gclid
-
-        def order_id_lambda(result):
-            return result.order_id
-
-        successful_gclids = list(
-            map(gclid_lambda, filter(gclid_lambda, response.results))
-        )
-        successful_order_ids = list(
-            map(order_id_lambda, filter(order_id_lambda, response.results))
-        )
-
-        successful_elements = list(
-            filter(
-                lambda element: element['gclid'] in successful_gclids, batch.elements
-            )
-        ) + list(
-            filter(
-                lambda element: element['order_id'] in successful_order_ids,
-                batch.elements,
-            )
-        )
-
-        return Batch(batch.execution, successful_elements)
+    def _get_new_batch_with_successfully_uploaded_elements(self, batch: Batch, response):
+        pass
+    
+    def populate_adjustments(self, rows:List[Dict[str, Any]], conversion_resource_name: str, adjustment_type: str) -> Dict[str, Any]:
+        pass
