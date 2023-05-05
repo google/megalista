@@ -247,6 +247,7 @@ _dtypes: Dict[str, Dict[str, Any]] = {
         'columns': [
             {'name': 'timestamp', 'required': True, 'data_type': 'string'},
             {'name': 'order_id', 'required': True, 'data_type': 'string'},
+            {'name': 'time', 'required': True, 'data_type': 'string'}
         ],
         'groups': []
     },

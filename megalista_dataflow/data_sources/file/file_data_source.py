@@ -105,7 +105,7 @@ class FileDataSource(BaseDataSource):
             new_df = pd.DataFrame([{'uuid': row['uuid'], 'timestamp': now} for row in rows])
         elif self._transactional_type == TransactionalType.GCLID_TIME:
             new_df = pd.DataFrame({'gclid': row['gclid'], 'time': row['time'], 'timestamp': now} for row in rows)
-        elif self._transactional_type == TransactionalType.ORDER_ID:
+        elif self._transactional_type == TransactionalType.ORDER_ID_TIME:
             new_df = pd.DataFrame({'order_id': row['order_id'], 'timestamp': now} for row in rows)
         df = pd.concat([df, new_df], ignore_index=True)
         # Upload file
@@ -130,8 +130,8 @@ class FileDataSource(BaseDataSource):
                     return pd.DataFrame({'uuid': [], 'timestamp': []})
                 elif self._transactional_type == TransactionalType.GCLID_TIME:
                     return pd.DataFrame({'gclid': [], 'time': [], 'timestamp': []})
-                elif self._transactional_type == TransactionalType.ORDER_ID:
-                    return pd.DataFrame({'order_id': [], 'timestamp': []})
+                elif self._transactional_type == TransactionalType.ORDER_ID_TIME:
+                    return pd.DataFrame({'order_id': [], 'time': [], 'timestamp': []})
                 else:
                     raise NotImplementedError(f'Transactional type not defined: {self._transactional_type.name}. Source="{self._source_name}". Destination="{self._destination_name}"')
             else:

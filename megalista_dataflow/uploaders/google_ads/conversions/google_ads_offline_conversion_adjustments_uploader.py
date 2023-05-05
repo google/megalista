@@ -103,7 +103,7 @@ class GoogleAdsOfflineAdjustmentUploaderDoFn(MegalistaUploader):
                 'Missing Metadata 3. Received {}'.format(str(destination))
             )
 
-    @utils.safe_process(logger=logging.getLogger('megalista.GoogleAdsOfflineUploader'))
+    @utils.safe_process(logger=logging.getLogger('megalista.GoogleAdsOfflineConversionAdjustmentsUploader'))
     def process(self, batch: Batch, **kwargs):
         execution = batch.execution
         self._assert_valid_destination(execution)

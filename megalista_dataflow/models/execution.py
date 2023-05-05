@@ -58,13 +58,13 @@ class TransactionalType(Enum):
         NOT_TRANSACTION: don't handle.
         UUID: Expect a 'uuid' field in the source table as a unique identifier to each row.
         GCLID_DATE_TIME: Expect 'gclid' and 'time' fields in the source table as unique identifiers to each row.
-        ORDER_ID: Expect an 'order_id' filed in the source table as an unique identifier for each row.
+        ORDER_ID_TIME: Expect an 'order_id' and 'time' filed in the source table as an unique identifier for each row.
     """
     (
         NOT_TRANSACTIONAL,
         UUID,
         GCLID_TIME,
-        ORDER_ID
+        ORDER_ID_TIME
     ) = range(4)
 
 
