@@ -375,7 +375,7 @@ class GoogleAdsOfflineConversionAdjustmentsOrderIdStep(MegalistaStep):
                 self.params.dataflow_options,
                 DestinationType.ADS_OFFLINE_CONVERSION_ADJUSTMENT_ORDER_ID,
                 2000,
-                TransactionalType.ORDER_ID)
+                TransactionalType.ORDER_ID_TIME)
             | "Upload - GoogleAdsOfflineConversionAdjustments"
             >> beam.ParDo(
                 GoogleAdsOfflineAdjustmentOrderIdUploaderDoFn(
@@ -388,7 +388,7 @@ class GoogleAdsOfflineConversionAdjustmentsOrderIdStep(MegalistaStep):
             | "Persist results - GoogleAdsOfflineConversions"
             >> TransactionalEventsResultsWriter(
                 self.params._dataflow_options,
-                TransactionalType.ORDER_ID,
+                TransactionalType.ORDER_ID_TIME,
                 ErrorHandler(DestinationType.ADS_OFFLINE_CONVERSION_ADJUSTMENT_ORDER_ID, self.params.error_notifier))
         )
 
