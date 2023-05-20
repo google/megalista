@@ -66,6 +66,10 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
     measurement_id = None
     if len(execution.destination.destination_metadata) >= 6:
       measurement_id = execution.destination.destination_metadata[5]
+      
+    conversion_name = None
+    if len(execution.destination.destination_metadata) >= 7:
+      conversion_name = execution.destination.destination_metadata[6]
      
     if not api_secret:
           raise ValueError(
@@ -106,7 +110,10 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
             for k, v in row.items()
             if self._validate_param(k, v, event_reserved_keys) and "event_" in k
         }
-        payload["events"] = {"name": row["name"], "params": event_params}
+        
+        # payload["events"] = {"name": row["name"], "params": event_params}
+        payload["events"] = {"name": conversion_name, "params": event_params}
+        
         user_property_params = {
             k.replace("user_property_", ""): {"value": v}
             for k, v in row.items()
