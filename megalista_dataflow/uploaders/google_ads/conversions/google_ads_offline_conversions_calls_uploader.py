@@ -20,6 +20,7 @@ from error.error_handling import ErrorHandler
 from models.execution import Batch, Execution, AccountConfig, Destination
 from models.oauth_credentials import OAuthCredentials
 from uploaders import utils
+from utils.utils import Utils
 from uploaders.google_ads import ADS_API_VERSION
 from uploaders.uploaders import MegalistaUploader
 from typing import Any, List, Dict, Union
@@ -60,8 +61,8 @@ class GoogleAdsOfflineUploaderCallsDoFn(MegalistaUploader):
       If the customer_id is present on the destination, returns it, otherwise defaults to the account_config info.
     """
     if len(destination.destination_metadata) >= 2 and len(destination.destination_metadata[1]) > 0:
-      return destination.destination_metadata[1].replace('-', '')
-    return account_config.google_ads_account_id.replace('-', '')
+      return Utils.filter_text_only_numbers(destination.destination_metadata[1])
+    return account_config.google_ads_account_id
 
 
   @staticmethod

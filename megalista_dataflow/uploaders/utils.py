@@ -16,10 +16,13 @@ import datetime
 import logging
 import pytz
 import math
+import re
 
 from typing import Optional
 from models.execution import Batch
 from uploaders.uploaders import MegalistaUploader
+
+from utils.utils import BaseUtils
 
 MAX_RETRIES = 3
 
@@ -68,15 +71,15 @@ def safe_process(logger):
         def inner(*args, **kwargs):
             self_ = args[0]
             batch = args[1]
-            if not batch:
-                logger.warning('Skipping upload, received no elements.')
+            if not batch or not batch.elements:
+                logger.info('Skipping upload, received no elements.')
                 return
             logger.info(f'Uploading {len(batch.elements)} rows...')
             try:
                 return func(*args, **kwargs)
             except BaseException as e:
                 self_._add_error(batch.execution, f'Error uploading data: {e}')
-                logger.error(f'Error uploading data for :{batch.elements}')
+                logger.error(f'Error uploading data for :{batch.execution.destination.destination_name}')
                 logger.error(e, exc_info=True)
                 logger.exception('Error uploading data.')
 
@@ -119,7 +122,7 @@ def print_partial_error_messages(logger_name, action, response) -> Optional[str]
     partial_failure = getattr(response, 'partial_failure_error', None)
     if partial_failure is not None and partial_failure.message != '':
         error_message = f'Error on {action}: {partial_failure.message}.'
-        logging.getLogger(logger_name).error(error_message)
+        logging.getLogger(logger_name).warning(error_message)
     results = getattr(response, 'results', [])
     for result in results:
         gclid = getattr(result, 'gclid', None)
@@ -134,3 +137,4 @@ def print_partial_error_messages(logger_name, action, response) -> Optional[str]
         logging.getLogger(logger_name).debug(message)
 
     return error_message
+    

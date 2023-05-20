@@ -1,4 +1,4 @@
-# Copyright 2021 Google LLC
+# Copyright 2022 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,4 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ADS_API_VERSION = 'v13'
+from .utils import Utils
+
+def test_filter_text_only_numbers():
+    assert '123' == Utils.filter_text_only_numbers('a123bc')
+
+def test_trim_test():
+    assert 'a123bc' == Utils.trim(' a123bc ')
+
+def test_trim_items_array():
+    assert ['a123bc'] == Utils.trim_items_array([' a123bc '])

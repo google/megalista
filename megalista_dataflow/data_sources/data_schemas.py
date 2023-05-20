@@ -30,16 +30,18 @@ _dtypes: Dict[str, Dict[str, Any]] = {
             {'name': 'mobileDeviceId', 'required': False, 'data_type': 'string'},
             {'name': 'encryptedUserId', 'required': False, 'data_type': 'string'},
             {'name': 'matchId', 'required': False, 'data_type': 'string'},
+            {'name': 'dclid', 'required': False, 'data_type': 'string'},
             {'name': 'value', 'required': False, 'data_type': 'int'},
             {'name': 'quantity', 'required': False, 'data_type': 'int'},
             {'name': 'timestamp', 'required': False, 'data_type': 'string'},
+            {'name': 'customVariables', 'required': False, 'data_type': 'string'},
             {'name': 'customVariables.type',
                 'required': False, 'data_type': 'string'},
             {'name': 'customVariables.value',
                 'required': False, 'data_type': 'string'}
         ],
         'groups': [
-            ['gclid', 'mobileDeviceId', 'encryptedUserId', 'matchId']
+            ['gclid', 'mobileDeviceId', 'encryptedUserId', 'matchId', 'dclid']
         ]
     },
     'ADS_OFFLINE_CONVERSION': {
@@ -104,9 +106,9 @@ _dtypes: Dict[str, Dict[str, Any]] = {
                 'required': False, 'data_type': 'string'},
             {'name': 'mailing_address_last_name',
                 'required': False, 'data_type': 'string'},
-            {'name': 'mailing_address_country_name',
+            {'name': 'mailing_address_country',
                 'required': False, 'data_type': 'string'},
-            {'name': 'mailing_address_zip_name',
+            {'name': 'mailing_address_zip',
                 'required': False, 'data_type': 'string'}
         ],
         'groups': []

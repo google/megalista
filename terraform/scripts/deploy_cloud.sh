@@ -14,8 +14,8 @@
 # limitations under the License.
 
 
-if [ $# != 3 ]; then
-    echo "Usage: $0 gcp_project_id bucket_name region"
+if [ $# != 4 ]; then
+    echo "Usage: $0 gcp_project_id bucket_name region service_account_email"
     exit 1
 fi
 
@@ -25,7 +25,12 @@ echo "Configuration GCP project in gcloud"
 gcloud config set project "$1"
 echo "Build Dataflow metadata"
 python3 -m pip install --user -q -r requirements.txt
-python3 -m main --runner DataflowRunner --project "$1" --gcp_project_id "$1" --temp_location "gs://$2/tmp/" --region "$3" --setup_file ./setup.py --template_location "gs://$2/templates/megalista" --num_workers 1 --autoscaling_algorithm=NONE
+echo "Update commit info inside code"
+sed -i "s/MEGALISTA_VERSION\s*=.*/MEGALISTA_VERSION = '$(git rev-parse HEAD)'/" ./config/version.py
+python3 -m main --runner DataflowRunner --project "$1" --gcp_project_id "$1" --temp_location "gs://$2/tmp/" --region "$3" --setup_file ./setup.py --template_location "gs://$2/templates/megalista" --num_workers 1 --autoscaling_algorithm=NONE --service_account_email "$4"
 echo "Copy megalista_medata to bucket $2"
 gsutil cp megalista_metadata "gs://$2/templates/megalista_metadata"
+echo "Cleanup"
+sed -i "s/MEGALISTA_VERSION\s*=.*/MEGALISTA_VERSION = '\[megalista_version\]'/" ./config/version.py
 cd ..
+echo "Finished"

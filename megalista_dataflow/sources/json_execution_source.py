@@ -22,7 +22,6 @@ from models.execution import Execution, AccountConfig
 from models.execution import Source, SourceType
 from models.json_config import JsonConfig
 
-
 class JsonExecutionSource(BaseBoundedSource):
   """
   Read Execution data from a JSON file. The URL is set-up in the parameter "setup_json_url"
@@ -36,7 +35,7 @@ class JsonExecutionSource(BaseBoundedSource):
   def _do_count(self):
     json_url = self._setup_json_url.get()
     json_data = self._json_config.parse_json_from_url(json_url)
-    return len(json_data)
+    return len(json_data['Connections'])
 
   def read(self, range_tracker):
     json_url = self._setup_json_url.get()

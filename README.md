@@ -9,6 +9,7 @@ Sample integration code for onboarding offline/CRM data from BigQuery as custom 
   - Contact Info **Customer Match** (email, phone, address) [[details]](https://support.google.com/google-ads/answer/6379332?&ref_topic=6296507)
   - Id Based **Customer Match** (device Id, user id)
   - Offline Conversions through **gclid** [[details]](https://support.google.com/google-ads/answer/2998031?)
+  - Enhanced Conversions for Leads or Offline Conversions through **user_identifiers** [[details]](https://support.google.com/google-ads/answer/9888656#leads)
   - Store Sales Direct **(SSD)** conversions [[details]](https://support.google.com/google-ads/answer/9995886?hl=en)
 
 - **Google Analytics (Universal analytics)**
@@ -101,6 +102,7 @@ In order to create it, follow these steps:
    -  The user who opened the generated link and clicked on *Allow* must have access to the platforms that Megalista will integrate, including the configuration Sheet, if this is the chosen method for configuration.
 
 ### Deploying Pipeline
+- Download the latest Megalista code.
 To deploy the full Megalista pipeline, use the following command from the deployment folder:
 `./deploy.sh`
 The script will require some parameters, please add them to the config.json file. Some parameters have default values and can be

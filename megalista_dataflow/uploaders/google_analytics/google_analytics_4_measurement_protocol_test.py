@@ -352,3 +352,34 @@ def test_succesful_filter_out_nulls(uploader):
         assert m.call_count == 1
         assert 'empty_param' not in m.last_request.json().keys()
         assert 'null_param' not in m.last_request.json().keys()
+
+def test_succesful_multi_events(uploader):
+    with requests_mock.Mocker() as m:
+        m.post(requests_mock.ANY, status_code=204)
+        destination = Destination(
+            'dest1', DestinationType.GA_4_MEASUREMENT_PROTOCOL, [
+                'api_secret',
+                'True',
+                'False',
+                '',
+                'some_id',
+                ''
+            ])
+        source = Source('orig1', SourceType.BIG_QUERY, [])
+        execution = Execution(_account_config, source, destination)
+        uploader.do_process(Batch(execution, [{
+            'app_instance_id': '123',
+            'name': 'event_name',
+            'value': '42',
+            'important_event': 'False',
+            'user_id': '11'
+        }, {
+            'app_instance_id': '123',
+            'name': 'event_name',
+            'value': '42',
+            'important_event': 'False',
+        }]))
+
+        assert m.call_count == 2
+        assert 'user_id' not in m.last_request.json().keys()
+  

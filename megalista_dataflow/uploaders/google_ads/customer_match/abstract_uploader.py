@@ -23,6 +23,7 @@ from models.execution import Batch
 from models.execution import DestinationType
 from models.oauth_credentials import OAuthCredentials
 from uploaders import utils
+from utils.utils import Utils
 from uploaders.google_ads import ADS_API_VERSION
 from uploaders.uploaders import MegalistaUploader
 
@@ -50,7 +51,8 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
             logging.getLogger(_DEFAULT_LOGGER).info(f"Running job {job_definition['job_resource_name']}")
             self._get_offline_user_data_job_service(job_definition['login_customer_id']).run_offline_user_data_job(
                 resource_name=job_definition['job_resource_name'])
-
+        # Since these jobs have been sent, we can safely remove them from cache 
+        self._job_cache = {}
         super().finish_bundle()
 
     def _create_list_if_it_does_not_exist(self,
@@ -59,13 +61,14 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
                                           list_name: str,
                                           list_definition: Dict[str, Any]) -> str:
 
-        # TODO (antoniomoreira): include account id on the cache
-        if self._user_list_id_cache.get(list_name) is None:
-            self._user_list_id_cache[list_name] = \
+        # To avoid list name collision with different customer_ids, lets add the customer_id to the cache key
+        list_key = f"{list_name}-{customer_id}"
+        if self._user_list_id_cache.get(list_key) is None:
+            self._user_list_id_cache[list_key] = \
                 self._do_create_list_if_it_does_not_exist(
                     customer_id, login_customer_id, list_name, list_definition)
 
-        return self._user_list_id_cache[list_name]
+        return self._user_list_id_cache[list_key]
 
     def _do_create_list_if_it_does_not_exist(self,
                                              customer_id: str,
@@ -145,15 +148,15 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
           If the customer_id is present on the destination, returns it, otherwise defaults to the account_config info.
         """
         if len(destination.destination_metadata) >= 5 and len(destination.destination_metadata[4]) > 0:
-            return destination.destination_metadata[4].replace('-', '')
-        return account_config.google_ads_account_id.replace('-', '')
+            return Utils.filter_text_only_numbers(destination.destination_metadata[4])
+        return account_config.google_ads_account_id
 
     def _get_login_customer_id(self, account_config: AccountConfig, destination: Destination) -> str:
         """
           If the customer_id in account_config is a mcc, then login with the mcc account id, otherwise use the customer id.
         """
         if account_config._mcc:
-            return account_config.google_ads_account_id.replace('-', '')
+            return account_config.google_ads_account_id
         
         return self._get_customer_id(account_config, destination)
 
@@ -194,7 +197,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
     @utils.safe_process(logger=logging.getLogger(_DEFAULT_LOGGER))
     def process(self, batch: Batch, **kwargs):
         if not self.active:
-            logging.getLogger(_DEFAULT_LOGGER).warning(
+            logging.getLogger(_DEFAULT_LOGGER).info(
                 'Skipping upload to ads, parameters not configured.')
             return
 
@@ -235,7 +238,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
 
         data_insertion_payload = {
             'resource_name': job_resource_name,
-            'enable_partial_failure': False,
+            'enable_partial_failure': True,
             'operations': operations
         }
 
