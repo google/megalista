@@ -13,6 +13,7 @@
 # limitations under the License.
 
 
+import time
 import json
 import logging
 from typing import Dict, Any, Sequence
@@ -86,10 +87,16 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
     accepted_elements = []
 
     for row in batch.elements:
+      
+      timestamp_micros = row.get('timestamp_micros')
+      three_days_past = (int(time.time()) - (86400 * 3)) * 1000000
+
+      if timestamp_micros > three_days_past:
+        continue
+      
       app_instance_id = row.get('app_instance_id')
       client_id = row.get('client_id')
       user_id = row.get('user_id')
-      timestamp_micros = row.get('timestamp_micros')
 
       payload: Dict[str, Any] = {
         'nonPersonalizedAds': non_personalized_ads

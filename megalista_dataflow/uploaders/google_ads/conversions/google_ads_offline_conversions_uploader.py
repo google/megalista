@@ -23,6 +23,8 @@ from uploaders import utils
 from utils.utils import Utils
 from uploaders.google_ads import ADS_API_VERSION
 from uploaders.uploaders import MegalistaUploader
+from datetime import datetime, timedelta
+
 
 _DEFAULT_LOGGER: str = 'megalista.GoogleAdsOfflineConversionsUploader'
 
@@ -106,12 +108,27 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
 
   def _do_upload(self, oc_service, execution, conversion_resource_name, customer_id, rows):
     logging.getLogger(_DEFAULT_LOGGER).info(f'Uploading {len(rows)} offline conversions on {conversion_resource_name} to Google Ads.')
-    conversions = [{
+
+    # conversions = [{
+    #       'conversion_action': conversion_resource_name,
+    #       'conversion_date_time': utils.format_date(conversion['time']),
+    #       'conversion_value': float(str(conversion['amount'])),
+    #       'gclid': conversion['gclid']
+    # } for conversion in rows]
+
+    conversions = []
+    
+    for conversion in rows:
+      if datetime.strptime(conversion['time'], '%Y-%m-%d') > datetime.now() - timedelta(days=3):
+        continue
+      
+      conversion_data = {
           'conversion_action': conversion_resource_name,
           'conversion_date_time': utils.format_date(conversion['time']),
           'conversion_value': float(str(conversion['amount'])),
           'gclid': conversion['gclid']
-    } for conversion in rows]
+      }
+      conversions.append(conversion_data)
 
     upload_data = {
       'customer_id': customer_id,
