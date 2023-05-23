@@ -80,11 +80,24 @@ class BigQueryDataSource(BaseDataSource):
         
         cols = self._get_table_columns(client, table_name)
         logging.getLogger(_LOGGER_NAME).info(f'Destination Type: {self._destination_type}')
+        
+        
+        # Petlove
+        conversion_name = ""        
+        if len(executions.destinations[0].destination_metadata[5]) >= 6:
+            conversion_name = executions.destinations[0].destination_metadata[5]
+                        
+        logging.getLogger(_LOGGER_NAME).info(f'[PETLOVE] CONVERSION NAME: {conversion_name}')
+        
         if DataSchemas.validate_data_columns(cols, self._destination_type):
             cols = DataSchemas.get_cols_names(cols, self._destination_type)
             query_cols = ','.join(['data.' + col for col in cols])
             template = None
-            if self._transactional_type == TransactionalType.UUID:
+            
+            # Petlove
+            if 'stag' in conversion_name:
+                template = "SELECT $query_cols FROM `$table_name` AS data;"
+            elif self._transactional_type == TransactionalType.UUID:
                 template = "SELECT $query_cols FROM `$table_name` AS data \
                                 LEFT JOIN `$uploaded_table_name` AS uploaded USING(uuid) \
                                 WHERE uploaded.uuid IS NULL;"
