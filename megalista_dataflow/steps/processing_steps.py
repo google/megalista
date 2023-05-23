@@ -404,22 +404,22 @@ class DisplayVideoCustomerMatchContactInfoStep(MegalistaStep):
             )
         )
 
-
+# Petlove
 PROCESSING_STEPS = [
-    ["Ads SSD", GoogleAdsSSDStep],
-    ["Ads Audiences Device", GoogleAdsCustomerMatchMobileDeviceIdStep],
-    ["Ads Audiences Contact", GoogleAdsCustomerMatchContactInfoStep],
-    ["Ads Audiences User ID", GoogleAdsCustomerMatchUserIdStep],
+    # ["Ads SSD", GoogleAdsSSDStep],
+    # ["Ads Audiences Device", GoogleAdsCustomerMatchMobileDeviceIdStep],
+    # ["Ads Audiences Contact", GoogleAdsCustomerMatchContactInfoStep],
+    # ["Ads Audiences User ID", GoogleAdsCustomerMatchUserIdStep],
     ["Ads OCI (Click)", GoogleAdsOfflineConversionsStep],
-    ["Ads OCI (Calls)", GoogleAdsOfflineConversionsCallsStep],
-    ["Ads ECLeads", GoogleAdsECLeadsStep],
-    ["GA 360 User List", GoogleAnalyticsUserListStep],
-    ["GA 360 Data Import", GoogleAnalyticsDataImportStep],
-    ["GA 360 MP", GoogleAnalyticsMeasurementProtocolStep],
+    # ["Ads OCI (Calls)", GoogleAdsOfflineConversionsCallsStep],
+    # ["Ads ECLeads", GoogleAdsECLeadsStep],
+    # ["GA 360 User List", GoogleAnalyticsUserListStep],
+    # ["GA 360 Data Import", GoogleAnalyticsDataImportStep],
+    # ["GA 360 MP", GoogleAnalyticsMeasurementProtocolStep],
     ["GA4 MP", GoogleAnalytics4MeasurementProtocolStep],
-    ["CM OCI", CampaignManagerConversionStep],
-    ["DV360 Audiences Device", DisplayVideoCustomerMatchDeviceIdStep],
-    ["DV360 Audiences Contact", DisplayVideoCustomerMatchContactInfoStep]
+    # ["CM OCI", CampaignManagerConversionStep],
+    # ["DV360 Audiences Device", DisplayVideoCustomerMatchDeviceIdStep],
+    # ["DV360 Audiences Contact", DisplayVideoCustomerMatchContactInfoStep]
 ]
 
 
@@ -432,7 +432,7 @@ class ProcessingStep(MegalistaStep):
             processing_results.append(executions | name >> step(self._params))
 
         # Add third party steps
-        for name, step in THIRD_PARTY_STEPS:
-            processing_results.append(executions | name >> step(self._params))
+        # for name, step in THIRD_PARTY_STEPS:
+        #     processing_results.append(executions | name >> step(self._params))
 
         return processing_results
