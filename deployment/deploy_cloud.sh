@@ -24,7 +24,8 @@ cd megalista_dataflow
 echo "Configuration GCP project in gcloud"
 gcloud config set project "$1"
 echo "Build Dataflow metadata"
-python3 -m pip install --user -q -r requirements.txt
+# python3 -m pip install --user -q -r requirements.txt
+python3 -m pip install -r requirements.txt
 echo $4
 echo "Update commit info inside code"
 sed -i "s/MEGALISTA_VERSION\s*=.*/MEGALISTA_VERSION = '$(git rev-parse HEAD)'/" ./config/version.py
