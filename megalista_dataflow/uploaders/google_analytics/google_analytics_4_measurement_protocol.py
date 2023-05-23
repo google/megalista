@@ -64,14 +64,16 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
     if len(execution.destination.destination_metadata) >= 5:
       firebase_app_id = execution.destination.destination_metadata[4]
 
-    measurement_id = None
-    if len(execution.destination.destination_metadata) >= 6:
-      measurement_id = execution.destination.destination_metadata[5]
-      
+# Petlove
+
     conversion_name = None
+    if len(execution.destination.destination_metadata) >= 6:
+      conversion_name = execution.destination.destination_metadata[5]
+      
+    measurement_id = None
     if len(execution.destination.destination_metadata) >= 7:
-      conversion_name = execution.destination.destination_metadata[6]
-     
+      measurement_id = execution.destination.destination_metadata[6]
+    
     if not api_secret:
           raise ValueError(
             'GA4 MP should be called with a non-null api_secret'
@@ -89,9 +91,9 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
     for row in batch.elements:
       
       timestamp_micros = row.get('timestamp_micros')
-      three_days_past = (int(time.time()) - (86400 * 3)) * 1000000
 
-      if timestamp_micros > three_days_past:
+      # Petlove
+      if timestamp_micros > ((int(time.time()) - (86400 * 3)) * 1000000):
         continue
       
       app_instance_id = row.get('app_instance_id')
