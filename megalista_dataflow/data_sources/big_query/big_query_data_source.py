@@ -81,10 +81,11 @@ class BigQueryDataSource(BaseDataSource):
         cols = self._get_table_columns(client, table_name)
         logging.getLogger(_LOGGER_NAME).info(f'Destination Type: {self._destination_type}')
         
+        logging.getLogger(_LOGGER_NAME).info(f'[PETLOVE] METADATA: {executions.destinations[0].destination_metadata}')
         
         # Petlove
-        conversion_name = ""        
-        if len(executions.destinations[0].destination_metadata[5]) >= 6:
+        conversion_name = ""
+        if 'GA_4_MEASUREMENT_PROTOCOL' in str(self._destination_type) and len(executions.destinations[0].destination_metadata[5]) >= 6:
             conversion_name = executions.destinations[0].destination_metadata[5]
                         
         logging.getLogger(_LOGGER_NAME).info(f'[PETLOVE] CONVERSION NAME: {conversion_name}')
