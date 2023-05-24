@@ -119,8 +119,10 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     conversions = []
     
     for conversion in rows:
-      if datetime.strptime(conversion['time'], '%Y-%m-%d') > datetime.now() - timedelta(days=3):
-        continue
+    
+    # Petlove - TODO: coletar 3 dias de dados
+      # if datetime.strptime(conversion['time'], '%Y-%m-%d') > (datetime.now() - timedelta(days=3)):
+      #   continue
       
       conversion_data = {
           'conversion_action': conversion_resource_name,

@@ -92,9 +92,9 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
       
       timestamp_micros = row.get('timestamp_micros')
 
-      # Petlove
-      if timestamp_micros > ((int(time.time()) - (86400 * 3)) * 1000000):
-        continue
+      # Petlove - TODO: coletar 3 dias de dados
+      # if timestamp_micros > ((int(time.time()) - (86400 * 3)) * 1000000):
+      #   continue
       
       app_instance_id = row.get('app_instance_id')
       client_id = row.get('client_id')
