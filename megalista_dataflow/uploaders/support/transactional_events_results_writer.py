@@ -48,6 +48,7 @@ class TransactionalEventsResultsWriter(beam.PTransform):
 
       data_source = DataSource.get_data_source(
         executions, self._transactional_type, self._dataflow_options)
+      
       return data_source.write_transactional_info(batch.elements, batch.execution)
   
 
