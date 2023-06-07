@@ -357,7 +357,7 @@ class GoogleAdsOfflineConversionAdjustmentsGclidStep(MegalistaStep):
                                  self.params.error_notifier)
                 )
             )
-            | "Persist results - GoogleAdsOfflineConversions"
+            | "Persist results - GoogleAdsOfflineConversionAdjustments"
             >> TransactionalEventsResultsWriter(
                 self.params._dataflow_options,
                 TransactionalType.GCLID_TIME,
@@ -385,7 +385,7 @@ class GoogleAdsOfflineConversionAdjustmentsOrderIdStep(MegalistaStep):
                                  self.params.error_notifier)
                 )
             )
-            | "Persist results - GoogleAdsOfflineConversions"
+            | "Persist results - GoogleAdsOfflineConversionAdjustments"
             >> TransactionalEventsResultsWriter(
                 self.params._dataflow_options,
                 TransactionalType.ORDER_ID_TIME,
