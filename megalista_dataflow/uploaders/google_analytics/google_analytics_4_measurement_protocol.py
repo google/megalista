@@ -30,6 +30,7 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
   def __init__(self, error_handler: ErrorHandler):
     super().__init__(error_handler)
     self.API_URL = 'https://www.google-analytics.com/mp/collect'
+    self.API_DEBUG_URL = 'https://www.google-analytics.com/debug/mp/collect'
     self.reserved_keys = ['app_instance_id', 'client_id', 'uuid', 'user_id', 'timestamp_micros']
 
   def start_bundle(self):
@@ -65,7 +66,6 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
       firebase_app_id = execution.destination.destination_metadata[4]
 
 # Petlove
-
     conversion_name = None
     if len(execution.destination.destination_metadata) >= 6:
       conversion_name = execution.destination.destination_metadata[5]
@@ -109,16 +109,22 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
           'GA4 MP should be called either with an app_instance_id (for apps) or a client_id (for web)')
     
       if is_event:
-        # event_reserved_keys = self.reserved_keys + ['name']
+        event_reserved_keys = self.reserved_keys + ['name']
         # params = {k: v for k, v in row.items() if self._validate_param(k, v, event_reserved_keys)}
         # payload['events'] = [{'name': row['name'], 'params': params}]
         
-        event_reserved_keys = self.reserved_keys + ["name"]
-        event_params = {
-            k.replace("event_", ""): v
-            for k, v in row.items()
-            if self._validate_param(k, v, event_reserved_keys) and "event_" in k
-        }
+        # Petlove        
+        # event_params = {
+        #     k.replace("event_", ""): v
+        #     for k, v in row.items()
+        #     if self._validate_param(k, v, event_reserved_keys) and "event_" in k
+        # }
+        for k, v in row.items():
+          if self._validate_param(k, v, event_reserved_keys) and "event_" in k:
+            event_params = {
+                k.replace("event_", ""): v
+            }
+            event_params.update({'currency': 'BRL'})
         
         # payload["events"] = {"name": row["name"], "params": event_params}
         payload["events"] = {"name": conversion_name, "params": event_params}
@@ -133,12 +139,19 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
 
       if is_user_property: 
         payload['userProperties'] = {k: {'value': v} for k, v in row.items() if self._validate_param(k, v, self.reserved_keys)}
-        payload['events'] = {'name': 'user_property_addition_event', 'params': {}}
+        # Petlove
+        payload['events'] = {'name': 'user_property_addition_event', 'params': {'currency': 'BRL'}}
 
       url_container = [f'{self.API_URL}?api_secret={api_secret}']
+      
+      # Petlove
+      url_debug_container = [f'{self.API_DEBUG_URL}?api_secret={api_secret}']
 
       if firebase_app_id:
         url_container.append(f'&firebase_app_id={firebase_app_id}')
+        
+        # Petlove
+        url_debug_container.append(f'&firebase_app_id={firebase_app_id}')
         if not app_instance_id:
           raise ValueError(
             'GA4 MP needs an app_instance_id parameter when used for an App Stream.')
@@ -146,6 +159,8 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
         
       if measurement_id:
         url_container.append(f'&measurement_id={measurement_id}')
+        # Petlove
+        url_debug_container.append(f'&measurement_id={measurement_id}')
         if not client_id:
           raise ValueError(
             'GA4 MP needs a client_id parameter when used for a Web Stream.')
@@ -157,12 +172,28 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
       if timestamp_micros:
         payload['timestamp_micros'] = int(str(timestamp_micros))
       url = ''.join(url_container)
+      
+      #Petlove
+      logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(
+      f'[PETLOVE] Payload created:\n {json.dumps(payload)}')
+      
+      debug_response = requests.post(''.join(url_debug_container),data=json.dumps(payload))
+
+      # for k, v in debug_response["validationMessages"][0].items():
+      #   print(k, v)
+      logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] debug payload: {debug_response}")
+      
       response = requests.post(url,data=json.dumps(payload))
+      
       if response.status_code != 204:
         error_message = f'Error calling GA4 MP {response.status_code}: {str(response.content)}'
         logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').error(error_message)
         self._add_error(execution, error_message)
       else:
+        # Petlove
+        logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] status code: {response.status_code}")
+        logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] response: {response}")
+        
         accepted_elements.append(row)
 
     logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(
