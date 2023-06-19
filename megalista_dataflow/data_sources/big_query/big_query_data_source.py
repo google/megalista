@@ -124,6 +124,8 @@ class BigQueryDataSource(BaseDataSource):
 
     def _ensure_control_table_exists(self, client: Client, uploaded_table_name: str):
         template = None
+        
+        # para alterar tabelas uploaded
         if self._transactional_type == TransactionalType.UUID:
             template = "CREATE TABLE IF NOT EXISTS `$uploaded_table_name` ( \
                             timestamp TIMESTAMP OPTIONS(description= 'Event timestamp'), \
