@@ -23,7 +23,9 @@ from uploaders import utils
 from utils.utils import Utils
 from uploaders.google_ads import ADS_API_VERSION
 from uploaders.uploaders import MegalistaUploader
-from datetime import datetime, timedelta
+
+# Petlove
+from datetime import datetime
 
 
 _DEFAULT_LOGGER: str = 'megalista.GoogleAdsOfflineConversionsUploader'
@@ -79,6 +81,21 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
       raise ValueError('Missing destination information. Received {}'.format(
           str(destination)))
 
+  # Petlove
+  def _get_start_date(self, destination:Destination):
+    if not destination.destination_metadata[1]:
+      raise ValueError(f'Missing start date information. Received {destination}')
+    else:
+      return datetime.strptime(destination.destination_metadata[1], '%Y-%m-%d') 
+
+  # Petlove
+  def _get_stop_date(self, destination:Destination):
+    if not destination.destination_metadata[2]:
+      raise ValueError(f'Missing start date information. Received {destination}')
+    else:
+      return datetime.strptime(destination.destination_metadata[2], '%Y-%m-%d')
+
+
   @utils.safe_process(
       logger=logging.getLogger('megalista.GoogleAdsOfflineUploader'))
   def process(self, batch: Batch, **kwargs):
@@ -96,17 +113,31 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     
     resource_name = self._get_resource_name(ads_service, customer_id, execution.destination.destination_metadata[0])
 
+    # Petlove
+    start_date = self._get_start_date(execution.destination)
+    stop_date = self._get_stop_date(execution.destination)
+
+    # response = self._do_upload(oc_service,
+    #                 execution,
+    #                 resource_name,
+    #                 customer_id,
+    #                 batch.elements)
+
     response = self._do_upload(oc_service,
                     execution,
                     resource_name,
                     customer_id,
-                    batch.elements)
+                    batch.elements, start_date, stop_date)
 
     batch_with_successful_gclids = self._get_new_batch_with_successfully_uploaded_gclids(batch, response)
     if len(batch_with_successful_gclids.elements) > 0:
       return [batch_with_successful_gclids]
-
-  def _do_upload(self, oc_service, execution, conversion_resource_name, customer_id, rows):
+    
+    
+  # def _do_upload(self, oc_service, execution, conversion_resource_name, customer_id, rows):
+  
+  # Petlove
+  def _do_upload(self, oc_service, execution, conversion_resource_name, customer_id, rows, start_date, stop_date):
     logging.getLogger(_DEFAULT_LOGGER).info(f'Uploading {len(rows)} offline conversions on {conversion_resource_name} to Google Ads.')
 
     # conversions = [{
@@ -116,21 +147,24 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     #       'gclid': conversion['gclid']
     # } for conversion in rows]
 
+    # Petlove
     conversions = []
     
     for conversion in rows:
     
-    # Petlove - TODO: coletar 3 dias de dados
-      # if datetime.strptime(conversion['time'], '%Y-%m-%d') > (datetime.now() - timedelta(days=3)):
-      #   continue
+      # Petlove
+      logging.getLogger(_DEFAULT_LOGGER).info(f'conversion time: {conversion["time"]}')
       
-      conversion_data = {
-          'conversion_action': conversion_resource_name,
-          'conversion_date_time': utils.format_date(conversion['time']),
-          'conversion_value': float(str(conversion['amount'])),
-          'gclid': conversion['gclid']
-      }
-      conversions.append(conversion_data)
+      logging.getLogger(_DEFAULT_LOGGER).info(f'start_date: {start_date}, date: {datetime.strptime(conversion["time"], "%Y-%m-%d")}, stop_date: {stop_date}')
+      
+      if start_date <= datetime.strptime(conversion['time'], '%Y-%m-%d') <= stop_date:
+        conversion_data = {
+            'conversion_action': conversion_resource_name,
+            'conversion_date_time': utils.format_date(conversion['time']),
+            'conversion_value': float(str(conversion['amount'])),
+            'gclid': conversion['gclid']
+        }
+        conversions.append(conversion_data)
 
     upload_data = {
       'customer_id': customer_id,
