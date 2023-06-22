@@ -23,7 +23,9 @@ from uploaders import utils
 from utils.utils import Utils
 from uploaders.google_ads import ADS_API_VERSION
 from uploaders.uploaders import MegalistaUploader
-from datetime import datetime, timedelta
+
+# Petlove
+from datetime import datetime
 
 
 _DEFAULT_LOGGER: str = 'megalista.GoogleAdsOfflineConversionsUploader'
@@ -84,6 +86,8 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
   def process(self, batch: Batch, **kwargs):
     execution = batch.execution
     self._assert_conversion_name_is_present(execution)
+    logging.getLogger(_DEFAULT_LOGGER).info(f'execution.account_config: {execution.account_config}')
+    logging.getLogger(_DEFAULT_LOGGER).info(f'execution.destination: {execution.destination}')
 
     customer_id = self._get_customer_id(execution.account_config, execution.destination)
     
@@ -94,7 +98,14 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     # Initiates ADS service
     ads_service = self._get_ads_service(login_customer_id)
     
+    
+    logging.getLogger(_DEFAULT_LOGGER).info(f'execution.destination.destination_metadata: {execution.destination.destination_metadata}')
+
     resource_name = self._get_resource_name(ads_service, customer_id, execution.destination.destination_metadata[0])
+
+    # Petlove
+    # start_date = self._get_start_date(execution.destination)
+    # stop_date = self._get_stop_date(execution.destination)
 
     response = self._do_upload(oc_service,
                     execution,
@@ -102,10 +113,20 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
                     customer_id,
                     batch.elements)
 
+    # response = self._do_upload(oc_service,
+    #                 execution,
+    #                 resource_name,
+    #                 customer_id,
+    #                 batch.elements, start_date, stop_date)
+
     batch_with_successful_gclids = self._get_new_batch_with_successfully_uploaded_gclids(batch, response)
     if len(batch_with_successful_gclids.elements) > 0:
       return [batch_with_successful_gclids]
-
+    
+    
+  
+  # Petlove
+  # def _do_upload(self, oc_service, execution, conversion_resource_name, customer_id, rows, start_date, stop_date):
   def _do_upload(self, oc_service, execution, conversion_resource_name, customer_id, rows):
     logging.getLogger(_DEFAULT_LOGGER).info(f'Uploading {len(rows)} offline conversions on {conversion_resource_name} to Google Ads.')
 
@@ -116,14 +137,17 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     #       'gclid': conversion['gclid']
     # } for conversion in rows]
 
+    # Petlove
     conversions = []
     
     for conversion in rows:
     
-    # Petlove - TODO: coletar 3 dias de dados
-      # if datetime.strptime(conversion['time'], '%Y-%m-%d') > (datetime.now() - timedelta(days=3)):
-      #   continue
+      # Petlove
+      logging.getLogger(_DEFAULT_LOGGER).info(f'conversion time: {conversion["time"]}')
       
+      # logging.getLogger(_DEFAULT_LOGGER).info(f'start_date: {start_date}, date: {datetime.strptime(conversion['time'], '%Y-%m-%dT%H:%M:%S.%f')}, stop_date: {stop_date}')
+      
+      # if start_date <= datetime.strptime(conversion['time'], '%Y-%m-%dT%H:%M:%S.%f') <= stop_date:
       conversion_data = {
           'conversion_action': conversion_resource_name,
           'conversion_date_time': utils.format_date(conversion['time']),
