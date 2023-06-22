@@ -101,6 +101,8 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
   def process(self, batch: Batch, **kwargs):
     execution = batch.execution
     self._assert_conversion_name_is_present(execution)
+    logging.getLogger(_DEFAULT_LOGGER).info(f'execution.account_config: {execution.account_config}')
+    logging.getLogger(_DEFAULT_LOGGER).info(f'execution.destination: {execution.destination}')
 
     customer_id = self._get_customer_id(execution.account_config, execution.destination)
     
@@ -111,6 +113,9 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     # Initiates ADS service
     ads_service = self._get_ads_service(login_customer_id)
     
+    
+    logging.getLogger(_DEFAULT_LOGGER).info(f'execution.destination.destination_metadata: {execution.destination.destination_metadata}')
+
     resource_name = self._get_resource_name(ads_service, customer_id, execution.destination.destination_metadata[0])
 
     # Petlove
