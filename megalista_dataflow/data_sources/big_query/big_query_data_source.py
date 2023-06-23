@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import json
 from typing import Any, List, Iterable, Tuple, Dict, Optional
 from datetime import datetime
 from string import Template
@@ -104,9 +105,12 @@ class BigQueryDataSource(BaseDataSource):
             logging.getLogger(_LOGGER_NAME).info(
                 f'Reading from table `{table_name}` for Execution {executions}')
             elements = []
-            for row in client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE):
-                elements.append(_convert_row_to_dict(row))
-            logging.getLogger(_LOGGER_NAME).info(f'Data source ({self._source_name}): using {len(elements)} rows')
+            rows = client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE)  
+            # Maps the query's schema for later use
+            query_schema = { sch.name : sch for sch in rows.schema } 
+            for row in rows:
+                elements.append(_convert_row_to_dict(row, query_schema))              
+            logging.getLogger(_LOGGER_NAME).info(f'Data source ({self._source_name}): using {len(elements)} rows')  
             return [DataRowsGroupedBySource(executions, elements)]
         else:
             raise ValueError(f'Data source incomplete. {DataSchemas.get_error_message(cols, self._destination_type)} Source="{self._source_name}". Destination="{self._destination_name}"')
@@ -204,9 +208,19 @@ class BigQueryDataSource(BaseDataSource):
     def _get_bq_client(self):
         return bigquery.Client(location=self._bq_location)
         
-def _convert_row_to_dict(row):
+def _convert_row_to_dict(row, schema:dict = {}):
     dict = {}
     for key, value in row.items():
-        dict[key] = value
+        # This is necessary because bq.client does not 
+        # automatically convert a stringify json into a dict     
+        if value and schema and schema[key].field_type.lower() == 'json':
+             # In case it's an array of  json, apply the proper
+             # transformation
+             if schema[key].mode.lower() == 'repeated':
+                dict[key] = list(map(json.loads,value))
+             else:
+                dict[key] = json.loads(value)
+        else:
+            dict[key] = value
     return dict
  
