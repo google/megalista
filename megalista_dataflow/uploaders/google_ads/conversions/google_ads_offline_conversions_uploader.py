@@ -134,6 +134,12 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
                     customer_id,
                     batch.elements, start_date, stop_date)
 
+    # response = self._do_upload(oc_service,
+    #                 execution,
+    #                 resource_name,
+    #                 customer_id,
+    #                 batch.elements, start_date, stop_date)
+
     batch_with_successful_gclids = self._get_new_batch_with_successfully_uploaded_gclids(batch, response)
     if len(batch_with_successful_gclids.elements) > 0:
       return [batch_with_successful_gclids]
