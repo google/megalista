@@ -83,26 +83,28 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
 
   # Petlove
   def _get_start_date(self, destination:Destination):
-    if not destination.destination_metadata[1]:
-      raise ValueError(f'Missing start date information. Received {destination}')
-    else:
-      return datetime.strptime(destination.destination_metadata[1], '%Y-%m-%d') 
-
-  # Petlove
-  def _get_stop_date(self, destination:Destination):
     if not destination.destination_metadata[2]:
       raise ValueError(f'Missing start date information. Received {destination}')
     else:
-      return datetime.strptime(destination.destination_metadata[2], '%Y-%m-%d')
+      return datetime.strptime(destination.destination_metadata[2], '%Y-%m-%d %H:%M:%S.%f') 
+
+  # Petlove
+  def _get_stop_date(self, destination:Destination):
+    if not destination.destination_metadata[3]:
+      raise ValueError(f'Missing start date information. Received {destination}')
+    else:
+      return datetime.strptime(destination.destination_metadata[3], '%Y-%m-%d %H:%M:%S.%f')
 
 
   @utils.safe_process(
       logger=logging.getLogger('megalista.GoogleAdsOfflineUploader'))
   def process(self, batch: Batch, **kwargs):
     execution = batch.execution
+    
     self._assert_conversion_name_is_present(execution)
-    logging.getLogger(_DEFAULT_LOGGER).info(f'execution.account_config: {execution.account_config}')
-    logging.getLogger(_DEFAULT_LOGGER).info(f'execution.destination: {execution.destination}')
+    
+    logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] execution.account_config: {execution.account_config}')
+    logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] execution.destination: {execution.destination}')
 
     customer_id = self._get_customer_id(execution.account_config, execution.destination)
     
@@ -114,7 +116,7 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     ads_service = self._get_ads_service(login_customer_id)
     
     
-    logging.getLogger(_DEFAULT_LOGGER).info(f'execution.destination.destination_metadata: {execution.destination.destination_metadata}')
+    logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] execution.destination.destination_metadata: {execution.destination.destination_metadata}')
 
     resource_name = self._get_resource_name(ads_service, customer_id, execution.destination.destination_metadata[0])
 
@@ -134,18 +136,9 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
                     customer_id,
                     batch.elements, start_date, stop_date)
 
-    # response = self._do_upload(oc_service,
-    #                 execution,
-    #                 resource_name,
-    #                 customer_id,
-    #                 batch.elements, start_date, stop_date)
-
     batch_with_successful_gclids = self._get_new_batch_with_successfully_uploaded_gclids(batch, response)
     if len(batch_with_successful_gclids.elements) > 0:
       return [batch_with_successful_gclids]
-    
-    
-  # def _do_upload(self, oc_service, execution, conversion_resource_name, customer_id, rows):
   
   # Petlove
   def _do_upload(self, oc_service, execution, conversion_resource_name, customer_id, rows, start_date, stop_date):
@@ -164,11 +157,11 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     for conversion in rows:
     
       # Petlove
-      logging.getLogger(_DEFAULT_LOGGER).info(f'conversion time: {conversion["time"]}')
+      logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] conversion time: {conversion["time"]}')
       
-      logging.getLogger(_DEFAULT_LOGGER).info(f'start_date: {start_date}, date: {datetime.strptime(conversion["time"], "%Y-%m-%d")}, stop_date: {stop_date}')
+      logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] start_date: {start_date}, date: {datetime.strptime(conversion["time"], "%Y-%m-%dT%H:%M:%S.%f")}, stop_date: {stop_date}')
       
-      if start_date <= datetime.strptime(conversion['time'], '%Y-%m-%d') <= stop_date:
+      if start_date <= datetime.strptime(conversion['time'], '%Y-%m-%dT%H:%M:%S.%f') <= stop_date:
         conversion_data = {
             'conversion_action': conversion_resource_name,
             'conversion_date_time': utils.format_date(conversion['time']),
