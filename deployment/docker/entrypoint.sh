@@ -39,6 +39,4 @@ fi
 echo "Running Megalista"
 python megalista_dataflow/main.py \
     --runner DirectRunner \
-    --direct_num_workers 0 \
-    --direct_running_mode multi_threading \
     ${params}
