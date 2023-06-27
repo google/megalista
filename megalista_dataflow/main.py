@@ -24,8 +24,16 @@ from config.version import MEGALISTA_VERSION
 from error.error_handling import GmailNotifier
 from config.logging import LoggingConfig
 
-from models.execution import DataRowsGroupedBySource, Execution, ExecutionsGroupedBySource
-from sources.batches_from_executions import ExecutionsGroupedBySourceCoder, DataRowsGroupedBySourceCoder, ExecutionCoder
+from models.execution import (
+    DataRowsGroupedBySource,
+    Execution,
+    ExecutionsGroupedBySource,
+)
+from sources.batches_from_executions import (
+    ExecutionsGroupedBySourceCoder,
+    DataRowsGroupedBySourceCoder,
+    ExecutionCoder,
+)
 from models.json_config import JsonConfig
 from models.oauth_credentials import OAuthCredentials
 from models.options import DataflowOptions
@@ -60,27 +68,32 @@ def run(argv=None):
         dataflow_options.setup_sheet_id,
         dataflow_options.setup_json_url,
         dataflow_options.setup_firestore_collection,
-        dataflow_options.show_code_lines_in_log
+        dataflow_options.show_code_lines_in_log,
     )
-    error_notifier = GmailNotifier(dataflow_options.notify_errors_by_email, oauth_credentials,
-                                   dataflow_options.errors_destination_emails)
-    params = MegalistaStepParams(
-        oauth_credentials, dataflow_options, error_notifier)
+    error_notifier = GmailNotifier(
+        dataflow_options.notify_errors_by_email,
+        oauth_credentials,
+        dataflow_options.errors_destination_emails,
+    )
+    params = MegalistaStepParams(oauth_credentials, dataflow_options, error_notifier)
 
     coders.registry.register_coder(Execution, ExecutionCoder)
     coders.registry.register_coder(
-        ExecutionsGroupedBySource, ExecutionsGroupedBySourceCoder)
+        ExecutionsGroupedBySource, ExecutionsGroupedBySourceCoder
+    )
     coders.registry.register_coder(
-        DataRowsGroupedBySource, DataRowsGroupedBySourceCoder)
+        DataRowsGroupedBySource, DataRowsGroupedBySourceCoder
+    )
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
         # Add load executions step
-        executions = (pipeline
-                      | "Load executions" >> LoadExecutionsStep(params, execution_source)
-                      )
+        executions = pipeline | "Load executions" >> LoadExecutionsStep(
+            params, execution_source
+        )
 
         processing_results = executions | "Execute integrations" >> ProcessingStep(
-            params)
+            params
+        )
 
         # todo: update trix at the end
 
@@ -93,13 +106,16 @@ if __name__ == "__main__":
     logging_handler = LoggingConfig.get_logging_handler()
     if logging_handler is None:
         logging.getLogger("megalista").info(
-            f"MEGALISTA build {MEGALISTA_VERSION}: Clould not find error interception handler. Skipping error intereception.")
+            f"MEGALISTA build {MEGALISTA_VERSION}: Clould not find error interception handler. Skipping error intereception."
+        )
     else:
         if logging_handler.has_errors:
             logging.getLogger("megalista").critical(
-                f'MEGALISTA build {MEGALISTA_VERSION}: Completed with errors')
+                f"MEGALISTA build {MEGALISTA_VERSION}: Completed with errors"
+            )
             raise SystemExit(1)
         else:
             logging.getLogger("megalista").info(
-                f"MEGALISTA build {MEGALISTA_VERSION}: Completed successfully!")
+                f"MEGALISTA build {MEGALISTA_VERSION}: Completed successfully!"
+            )
     exit(0)
