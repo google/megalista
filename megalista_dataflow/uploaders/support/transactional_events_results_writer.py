@@ -59,10 +59,7 @@ class TransactionalEventsResultsWriter(beam.PTransform):
     def process(self, batches: BatchesGroupedBySource):
       elements = []
       for batch in batches.batches:
-        for el in batch.elements:
-          if el not in elements:
-            elements.append(el)
-      
+        elements = [*elements, *batch.elements]
       return [Batch(batches.batches[0].execution, elements)]
 
   def __init__(self, dataflow_options: DataflowOptions, transactional_type: TransactionalType, error_handler: ErrorHandler):
