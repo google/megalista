@@ -25,7 +25,7 @@ from uploaders.google_ads import ADS_API_VERSION
 from uploaders.uploaders import MegalistaUploader
 
 # Petlove
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 _DEFAULT_LOGGER: str = 'megalista.GoogleAdsOfflineConversionsUploader'
@@ -83,17 +83,29 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
 
   # Petlove
   def _get_start_date(self, destination:Destination):
-    if not destination.destination_metadata[2]:
-      raise ValueError(f'Missing start date information. Received {destination}')
-    else:
-      return datetime.strptime(destination.destination_metadata[2], '%Y-%m-%d %H:%M:%S.%f') 
+    if len(destination.destination_metadata) <= 3:
+      today = datetime.now()
+      unix_today = str(datetime(today.year, today.month, today.day, 23, 59, 59)) + ".000"
+      return datetime.strptime(unix_today, '%Y-%m-%d %H:%M:%S.%f') - timedelta(days=1)
+    
+    try:
+      return datetime.strptime(destination.destination_metadata[2], '%Y-%m-%d %H:%M:%S.%f')
+    
+    except Exception as err:
+      raise ValueError(f'Wrong format start date information. Exception: {err}')
 
   # Petlove
   def _get_stop_date(self, destination:Destination):
-    if not destination.destination_metadata[3]:
-      raise ValueError(f'Missing start date information. Received {destination}')
-    else:
+    if len(destination.destination_metadata) <= 4:
+      today = datetime.now()
+      unix_today = str(datetime(today.year, today.month, today.day, 23, 59, 59)) + ".000"
+      return datetime.strptime(unix_today, '%Y-%m-%d %H:%M:%S.%f') - timedelta(days=1)
+    
+    try:
       return datetime.strptime(destination.destination_metadata[3], '%Y-%m-%d %H:%M:%S.%f')
+    
+    except Exception as err:
+      raise ValueError(f'Wrong format start date information. Exception: {err}')
 
 
   @utils.safe_process(
