@@ -66,9 +66,14 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
 
     # Petlove
     def str_to_timestamp_micros(sheet_date):
-      data = datetime.strptime(sheet_date, "%Y-%m-%d %H:%M:%S.%f")
-      timestamp = int(data.timestamp()) * 1000000
-      return timestamp
+      try: 
+        data = datetime.strptime(sheet_date, "%Y-%m-%d %H:%M:%S.%f")
+        return int(data.timestamp()) * 1000000
+      
+      except Exception as err:
+        raise ValueError(f'Missing start date information. Received: {sheet_date}. Exception: {err}')
+      
+      
 
     firebase_app_id = None
     if len(execution.destination.destination_metadata) >= 5:
@@ -79,11 +84,23 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
     if len(execution.destination.destination_metadata) >= 6:
       conversion_name = execution.destination.destination_metadata[5]
 
-    start_date = None
+    start_date = str()
+    if len(execution.destination.destination_metadata) <= 7:
+      today = datetime.now()
+      unix_today = int(datetime(today.year, today.month, today.day, 23, 59, 59).timestamp())
+      unix_one_day = 86400
+      start_date = int((unix_today - unix_one_day) * 1000000)
+      
     if len(execution.destination.destination_metadata) >= 7:
       start_date = str_to_timestamp_micros(execution.destination.destination_metadata[6]) 
       
-    stop_date = None
+    stop_date = str()
+    if len(execution.destination.destination_metadata) <= 8:
+      today = datetime.now()
+      unix_today = int(datetime(today.year, today.month, today.day, 23, 59, 59).timestamp())
+      unix_one_day = 86400
+      stop_date = int((unix_today - unix_one_day) * 1000000)
+     
     if len(execution.destination.destination_metadata) >= 8:
       stop_date = str_to_timestamp_micros(execution.destination.destination_metadata[7]) 
 
