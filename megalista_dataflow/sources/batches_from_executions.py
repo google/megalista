@@ -84,7 +84,7 @@ class DataRowsGroupedBySourceCoder(coders.Coder):
         amount_of_rows = len(o.rows)
         row_size = 0
         if amount_of_rows > 0:
-            row_size = len(json.dumps(o.rows[0]).encode('utf-8'))
+            row_size = len(json.dumps(o.rows[0], default=str).encode('utf-8'))
         estimate = amount_of_rows * row_size
         # there is an overflow error if estimated size > _INT_MAX
         if estimate > _INT_MAX:
