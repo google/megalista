@@ -38,7 +38,8 @@ _dtypes: Dict[str, Dict[str, Any]] = {
             {'name': 'customVariables.type',
                 'required': False, 'data_type': 'string'},
             {'name': 'customVariables.value',
-                'required': False, 'data_type': 'string'}
+                'required': False, 'data_type': 'string'},
+            {'name': 'ordinal', 'required': False, 'data_type': 'string'}
         ],
         'groups': [
             ['gclid', 'mobileDeviceId', 'encryptedUserId', 'matchId', 'dclid']

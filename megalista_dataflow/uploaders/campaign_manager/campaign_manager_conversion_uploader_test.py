@@ -92,14 +92,62 @@ def test_conversion_upload(mocker, uploader):
             'gclid': '123',
             'floodlightActivityId': floodlight_activity_id,
             'floodlightConfigurationId': floodlight_configuration_id,
-            'ordinal': math.floor(current_time * 10e5),
+            'ordinal': str(math.floor(current_time * 10e5)),
             'timestampMicros': timestamp_micros,
             'quantity': 1
         }, {
             'gclid': '456',
             'floodlightActivityId': floodlight_activity_id,
             'floodlightConfigurationId': floodlight_configuration_id,
-            'ordinal': math.floor(current_time * 10e5),
+            'ordinal': str(math.floor(current_time * 10e5)),
+            'timestampMicros': math.floor(current_time * 10e5),
+            'quantity': 1
+        }],
+    }
+
+    uploader._get_dcm_service().conversions().batchinsert.assert_any_call(
+        profileId=_dcm_profile_id, body=expected_body)
+    
+def test_conversion_upload_with_ordinal(mocker, uploader):
+    mocker.patch.object(uploader, '_get_dcm_service')
+
+    floodlight_activity_id = 'floodlight_activity_id'
+    floodlight_configuration_id = 'floodlight_configuration_id'
+
+    source = Source('orig1', SourceType.BIG_QUERY, ('dt1', 'buyers'))
+    destination = Destination(
+        'dest1',
+        DestinationType.CM_OFFLINE_CONVERSION,
+        (floodlight_activity_id, floodlight_configuration_id))
+
+    execution = Execution(_account_config, source, destination)
+
+    current_time = time.time()
+
+    uploader._do_process(Batch(execution, [{
+        'gclid': '123',
+        'timestamp': '2021-11-30T12:00:00.000',
+        'ordinal': '0927252-8'
+    }, {
+        'gclid': '456'
+    }]), current_time)
+
+    # convert 2021-11-30T12:00:00.000 to timestampMicros
+    timestamp_micros = math.floor(datetime.strptime('2021-11-30T12:00:00.000', '%Y-%m-%dT%H:%M:%S.%f').timestamp() * 10e5)
+
+    expected_body = {
+        'conversions': [{
+            'gclid': '123',
+            'floodlightActivityId': floodlight_activity_id,
+            'floodlightConfigurationId': floodlight_configuration_id,
+            'ordinal': '0927252-8',
+            'timestampMicros': timestamp_micros,
+            'quantity': 1
+        }, {
+            'gclid': '456',
+            'floodlightActivityId': floodlight_activity_id,
+            'floodlightConfigurationId': floodlight_configuration_id,
+            'ordinal': str(math.floor(current_time * 10e5)),
             'timestampMicros': math.floor(current_time * 10e5),
             'quantity': 1
         }],
@@ -136,14 +184,14 @@ def test_conversion_upload_with_quantity(mocker, uploader):
             'gclid': '123',
             'floodlightActivityId': floodlight_activity_id,
             'floodlightConfigurationId': floodlight_configuration_id,
-            'ordinal': math.floor(current_time * 10e5),
+            'ordinal': str(math.floor(current_time * 10e5)),
             'timestampMicros': timestamp_micros,
             'quantity': 50
         }, {
             'gclid': '456',
             'floodlightActivityId': floodlight_activity_id,
             'floodlightConfigurationId': floodlight_configuration_id,
-            'ordinal': math.floor(current_time * 10e5),
+            'ordinal': str(math.floor(current_time * 10e5)),
             'timestampMicros': math.floor(current_time * 10e5),
             'quantity': 200
         }],
@@ -176,7 +224,7 @@ def test_conversion_upload_match_id(mocker, uploader):
             'matchId': 'abc',
             'floodlightActivityId': floodlight_activity_id,
             'floodlightConfigurationId': floodlight_configuration_id,
-            'ordinal': math.floor(current_time * 10e5),
+            'ordinal': str(math.floor(current_time * 10e5)),
             'timestampMicros': math.floor(current_time * 10e5),
             'quantity': 1
         }],
@@ -221,7 +269,7 @@ def test_conversion_upload_match_id_additional_fields(mocker, uploader):
             'matchId': 'abc',
             'floodlightActivityId': floodlight_activity_id,
             'floodlightConfigurationId': floodlight_configuration_id,
-            'ordinal': math.floor(current_time * 10e5),
+            'ordinal': str(math.floor(current_time * 10e5)),
             'timestampMicros': math.floor(current_time * 10e5),
             'value': 1,
             'quantity': 2,
@@ -270,7 +318,7 @@ def test_conversion_upload_decimal_value(mocker, uploader):
             'gclid': 'abc',
             'floodlightActivityId': floodlight_activity_id,
             'floodlightConfigurationId': floodlight_configuration_id,
-            'ordinal': math.floor(current_time * 10e5),
+            'ordinal': str(math.floor(current_time * 10e5)),
             'timestampMicros': math.floor(current_time * 10e5),
             'value': 540.12,
             'quantity': 1
