@@ -95,7 +95,6 @@ class CampaignManagerConversionUploaderDoFn(MegalistaUploader):
       to_upload = {
           'floodlightActivityId': floodlight_activity_id,
           'floodlightConfigurationId': floodlight_configuration_id,
-          'ordinal': math.floor(timestamp * 10e5),
           'timestampMicros': math.floor(timestamp * 10e5)
       }
 
@@ -116,6 +115,12 @@ class CampaignManagerConversionUploaderDoFn(MegalistaUploader):
         to_upload['quantity'] = conversion['quantity']
       else:
         to_upload['quantity'] = 1
+      
+      if 'ordinal' in conversion:
+        to_upload['ordinal'] = conversion['ordinal']
+      else:
+        to_upload['ordinal'] = str(math.floor(timestamp * 10e5))
+
       if 'customVariables' in conversion:
         custom_variables = []
         for r in conversion['customVariables']:
