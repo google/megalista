@@ -12,5 +12,8 @@
     "refresh_token": "",
     "setup_sheet_id": "",
     "setup_json_url": "",
-    "setup_firestore_collection": ""
+    "setup_firestore_collection": "",
+    "image_repository_name": "",
+    "image_name": "",
+    "image_version": ""
 }

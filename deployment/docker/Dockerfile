@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM python:3.9-slim
+FROM apache/beam_python3.9_sdk:2.40.0
 
 # pre requirements
 RUN apt-get update
@@ -24,7 +24,6 @@ RUN adduser --gecos [] --disabled-password worker
 # copy files
 WORKDIR /app
 COPY --chown=worker:worker megalista_dataflow megalista_dataflow
-COPY --chown=worker:worker .git .git
 COPY --chown=worker:worker deployment/docker/entrypoint.sh .
 COPY --chown=worker:worker deployment/docker/service-account-file.json .
 
@@ -34,10 +33,7 @@ RUN python -m ensurepip --upgrade
 RUN pip install --upgrade pip setuptools wheel
 RUN pip install --user --no-warn-script-location -r megalista_dataflow/requirements.txt
 
-# updates megalista version
-RUN sed -i "s/MEGALISTA_VERSION\s*=.*/MEGALISTA_VERSION = '$(git rev-parse HEAD)'/" megalista_dataflow/config/version.py
+ENV PYTHONPATH "${PYTHONPATH}:/app/megalista_dataflow"
 
-# set entrypoint
-RUN ["chmod", "+x", "entrypoint.sh"]
-ENTRYPOINT [ "/app/entrypoint.sh" ]
-
+# Set the entrypoint to Apache Beam SDK launcher.
+ENTRYPOINT ["/opt/apache/beam/boot"]

@@ -200,6 +200,9 @@ function init() {
         SETUP_SHEET_ID=$(cat config.json | jq -r '.setup_sheet_id')
         SETUP_JSON_URL=$(cat config.json | jq -r '.setup_json_url')
         SETUP_FIRESTORE_COLLECTION=$(cat config.json | jq -r '.setup_firestore_collection')
+        IMAGE_REPOSITORY_NAME=$(cat config.json | jq -r '.image_repository_name')
+        IMAGE_NAME=$(cat config.json | jq -r '.image_name')
+        IMAGE_VERSION=$(cat config.json | jq -r '.image_version')
         # Validate params before deployment
         check_valid_parameters
         # Confirm details
@@ -259,7 +262,7 @@ function init() {
             # Build metadata and copy it to Cloud Storage
             start_message "Building Dataflow metadata..."
             cd ..
-            sh ./deployment/deploy_cloud.sh ${GOOGLE_CLOUD_PROJECT} ${BUCKET_NAME} ${REGION} ${SERVICE_ACCOUNT}
+            sh ./deployment/deploy_cloud.sh ${GOOGLE_CLOUD_PROJECT} ${BUCKET_NAME} ${REGION} ${SERVICE_ACCOUNT} ${IMAGE_REPOSITORY_NAME} ${IMAGE_NAME} ${IMAGE_VERSION}
             echo
 
             echo "✅ ${bold}${text_green} Done!${reset}"
