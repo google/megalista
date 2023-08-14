@@ -24,6 +24,10 @@ from utils.utils import Utils
 from uploaders.google_ads import ADS_API_VERSION
 from uploaders.uploaders import MegalistaUploader
 
+# Petlove
+from datetime import datetime, timedelta
+
+
 _DEFAULT_LOGGER: str = 'megalista.GoogleAdsECLeadsUploader'
 
 
@@ -77,11 +81,42 @@ class GoogleAdsECLeadsUploaderDoFn(MegalistaUploader):
             raise ValueError('Missing destination information. Received {}'.format(
                 str(destination)))
 
+    # Petlove
+    def _get_start_date(self, destination:Destination):
+        if len(destination.destination_metadata) <= 3:
+            today = datetime.now()
+            unix_today = str(datetime(today.year, today.month, today.day, 23, 59, 59)) + ".000"
+            return datetime.strptime(unix_today, '%Y-%m-%d %H:%M:%S.%f') - timedelta(days=1)
+        
+        try:
+            return datetime.strptime(destination.destination_metadata[2], '%Y-%m-%d %H:%M:%S.%f')
+        
+        except Exception as err:
+            raise ValueError(f'Wrong format start date information. Exception: {err}')
+
+    # Petlove
+    def _get_stop_date(self, destination:Destination):
+        if len(destination.destination_metadata) <= 4:
+            today = datetime.now()
+            unix_today = str(datetime(today.year, today.month, today.day, 23, 59, 59)) + ".000"
+            return datetime.strptime(unix_today, '%Y-%m-%d %H:%M:%S.%f') - timedelta(days=1)
+        
+        try:
+            return datetime.strptime(destination.destination_metadata[3], '%Y-%m-%d %H:%M:%S.%f')
+        
+        except Exception as err:
+            raise ValueError(f'Wrong format start date information. Exception: {err}')
+
+
     @utils.safe_process(
         logger=logging.getLogger('megalista.GoogleAdsECLeadsUploader'))  # Changed
     def process(self, batch: Batch, **kwargs):
         execution = batch.execution
         self._assert_conversion_name_is_present(execution)
+        
+        logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] execution.account_config: {execution.account_config}')
+        logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] execution.destination: {execution.destination}')
+        
 
         customer_id = self._get_customer_id(
             execution.account_config, execution.destination)
@@ -92,18 +127,35 @@ class GoogleAdsECLeadsUploaderDoFn(MegalistaUploader):
         oc_service = self._get_oc_service(login_customer_id)
         # Initiates ADS service
         ads_service = self._get_ads_service(login_customer_id)
+        
         # Asserts Ads is set up for EC for Leads
         self._assert_ec_for_leads_enabled(
             ads_service, customer_id)
 
+        logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] execution.destination.destination_metadata: {execution.destination.destination_metadata}')
+
         resource_name = self._get_resource_name(ads_service,
                                                 customer_id, execution.destination.destination_metadata[0])
 
+        # Petlove
+        start_date = self._get_start_date(execution.destination)
+        stop_date = self._get_stop_date(execution.destination)
+
+
+        # response = self._do_upload(oc_service,
+        #                            execution,
+        #                            resource_name,
+        #                            customer_id,
+        #                            batch.elements)
+        
+        
         response = self._do_upload(oc_service,
                                    execution,
                                    resource_name,
                                    customer_id,
-                                   batch.elements)
+                                   batch.elements, start_date, stop_date)
+        
+        
         successful_users = [
             user for user in response.results if user.ListFields()]
         logging.getLogger(_DEFAULT_LOGGER).info(
@@ -112,15 +164,39 @@ class GoogleAdsECLeadsUploaderDoFn(MegalistaUploader):
         # all uploaded results do not need to be sent again
         return [batch]
 
-    def _do_upload(self, oc_service, execution, conversion_resource_name, customer_id, rows):
+    # Petlove
+    def _do_upload(self, oc_service, execution, conversion_resource_name, customer_id, rows, start_date, stop_date):
         logging.getLogger(_DEFAULT_LOGGER).info(
             f'Uploading {len(rows)} offline conversions on {conversion_resource_name} to Google Ads.')
-        conversions = [{
-            'conversion_action': conversion_resource_name,
-            'conversion_date_time': utils.format_date(conversion['time']),
-            'conversion_value': float(str(conversion['amount'])),
-            'user_identifiers': [{k: v} for (k, v) in conversion.items() if k in ('hashed_email', 'hashed_phone_number')]
-        } for conversion in rows]
+        
+        # Petlove
+        logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] total rows: {len(rows)}')
+        
+        conversions = []
+        
+        for conversion in rows:
+            
+            # Petlove
+            logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] conversion time: {conversion["time"]}')
+            logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] start_date: {start_date}, date: {datetime.strptime(conversion["time"], "%Y-%m-%dT%H:%M:%S.%f")}, stop_date: {stop_date}')
+        
+            if start_date <= datetime.strptime(conversion['time'], '%Y-%m-%dT%H:%M:%S.%f') <= stop_date:
+                logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] The conversion is in time range. Conversion date: {datetime.strptime(conversion["time"], "%Y-%m-%dT%H:%M:%S.%f")}, start_date: {start_date}, stop_date: {stop_date}')
+                conversion_data = {
+                    'conversion_action': conversion_resource_name,
+                    'conversion_date_time': utils.format_date(conversion['time']),
+                    'conversion_value': float(str(conversion['amount'])),
+                    'user_identifiers': [{k: v} for (k, v) in conversion.items() if k in ('hashed_email', 'hashed_phone_number')]
+                }
+                
+                logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] conversion_data: {conversion_data}')
+                
+                conversions.append(conversion_data)
+                
+            else:
+                logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] The conversion is NOT in time range. Conversion date: {datetime.strptime(conversion["time"], "%Y-%m-%dT%H:%M:%S.%f")}, start_date: {start_date}, stop_date: {stop_date}')
+        
+        logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] total conversions: {len(conversions)}')
 
         upload_data = {
             'customer_id': customer_id,
@@ -128,6 +204,8 @@ class GoogleAdsECLeadsUploaderDoFn(MegalistaUploader):
             'validate_only': False,
             'conversions': conversions,
         }
+
+        logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] upload_data: {upload_data}')
 
         response = oc_service.upload_click_conversions(
             request=upload_data)
