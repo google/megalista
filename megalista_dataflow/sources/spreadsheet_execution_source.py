@@ -56,7 +56,13 @@ class SpreadsheetExecutionSource(BaseBoundedSource):
       else:
         campaign_manager_profile_id = self._sheets_config.get_value(sheet_id, "CampaignManagerAccountId")
 
+      logging.getLogger("megalista.SpreadsheetExecutionSource").info(f"[PETLOVE] {campaign_manager_profile_id}...")
+      
       account_config = AccountConfig(google_ads_id, mcc, google_analytics_account_id, campaign_manager_profile_id, app_id)
+      
+      logging.getLogger("megalista.SpreadsheetExecutionSource").info(f"[PETLOVE] campaign_manager_profile_id: {account_config}. campaign_manager_profile_id: {campaign_manager_profile_id}. app_id: {app_id}")
+      logging.getLogger("megalista.SpreadsheetExecutionSource").info(f"[PETLOVE] sheet_id: {sheet_id}.")
+      
       logging.getLogger("megalista.SpreadsheetExecutionSource").info(f"Loaded: {account_config}")
 
       sources = self._read_sources(self._sheets_config, sheet_id)
@@ -90,15 +96,29 @@ class SpreadsheetExecutionSource(BaseBoundedSource):
     # TODO Segment different types of error instead of only Exception
     try:
       range = sheets_config.get_range(sheet_id, 'SourcesRange')
+      
+      logging.getLogger("megalista.SpreadsheetExecutionSource").info(f"[PETLOVE] sheet_id: {range}.")
+      
       sources = {}
       if 'values' in range:
         for row in range['values']:
+          logging.getLogger("megalista.SpreadsheetExecutionSource").info(f"[PETLOVE] range['values']: {range['values']}.")
+          
           source = Source(row[0], SourceType[row[1]], row[2:])
+
           sources[source.source_name] = source
+          
+          logging.getLogger("megalista.SpreadsheetExecutionSource").info(f"[PETLOVE] sources[source.source_name]: {sources[source.source_name]}.")
+          
+          logging.getLogger("megalista.SpreadsheetExecutionSource").info(f"[PETLOVE] source: {source}.")
+
       else:
         logging.getLogger("megalista.SpreadsheetExecutionSource").warn("No sources found!")
+      
       return sources
+    
     except:
+
       raise IndexError(
           """
           Megalista encountered a error in the Sources Configuration Tab inside 
