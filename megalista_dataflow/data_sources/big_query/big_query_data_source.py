@@ -177,10 +177,14 @@ class BigQueryDataSource(BaseDataSource):
         
     def _get_table_name(self, source_metadata: list, uploaded: bool):
         dataset = ''
-        if self._transactional_type != TransactionalType.NOT_TRANSACTIONAL and uploaded:
-            dataset = self._bq_ops_dataset
-        else:
-            dataset = source_metadata[0]
+        
+        # if self._transactional_type != TransactionalType.NOT_TRANSACTIONAL and uploaded:
+        #     dataset = self._bq_ops_dataset
+        # else:
+            # dataset = source_metadata[0]
+
+        # Petlove
+        dataset = source_metadata[0]
         table_name = dataset + '.' + source_metadata[1]
         if uploaded:
             table_name = f"{table_name}_uploaded"
