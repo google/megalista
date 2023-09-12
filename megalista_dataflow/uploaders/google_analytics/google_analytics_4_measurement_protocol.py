@@ -127,7 +127,7 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
       timestamp_micros = row.get('timestamp_micros')
 
       # Petlove
-      logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f'[PETLOVE] timestamp_micros: {timestamp_micros}, start_date: {start_date}, stop_date: {stop_date}')
+      # logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f'[PETLOVE] timestamp_micros: {timestamp_micros}, start_date: {start_date}, stop_date: {stop_date}')
 
       # Petlove
       if start_date <= timestamp_micros <= stop_date:
@@ -204,14 +204,14 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
         url = ''.join(url_container)
         
         #Petlove
-        logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(
-        f'[PETLOVE] Payload created:\n {json.dumps(payload)}')
+        # logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(
+        # f'[PETLOVE] Payload created:\n {json.dumps(payload)}')
         
         debug_response = requests.post(''.join(url_debug_container),data=json.dumps(payload))
 
         # for k, v in debug_response["validationMessages"][0].items():
         #   print(k, v)
-        logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] debug payload: {debug_response}")
+        # logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] debug payload: {debug_response}")
         
         response = requests.post(url,data=json.dumps(payload))
         
@@ -221,8 +221,8 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
           self._add_error(execution, error_message)
         else:
           # Petlove
-          logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] status code: {response.status_code}")
-          logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] response: {response}")
+          # logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] status code: {response.status_code}")
+          # logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] response: {response}")
           
           accepted_elements.append(row)
 

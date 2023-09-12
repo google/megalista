@@ -74,19 +74,19 @@ def run(argv=None):
         DataRowsGroupedBySource, DataRowsGroupedBySourceCoder)
     
     # PETLOVE
-    logging_handler = LoggingConfig.get_logging_handler() # n sei se precisa    
-    logging.getLogger("megalista").info(f"[PETLOVE] executando funcao def run(argv=None)")
-    logging.getLogger("megalista").info(f"[PETLOVE] pipeline_options: {pipeline_options}")
-    logging.getLogger("megalista").info(f"[PETLOVE] dataflow_options: {dataflow_options}")
-    logging.getLogger("megalista").info(f"[PETLOVE] dataflow_options.client_id: {dataflow_options.client_id}")
-    logging.getLogger("megalista").info(f"[PETLOVE] dataflow_options.client_secret: {dataflow_options.client_secret}")
-    logging.getLogger("megalista").info(f"[PETLOVE] dataflow_options.access_token: {dataflow_options.access_token}")
-    logging.getLogger("megalista").info(f"[PETLOVE] dataflow_options.refresh_token: {dataflow_options.refresh_token}")
-    logging.getLogger("megalista").info(f"[PETLOVE] sheets_config: {sheets_config}")
-    logging.getLogger("megalista").info(f"[PETLOVE] json_config: {json_config}")
-    logging.getLogger("megalista").info(f"[PETLOVE] execution_source: {execution_source}")
-    logging.getLogger("megalista").info(f"[PETLOVE] error_notifier: {error_notifier}")
-    logging.getLogger("megalista").info(f"[PETLOVE] params: {params}")
+    # logging_handler = LoggingConfig.get_logging_handler() # n sei se precisa    
+    # logging.getLogger("megalista").info(f"[PETLOVE] executando funcao def run(argv=None)")
+    # logging.getLogger("megalista").info(f"[PETLOVE] pipeline_options: {pipeline_options}")
+    # logging.getLogger("megalista").info(f"[PETLOVE] dataflow_options: {dataflow_options}")
+    # logging.getLogger("megalista").info(f"[PETLOVE] dataflow_options.client_id: {dataflow_options.client_id}")
+    # logging.getLogger("megalista").info(f"[PETLOVE] dataflow_options.client_secret: {dataflow_options.client_secret}")
+    # logging.getLogger("megalista").info(f"[PETLOVE] dataflow_options.access_token: {dataflow_options.access_token}")
+    # logging.getLogger("megalista").info(f"[PETLOVE] dataflow_options.refresh_token: {dataflow_options.refresh_token}")
+    # logging.getLogger("megalista").info(f"[PETLOVE] sheets_config: {sheets_config}")
+    # logging.getLogger("megalista").info(f"[PETLOVE] json_config: {json_config}")
+    # logging.getLogger("megalista").info(f"[PETLOVE] execution_source: {execution_source}")
+    # logging.getLogger("megalista").info(f"[PETLOVE] error_notifier: {error_notifier}")
+    # logging.getLogger("megalista").info(f"[PETLOVE] params: {params}")
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
         # Add load executions step

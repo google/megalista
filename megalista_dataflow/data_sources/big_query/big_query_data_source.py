@@ -90,7 +90,7 @@ class BigQueryDataSource(BaseDataSource):
         if 'ADS_OFFLINE_CONVERSION' in str(self._destination_type) and len(executions.destinations[0].destination_metadata[0]) >= 1:
             conversion_name = executions.destinations[0].destination_metadata[0]
                         
-        logging.getLogger(_LOGGER_NAME).info(f'[PETLOVE] CONVERSION NAME: {conversion_name}')
+        # logging.getLogger(_LOGGER_NAME).info(f'[PETLOVE] CONVERSION NAME: {conversion_name}')
         
         if DataSchemas.validate_data_columns(cols, self._destination_type):
             cols = DataSchemas.get_cols_names(cols, self._destination_type)

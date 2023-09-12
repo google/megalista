@@ -115,8 +115,8 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     
     self._assert_conversion_name_is_present(execution)
     
-    logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] execution.account_config: {execution.account_config}')
-    logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] execution.destination: {execution.destination}')
+    # logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] execution.account_config: {execution.account_config}')
+    # logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] execution.destination: {execution.destination}')
 
     customer_id = self._get_customer_id(execution.account_config, execution.destination)
     
@@ -171,12 +171,12 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     for conversion in rows:
     
       # Petlove
-      logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] conversion time: {conversion["time"]}')
+      # logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] conversion time: {conversion["time"]}')
       
-      logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] start_date: {start_date}, date: {datetime.strptime(conversion["time"], "%Y-%m-%dT%H:%M:%S.%f")}, stop_date: {stop_date}')
+      # logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] start_date: {start_date}, date: {datetime.strptime(conversion["time"], "%Y-%m-%dT%H:%M:%S.%f")}, stop_date: {stop_date}')
       
       if start_date <= datetime.strptime(conversion['time'], '%Y-%m-%dT%H:%M:%S.%f') <= stop_date:
-        logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] The conversion is in time range. Conversion date: {datetime.strptime(conversion["time"], "%Y-%m-%dT%H:%M:%S.%f")}, start_date: {start_date}, stop_date: {stop_date}')
+        # logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] The conversion is in time range. Conversion date: {datetime.strptime(conversion["time"], "%Y-%m-%dT%H:%M:%S.%f")}, start_date: {start_date}, stop_date: {stop_date}')
         conversion_data = {
             'conversion_action': conversion_resource_name,
             'conversion_date_time': utils.format_date(conversion['time']),
@@ -184,12 +184,12 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
             'gclid': conversion['gclid']
         }
         
-        logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] conversion_data: {conversion_data}')
+        # logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] conversion_data: {conversion_data}')
         
         conversions.append(conversion_data)
         
-      else:
-        logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] The conversion is NOT in time range. Conversion date: {datetime.strptime(conversion["time"], "%Y-%m-%dT%H:%M:%S.%f")}, start_date: {start_date}, stop_date: {stop_date}')
+      # else:
+      #   logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] The conversion is NOT in time range. Conversion date: {datetime.strptime(conversion["time"], "%Y-%m-%dT%H:%M:%S.%f")}, start_date: {start_date}, stop_date: {stop_date}')
   
     
     logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] total conversions: {len(conversions)}')
@@ -201,11 +201,11 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
       'conversions': conversions
     }
 
-    logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] upload_data: {upload_data}')
+    # logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] upload_data: {upload_data}')
     
     response = oc_service.upload_click_conversions(request=upload_data)
     
-    logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] response: {response}')
+    # logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] response: {response}')
 
     error_message = utils.print_partial_error_messages(_DEFAULT_LOGGER, 'uploading offline conversions', response)
     if error_message:
