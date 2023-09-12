@@ -86,7 +86,7 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     if len(destination.destination_metadata) <= 3:
       today = datetime.now()
       unix_today = str(datetime(today.year, today.month, today.day, 23, 59, 59)) + ".000"
-      return datetime.strptime(unix_today, '%Y-%m-%d %H:%M:%S.%f') - timedelta(days=3)
+      return datetime.strptime(unix_today, '%Y-%m-%d %H:%M:%S.%f') - timedelta(days=1)
     
     try:
       return datetime.strptime(destination.destination_metadata[2], '%Y-%m-%d %H:%M:%S.%f')

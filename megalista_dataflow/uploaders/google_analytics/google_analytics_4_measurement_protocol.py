@@ -88,8 +88,8 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
     if len(execution.destination.destination_metadata) <= 7:
       today = datetime.now()
       unix_today = int(datetime(today.year, today.month, today.day, 23, 59, 59).timestamp())
-      unix_three_days = 86400 * 3
-      start_date = int((unix_today - unix_three_days) * 1000000)
+      unix_one_day = 86400
+      start_date = int((unix_today - unix_one_day) * 1000000)
       
     if len(execution.destination.destination_metadata) >= 7:
       start_date = str_to_timestamp_micros(execution.destination.destination_metadata[6]) 
