@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import json
 from typing import Any, List, Iterable, Tuple, Dict, Optional
 from datetime import datetime
 from string import Template
@@ -19,6 +20,7 @@ import apache_beam as beam
 import logging
 from google.cloud import bigquery
 from google.cloud.bigquery import SchemaField, Client
+from google.api_core.retry import Retry
 from apache_beam.io.gcp.bigquery import ReadFromBigQueryRequest
 
 from models.execution import Execution, SourceType, DestinationType, DataRowsGroupedBySource
@@ -108,6 +110,10 @@ class BigQueryDataSource(BaseDataSource):
                 template = "SELECT $query_cols FROM `$table_name` AS data \
                                 LEFT JOIN `$uploaded_table_name` AS uploaded USING(gclid, time) \
                                 WHERE uploaded.gclid IS NULL;"
+            elif self._transactional_type == TransactionalType.ORDER_ID_TIME:
+                template = "SELECT $query_cols FROM `$table_name` AS data \
+                                LEFT JOIN `$uploaded_table_name` AS uploaded USING(order_id, time) \
+                                WHERE uploaded.order_id IS NULL;"
             else:
                 raise Exception(f'Unrecognized TransactionalType: {self._transactional_type}. Source="{self._source_name}". Destination="{self._destination_name}"')
 
@@ -115,9 +121,12 @@ class BigQueryDataSource(BaseDataSource):
             logging.getLogger(_LOGGER_NAME).info(
                 f'Reading from table `{table_name}` for Execution {executions}')
             elements = []
-            for row in client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE):
-                elements.append(_convert_row_to_dict(row))
-            logging.getLogger(_LOGGER_NAME).info(f'Data source ({self._source_name}): using {len(elements)} rows')
+            rows = client.query(query).result(page_size=_BIGQUERY_PAGE_SIZE)  
+            # Maps the query's schema for later use
+            query_schema = { sch.name : sch for sch in rows.schema } 
+            for row in rows:
+                elements.append(_convert_row_to_dict(row, query_schema))              
+            logging.getLogger(_LOGGER_NAME).info(f'Data source ({self._source_name}): using {len(elements)} rows')  
             return [DataRowsGroupedBySource(executions, elements)]
         else:
             raise ValueError(f'Data source incomplete. {DataSchemas.get_error_message(cols, self._destination_type)} Source="{self._source_name}". Destination="{self._destination_name}"')
@@ -136,7 +145,14 @@ class BigQueryDataSource(BaseDataSource):
             template = "CREATE TABLE IF NOT EXISTS `$uploaded_table_name` ( \
                             timestamp TIMESTAMP OPTIONS(description= 'Event timestamp'), \
                             gclid STRING OPTIONS(description= 'Original gclid'), \
-                            time STRING OPTIONS(description= 'Original time')) \
+                            time STRING OPTIONS(description= 'Adjustment time')) \
+                            PARTITION BY _PARTITIONDATE \
+                            OPTIONS(partition_expiration_days=15)"
+        elif self._transactional_type == TransactionalType.ORDER_ID_TIME:
+            template = "CREATE TABLE IF NOT EXISTS `$uploaded_table_name` ( \
+                            timestamp TIMESTAMP OPTIONS(description= 'Event timestamp'), \
+                            order_id STRING OPTIONS(description= 'Order Id (transaction Id)'), \
+                            time STRING OPTIONS(description= 'Adjustment time')) \
                             PARTITION BY _PARTITIONDATE \
                             OPTIONS(partition_expiration_days=15)"
         else:
@@ -155,7 +171,6 @@ class BigQueryDataSource(BaseDataSource):
                 "No rows to insert. Skipping...")
         else:
             table_name = self._get_table_name(execution.source.source_metadata, True)
-
             client = self._get_bq_client()
             table = client.get_table(table_name)
             now = self._get_now()
@@ -195,6 +210,8 @@ class BigQueryDataSource(BaseDataSource):
             return SchemaField("uuid", "string"), SchemaField("timestamp", "timestamp")
         if self._transactional_type == TransactionalType.GCLID_TIME:
             return SchemaField("gclid", "string"), SchemaField("time", "string"), SchemaField("timestamp", "timestamp")
+        if self._transactional_type == TransactionalType.ORDER_ID_TIME:
+            return SchemaField("order_id", "string"), SchemaField("time", "string"), SchemaField("timestamp", "timestamp")
         raise Exception(f'Unrecognized TransactionalType: {self._transactional_type}. Source="{self._source_name}". Destination="{self._destination_name}"')
 
     def _get_bq_rows(self, rows, now):
@@ -202,6 +219,8 @@ class BigQueryDataSource(BaseDataSource):
             return [{'uuid': row['uuid'], 'timestamp': now} for row in rows]
         if self._transactional_type == TransactionalType.GCLID_TIME:
             return [{'gclid': row['gclid'], 'time': row['time'], 'timestamp': now} for row in rows]
+        if self._transactional_type == TransactionalType.ORDER_ID_TIME:
+            return [{'order_id': row['order_id'], 'time': row['time'], 'timestamp': now} for row in rows]
         raise Exception(f'Unrecognized TransactionalType: {self._transactional_type}. Source="{self._source_name}". Destination="{self._destination_name}"')
 
     def _get_table_columns(self, client, table_name):
@@ -211,9 +230,19 @@ class BigQueryDataSource(BaseDataSource):
     def _get_bq_client(self):
         return bigquery.Client(location=self._bq_location)
         
-def _convert_row_to_dict(row):
+def _convert_row_to_dict(row, schema:dict = {}):
     dict = {}
     for key, value in row.items():
-        dict[key] = value
+        # This is necessary because bq.client does not 
+        # automatically convert a stringify json into a dict     
+        if value and schema and schema[key].field_type.lower() == 'json':
+             # In case it's an array of  json, apply the proper
+             # transformation
+             if schema[key].mode.lower() == 'repeated':
+                dict[key] = list(map(json.loads,value))
+             else:
+                dict[key] = json.loads(value)
+        else:
+            dict[key] = value
     return dict
  
