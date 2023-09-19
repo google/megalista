@@ -140,4 +140,4 @@ class AppsFlyerS2SUploaderDoFn(MegalistaUploader):
     logging.getLogger("megalista.AppsFlyerS2SUploader").info(
       f"Successfully uploaded {len(success_elements)}/{len(batch.elements)} events.")
 
-    yield Batch(execution, success_elements)
+    return [Batch(execution, success_elements)]

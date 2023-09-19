@@ -23,6 +23,8 @@ echo "Move to megalista_dataflow folder"
 cd megalista_dataflow
 echo "Configuration GCP project in gcloud"
 gcloud config set project "$1"
+echo "Upgrading pip to latest version"
+python3 -m pip install --upgrade pip
 echo "Build Dataflow metadata"
 # python3 -m pip install --user -q -r requirements.txt
 python3 -m pip install -r requirements.txt

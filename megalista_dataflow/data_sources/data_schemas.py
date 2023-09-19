@@ -38,7 +38,8 @@ _dtypes: Dict[str, Dict[str, Any]] = {
             {'name': 'customVariables.type',
                 'required': False, 'data_type': 'string'},
             {'name': 'customVariables.value',
-                'required': False, 'data_type': 'string'}
+                'required': False, 'data_type': 'string'},
+            {'name': 'ordinal', 'required': False, 'data_type': 'string'}
         ],
         'groups': [
             ['gclid', 'mobileDeviceId', 'encryptedUserId', 'matchId', 'dclid']
@@ -49,6 +50,23 @@ _dtypes: Dict[str, Dict[str, Any]] = {
             {'name': 'gclid', 'required': True, 'data_type': 'string'},
             {'name': 'time', 'required': True, 'data_type': 'string'},
             {'name': 'amount', 'required': True, 'data_type': 'string'}
+        ],
+        'groups': []
+    },
+    'ADS_OFFLINE_CONVERSION_ADJUSTMENT_GCLID': {
+        'columns': [
+            {'name': 'gclid', 'required': True, 'data_type': 'string'},
+            {'name': 'time', 'required': True, 'data_type': 'string'},
+            {'name': 'conversion_time', 'required': True, 'data_type': 'string'},
+            {'name': 'amount', 'required': False, 'data_type': 'string'}
+        ],
+        'groups': []
+    },
+    'ADS_OFFLINE_CONVERSION_ADJUSTMENT_ORDER_ID': {
+        'columns': [
+            {'name': 'order_id', 'required': True, 'data_type': 'string'},
+            {'name': 'time', 'required': True, 'data_type': 'string'},
+            {'name': 'amount', 'required': False, 'data_type': 'string'}
         ],
         'groups': []
     },
@@ -225,7 +243,15 @@ _dtypes: Dict[str, Dict[str, Any]] = {
             {'name': 'uuid', 'required': True, 'data_type': 'string'}
         ],
         'groups': []
-    }
+    },
+    'UPLOADED_ORDER_ID': {
+        'columns': [
+            {'name': 'timestamp', 'required': True, 'data_type': 'string'},
+            {'name': 'order_id', 'required': True, 'data_type': 'string'},
+            {'name': 'time', 'required': True, 'data_type': 'string'}
+        ],
+        'groups': []
+    },
 }
 
 # checks if every column marked as required exists in dataframe columns

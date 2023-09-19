@@ -22,6 +22,8 @@ class DestinationType(Enum):
     (
         CM_OFFLINE_CONVERSION,
         ADS_OFFLINE_CONVERSION,
+        ADS_OFFLINE_CONVERSION_ADJUSTMENT_GCLID,
+        ADS_OFFLINE_CONVERSION_ADJUSTMENT_ORDER_ID,
         ADS_OFFLINE_CONVERSION_CALLS,
         ADS_SSD_UPLOAD,
         ADS_ENHANCED_CONVERSION,
@@ -37,8 +39,8 @@ class DestinationType(Enum):
         DV_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD,
         DV_CUSTOMER_MATCH_DEVICE_ID_UPLOAD,
         UPLOADED_UUID,  # schema verification purposes
-        UPLOADED_GCLID_TIME  # schema verification purposes
-    ) = range(18)
+        UPLOADED_ORDER_ID
+    ) = range(20)
 
     def __eq__(self, other):
         if other is None:
@@ -56,12 +58,14 @@ class TransactionalType(Enum):
         NOT_TRANSACTION: don't handle.
         UUID: Expect a 'uuid' field in the source table as a unique identifier to each row.
         GCLID_DATE_TIME: Expect 'gclid' and 'time' fields in the source table as unique identifiers to each row.
+        ORDER_ID_TIME: Expect an 'order_id' and 'time' filed in the source table as an unique identifier for each row.
     """
     (
         NOT_TRANSACTIONAL,
         UUID,
         GCLID_TIME,
-    ) = range(3)
+        ORDER_ID_TIME
+    ) = range(4)
 
 
 class AccountConfig:
