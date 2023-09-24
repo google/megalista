@@ -112,7 +112,7 @@ changed.
 - Google Cloud Storage Bucket to create
   - This Cloud Storage Bucket will be used to store Megalista compiled binary, metadata, and temp files and will be created by the deployment script.
 - *Setup Firestore collection*, *URL for JSON configuration* and *Setup Sheet Id*
-  - Only one of these three should be filled and the other should be left black accordingly to the chosen configuration method.
+  - Only one of these three should be filled and the others should be left blank accordingly to the chosen configuration method.
 - Client ID, Client Secret, Access Token and Refresh Token from the previous step.
 
   **Disclaimer:** Please store your config.json file in a secure place or delete it after the deployment.
