@@ -23,7 +23,7 @@ setuptools.setup(
     install_requires=['google-ads-megalista',
                       'google-api-python-client==2.81.0',
                       'google-cloud-bigquery==3.3.0',
-                      'aiohttp==3.8.3',
+                      'aiohttp==3.8.5',
                       'google-cloud-storage==2.7.0',
                       'google-cloud-firestore==2.4.0',
                       'protobuf==3.20.3',
