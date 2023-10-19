@@ -1,0 +1,16 @@
+{
+    "location": "",
+    "region": "",
+    "bq_ops_dataset": "",
+    "bucket_name" : "",
+    "developer_token": "",
+    "client_id": "",
+    "client_secret": "",
+    "access_token": "",
+    "refresh_token": "",
+    "setup_sheet_id": "",
+    "setup_json_url": "",
+    "notify_errors_by_email": "True",
+    "errors_destination_emails": "",
+    "setup_firestore_collection": ""
+}
