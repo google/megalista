@@ -49,8 +49,8 @@ _dtypes: Dict[str, Dict[str, Any]] = {
         'columns': [
             {'name': 'gclid', 'required': True, 'data_type': 'string'},
             {'name': 'time', 'required': True, 'data_type': 'string'},
-            {'name': 'amount', 'required': True, 'data_type': 'string'}
-            {'name': 'external_attribution_credit', 'required': False, 'data_type': 'string'}
+            {'name': 'amount', 'required': True, 'data_type': 'string'},
+            {'name': 'external_attribution_credit', 'required': False, 'data_type': 'string'},
             {'name': 'external_attribution_model', 'required': False, 'data_type': 'string'}
         ],
         'groups': []
