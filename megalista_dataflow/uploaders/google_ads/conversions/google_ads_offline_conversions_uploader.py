@@ -113,11 +113,12 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
       conversion['conversion_date_time'] = utils.format_date(row['time'])
       conversion['conversion_value'] = float(str(row['amount']))
       conversion['gclid'] = row['gclid']
-      if row['external_attribution_credit'] and row['external_attribution_model']:
+      if 'external_attribution_credit' in row and 'external_attribution_model' in row:
         conversion['external_attribution_data'] = {
           'external_attribution_credit': float(str(row['external_attribution_credit'])),
           'external_attribution_model': row['external_attribution_model']
         }
+      conversions.append(conversion)
 
     upload_data = {
       'customer_id': customer_id,
