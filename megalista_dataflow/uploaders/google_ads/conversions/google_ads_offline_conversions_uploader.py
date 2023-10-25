@@ -110,7 +110,11 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
           'conversion_action': conversion_resource_name,
           'conversion_date_time': utils.format_date(conversion['time']),
           'conversion_value': float(str(conversion['amount'])),
-          'gclid': conversion['gclid']
+          'gclid': conversion['gclid'],
+          'external_attribution_data': {
+            'external_attribution_credit': float(str(conversion['external_attribution_credit'])),
+            'external_attribution_model': conversion['external_attribution_model']
+          }
     } for conversion in rows]
 
     upload_data = {
