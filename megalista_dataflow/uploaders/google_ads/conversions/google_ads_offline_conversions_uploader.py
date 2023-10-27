@@ -108,11 +108,12 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     logging.getLogger(_DEFAULT_LOGGER).info(f'Uploading {len(rows)} offline conversions on {conversion_resource_name} to Google Ads.')
     conversions = []
     for row in rows:
-      conversion = {}
-      conversion['conversion_action'] = conversion_resource_name
-      conversion['conversion_date_time'] = utils.format_date(row['time'])
-      conversion['conversion_value'] = float(str(row['amount']))
-      conversion['gclid'] = row['gclid']
+      conversion= {
+        'conversion_action': conversion_resource_name,
+        'conversion_date_time': utils.format_date(row['time']),
+        'conversion_value': float(str(row['amount'])),
+        'gclid': row['gclid']
+      }
       if 'external_attribution_credit' in row and 'external_attribution_model' in row:
         conversion['external_attribution_data'] = {
           'external_attribution_credit': float(str(row['external_attribution_credit'])),
