@@ -112,6 +112,25 @@ _dtypes: Dict[str, Dict[str, Any]] = {
             ['email', 'phone', 'mailing_address_first_name']
         ]
     },
+    'ADS_SSI_UPLOAD': {
+        'columns': [
+            {'name': 'email', 'required': False, 'data_type': 'string'},
+            {'name': 'phone', 'required': False, 'data_type': 'string'},
+            {'name': 'mailing_address_first_name',
+                'required': False, 'data_type': 'string'},
+            {'name': 'mailing_address_last_name',
+                'required': False, 'data_type': 'string'},
+            {'name': 'mailing_address_country_name',
+                'required': False, 'data_type': 'string'},
+            {'name': 'mailing_address_zip_name',
+                'required': False, 'data_type': 'string'},
+            {'name': 'time', 'required': True, 'data_type': 'string'},
+            {'name': 'amount', 'required': True, 'data_type': 'string'}
+        ],
+        'groups': [
+            ['email', 'phone', 'mailing_address_first_name']
+        ]
+    },
     'ADS_ENHANCED_CONVERSION': {
         'columns': [
             {'name': '.*', 'required': False, 'data_type': 'string'}
