@@ -83,7 +83,7 @@ class GoogleAdsSSIUploaderDoFn(MegalistaUploader):
 
         # 1. Creates Job
         job_creation_payload = {
-            'type': 'STORE_SALES_UPLOAD_FIRST_PARTY',
+            'type_': 'STORE_SALES_UPLOAD_FIRST_PARTY',
             'external_id':  int(datetime.datetime.now().timestamp()*10e3),
             'store_sales_metadata': {
                 'loyalty_fraction': 1.0,
@@ -128,6 +128,14 @@ class GoogleAdsSSIUploaderDoFn(MegalistaUploader):
         # 3. Runs the Job
         offline_user_data_job_service.run_offline_user_data_job(resource_name = job_resource_name)
 
+    def _get_customer_id(self, account_config: AccountConfig, destination: Destination) -> str:
+        """
+          If the customer_id is present on the destination, returns it, otherwise defaults to the account_config info.
+        """
+        if len(destination.destination_metadata) >= 2 and len(destination.destination_metadata[1]) > 0:
+            return Utils.filter_text_only_numbers(destination.destination_metadata[1])
+        return account_config.google_ads_account_id
+
     def _get_currency_code(self, destination: Destination) -> str:
         """
           If the currency_code is present on the destination, return it, otherwise default to BRL.
@@ -135,22 +143,14 @@ class GoogleAdsSSIUploaderDoFn(MegalistaUploader):
         if len(destination.destination_metadata) >= 5 and len(destination.destination_metadata[3]) > 0:
             return destination.destination_metadata[3]
         return 'BRL'
-
-    def _get_customer_id(self, account_config: AccountConfig, destination: Destination) -> str:
-        """
-          If the customer_id is present on the destination, returns it, otherwise defaults to the account_config info.
-        """
-        if len(destination.destination_metadata) >= 5 and len(destination.destination_metadata[4]) > 0:
-            return Utils.filter_text_only_numbers(destination.destination_metadata[4])
-        return account_config.google_ads_account_id
     
     def _get_user_data_consent(self, account_config: AccountConfig, destination: Destination) -> Optional[str]:
         """
           Specifies whether user consent was obtained for the data you are uploading.
           https://www.google.com/about/company/user-consent-policy
         """
-        if len(destination.destination_metadata) >= 6 and len(destination.destination_metadata[5]) > 0:
-            return destination.destination_metadata[5]
+        if len(destination.destination_metadata) >= 5 and len(destination.destination_metadata[4]) > 0:
+            return destination.destination_metadata[4]
         return None
     
     def _get_ad_personalization_consent(self, account_config: AccountConfig, destination: Destination) -> Optional[str]:
@@ -158,8 +158,8 @@ class GoogleAdsSSIUploaderDoFn(MegalistaUploader):
           Specifies whether user consent was obtained for the data you are uploading.
           https://www.google.com/about/company/user-consent-policy
         """
-        if len(destination.destination_metadata) >= 6 and len(destination.destination_metadata[6]) > 0:
-            return destination.destination_metadata[6]
+        if len(destination.destination_metadata) >= 6 and len(destination.destination_metadata[5]) > 0:
+            return destination.destination_metadata[5]
         return None
 
     def _get_login_customer_id(self, account_config: AccountConfig, destination: Destination) -> str:

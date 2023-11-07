@@ -119,7 +119,7 @@ class GoogleAdsSSIStep(MegalistaStep):
             | "Load Data -  Google Ads SSI"
             >> BatchesFromExecutions(
                 ErrorHandler(
-                    DestinationType.ADS_SSD_UPLOAD, self.params.error_notifier
+                    DestinationType.ADS_SSI_UPLOAD, self.params.error_notifier
                 ),
                 self.params.dataflow_options,
                 DestinationType.ADS_SSI_UPLOAD,
@@ -132,7 +132,7 @@ class GoogleAdsSSIStep(MegalistaStep):
                     self.params._oauth_credentials,
                     self.params._dataflow_options.developer_token,
                     ErrorHandler(
-                        DestinationType.ADS_SSD_UPLOAD, self.params.error_notifier
+                        DestinationType.ADS_SSI_UPLOAD, self.params.error_notifier
                     ),
                 )
             )
