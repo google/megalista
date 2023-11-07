@@ -14,6 +14,7 @@ typed-ast==1.5.5
 google_auth==2.23.4
 fasteners==0.19
 google-apitools==0.5.32
+tadau
 # Test deps
 mypy==1.6.1
 pytest==7.2.2
