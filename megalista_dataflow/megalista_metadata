@@ -90,7 +90,7 @@
         },
         {
             "name": "collect_usage_stats",
-            "label": "Should show code lines in log messages?",
+            "label": "Share crash/usage stats that helps us suporting the solution? True or False",
             "help_text": "Share crash/usage stats that helps us suporting the solution? True or False",
             "is_optional": "true"
         }
