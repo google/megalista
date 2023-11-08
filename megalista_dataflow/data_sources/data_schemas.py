@@ -125,7 +125,8 @@ _dtypes: Dict[str, Dict[str, Any]] = {
             {'name': 'mailing_address_zip_name',
                 'required': False, 'data_type': 'string'},
             {'name': 'time', 'required': True, 'data_type': 'string'},
-            {'name': 'amount', 'required': True, 'data_type': 'string'}
+            {'name': 'amount', 'required': True, 'data_type': 'string'},
+            {'name': 'currency_code', 'required': True, 'data_type': 'string'}
         ],
         'groups': [
             ['email', 'phone', 'mailing_address_first_name']
