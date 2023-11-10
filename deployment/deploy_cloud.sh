@@ -14,8 +14,9 @@
 # limitations under the License.
 
 
-if [ $# != 4 ]; then
-    echo "Usage: $0 gcp_project_id bucket_name region service_account_email"
+if [ $# != 5 ]; then
+    echo "Usage: $0 gcp_project_id bucket_name region service_account_email share_crash_usage_stats(true/false)"
+    echo "Sharing crash/usage stats helps us suporting the solution (E.g. true/false)"
     exit 1
 fi
 
@@ -31,7 +32,18 @@ python3 -m pip install -r requirements.txt
 echo $4
 echo "Update commit info inside code"
 sed -i "s/MEGALISTA_VERSION\s*=.*/MEGALISTA_VERSION = '$(git rev-parse HEAD)'/" ./config/version.py
-python3 -m main --runner DataflowRunner --project "$1" --gcp_project_id "$1" --temp_location "gs://$2/tmp/" --region "$3" --setup_file ./setup.py --template_location "gs://$2/templates/megalista" --num_workers 1 --autoscaling_algorithm=NONE --service_account_email "$4"
+python3 -m main \
+    --runner DataflowRunner \
+    --project "$1" \
+    --gcp_project_id "$1" \
+    --temp_location "gs://$2/tmp/" \
+    --region "$3" \
+    --setup_file ./setup.py \
+    --template_location "gs://$2/templates/megalista" \
+    --num_workers 1 \
+    --autoscaling_algorithm=NONE \
+    --service_account_email "$4" \
+    --collect_usage_stats "$5"
 echo "Copy megalista_medata to bucket $2"
 gsutil cp megalista_metadata "gs://$2/templates/megalista_metadata"
 echo "Cleanup"

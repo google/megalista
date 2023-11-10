@@ -168,25 +168,30 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     
     conversions = []
     
-    for conversion in rows:
+    for row in rows:
     
       # Petlove
       # logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] conversion time: {conversion["time"]}')
       
       # logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] start_date: {start_date}, date: {datetime.strptime(conversion["time"], "%Y-%m-%dT%H:%M:%S.%f")}, stop_date: {stop_date}')
       
-      if start_date <= datetime.strptime(conversion['time'], '%Y-%m-%dT%H:%M:%S.%f') <= stop_date:
+      if start_date <= datetime.strptime(row['time'], '%Y-%m-%dT%H:%M:%S.%f') <= stop_date:
         # logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] The conversion is in time range. Conversion date: {datetime.strptime(conversion["time"], "%Y-%m-%dT%H:%M:%S.%f")}, start_date: {start_date}, stop_date: {stop_date}')
-        conversion_data = {
-            'conversion_action': conversion_resource_name,
-            'conversion_date_time': utils.format_date(conversion['time']),
-            'conversion_value': float(str(conversion['amount'])),
-            'gclid': conversion['gclid']
+        conversion = {
+          'conversion_action': conversion_resource_name,
+          'conversion_date_time': utils.format_date(row['time']),
+          'conversion_value': float(str(row['amount'])),
+          'gclid': row['gclid']
         }
+        if 'external_attribution_credit' in row and 'external_attribution_model' in row:
+          conversion['external_attribution_data'] = {
+            'external_attribution_credit': float(str(row['external_attribution_credit'])),
+            'external_attribution_model': row['external_attribution_model']
+          }
         
         # logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] conversion_data: {conversion_data}')
         
-        conversions.append(conversion_data)
+        conversions.append(conversion)
         
       # else:
       #   logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] The conversion is NOT in time range. Conversion date: {datetime.strptime(conversion["time"], "%Y-%m-%dT%H:%M:%S.%f")}, start_date: {start_date}, stop_date: {stop_date}')

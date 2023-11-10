@@ -1,22 +1,23 @@
-apache-beam==2.40.0
-google-ads-megalista
-google-api-python-client==2.81.0
-google-cloud-bigquery==3.3.0
+apache-beam==2.51.0
+google-ads==22.1.0
+google-api-python-client==2.106.0
+google-cloud-bigquery==3.13.0
 google-cloud-firestore==2.4.0
-google-cloud-storage==2.7.0
-aiohttp==3.8.3
+google-cloud-storage==2.13.0
+aiohttp==3.8.6
+pandas==2.1.2
+boto3==1.28.78
+typed-ast==1.5.5
 # These packages are indirected dependencies.
 # Their versions are fixed here to improove resolution time.
-google_auth==2.16.2
-fasteners==0.18
+google_auth==2.23.4
+fasteners==0.19
 google-apitools==0.5.32
+tadau
 # Test deps
-mypy==0.790
+mypy==1.6.1
 pytest==7.2.2
 pytest-cov==4.0.0
 pytest-mock==3.10.0
 pytz==2021.3
 requests-mock==1.8.0
-pandas==1.5.3
-boto3==1.26.66
-protobuf==3.20.3
