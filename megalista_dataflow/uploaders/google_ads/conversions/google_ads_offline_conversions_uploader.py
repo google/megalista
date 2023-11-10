@@ -183,6 +183,11 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
             'conversion_value': float(str(conversion['amount'])),
             'gclid': conversion['gclid']
         }
+        if 'external_attribution_credit' in conversion and 'external_attribution_model' in conversion:
+        conversion_data['external_attribution_data'] = {
+          'external_attribution_credit': float(str(conversion['external_attribution_credit'])),
+          'external_attribution_model': conversion['external_attribution_model']
+        }
         
         # logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] conversion_data: {conversion_data}')
         

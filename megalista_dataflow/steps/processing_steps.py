@@ -43,6 +43,9 @@ from uploaders.google_ads.conversions.google_ads_enhanced_conversions_leads_uplo
 from uploaders.google_ads.conversions.google_ads_ssd_uploader import (
     GoogleAdsSSDUploaderDoFn,
 )
+from uploaders.google_ads.conversions.google_ads_ssi_uploader import (
+    GoogleAdsSSIUploaderDoFn,
+)
 from uploaders.google_ads.customer_match.contact_info_uploader import (
     GoogleAdsCustomerMatchContactInfoUploaderDoFn,
 )
@@ -109,6 +112,31 @@ class GoogleAdsSSDStep(MegalistaStep):
             )
         )
 
+class GoogleAdsSSIStep(MegalistaStep):
+    def expand(self, executions):
+        return (
+            executions
+            | "Load Data -  Google Ads SSI"
+            >> BatchesFromExecutions(
+                ErrorHandler(
+                    DestinationType.ADS_SSI_UPLOAD, self.params.error_notifier
+                ),
+                self.params.dataflow_options,
+                DestinationType.ADS_SSI_UPLOAD,
+                5000,
+            )
+            | "Hash Users - Google Ads SSI" >> beam.Map(ADS_CM_HASHER.hash_users)
+            | "Upload - Google Ads SSI"
+            >> beam.ParDo(
+                GoogleAdsSSIUploaderDoFn(
+                    self.params._oauth_credentials,
+                    self.params._dataflow_options.developer_token,
+                    ErrorHandler(
+                        DestinationType.ADS_SSI_UPLOAD, self.params.error_notifier
+                    ),
+                )
+            )
+        )
 
 class GoogleAdsCustomerMatchMobileDeviceIdStep(MegalistaStep):
     def expand(self, executions):
@@ -611,6 +639,7 @@ class DisplayVideoCustomerMatchContactInfoStep(MegalistaStep):
 # Petlove
 PROCESSING_STEPS = [
     # ["Ads SSD", GoogleAdsSSDStep],
+    # ["Ads SSI", GoogleAdsSSIStep],
     # ["Ads Audiences Device", GoogleAdsCustomerMatchMobileDeviceIdStep],
     # ["Ads Audiences Contact", GoogleAdsCustomerMatchContactInfoStep],
     # ["Ads Audiences User ID", GoogleAdsCustomerMatchUserIdStep],
