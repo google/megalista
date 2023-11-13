@@ -63,6 +63,11 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
     is_event = self._str2bool(execution.destination.destination_metadata[1])
     is_user_property = self._str2bool(execution.destination.destination_metadata[2])
     non_personalized_ads = self._str2bool(execution.destination.destination_metadata[3])
+    
+    logging.getLogger("megalista").info(f'[PETLOVE] api_secret {api_secret}')
+    logging.getLogger("megalista").info(f'[PETLOVE] is_event {is_event}')
+    logging.getLogger("megalista").info(f'[PETLOVE] is_user_property {is_user_property}')
+    logging.getLogger("megalista").info(f'[PETLOVE] non_personalized_ads {non_personalized_ads}')
 
     # Petlove
     def str_to_timestamp_micros(sheet_date):
