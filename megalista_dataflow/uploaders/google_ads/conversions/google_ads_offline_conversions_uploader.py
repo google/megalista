@@ -39,12 +39,20 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     self.developer_token = developer_token
 
   def _get_ads_service(self, customer_id: str):
+    logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE][ADS OFF CONV] ADS_API_VERSION: {ADS_API_VERSION}')
+    logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE][ADS OFF CONV] self.oauth_credentials: {self.oauth_credentials}')
+    logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE][ADS OFF CONV] self.developer_token.get(): {self.developer_token.get()}')
+    logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE][ADS OFF CONV] customer_id: {customer_id}')
     return utils.get_ads_service('GoogleAdsService', ADS_API_VERSION,
                                      self.oauth_credentials,
                                      self.developer_token.get(),
                                      customer_id)
 
   def _get_oc_service(self, customer_id):
+    logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE][ADS OFF CONV] ADS_API_VERSION: {ADS_API_VERSION}')
+    logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE][ADS OFF CONV] self.oauth_credentials: {self.oauth_credentials}')
+    logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE][ADS OFF CONV] self.developer_token.get(): {self.developer_token.get()}')
+    logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE][ADS OFF CONV] customer_id: {customer_id}')
     return utils.get_ads_service('ConversionUploadService', ADS_API_VERSION,
                                      self.oauth_credentials,
                                      self.developer_token.get(),
