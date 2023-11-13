@@ -216,7 +216,7 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
 
         # for k, v in debug_response["validationMessages"][0].items():
         #   print(k, v)
-        # logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] debug payload: {debug_response}")
+        logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] debug payload: {debug_response}")
         
         response = requests.post(url,data=json.dumps(payload))
         
@@ -226,8 +226,8 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
           self._add_error(execution, error_message)
         else:
           # Petlove
-          # logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] status code: {response.status_code}")
-          # logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] response: {response}")
+          logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] status code: {response.status_code}")
+          logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] response: {response}")
           
           accepted_elements.append(row)
 
