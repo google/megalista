@@ -78,13 +78,13 @@ def safe_process(logger):
             try:
                 return func(*args, **kwargs)
             
-            except Exception as auth_error:
-                # Petlove
-                self_._add_error(batch.execution, f'[PETLOVE] - Authentication error: {auth_error}')
-                logger.error(f'[PETLOVE] - Authentication error: {auth_error}')
-                logger.error(auth_error, exc_info=True)
-                logger.exception('Error uploading data.')
-                raise ValueError(f'[PETLOVE] - Authentication error. Exception: {auth_error}')
+            # except Exception as auth_error:
+            #     # Petlove
+            #     self_._add_error(batch.execution, f'[PETLOVE] - Authentication error: {auth_error}')
+            #     logger.error(f'[PETLOVE] - Authentication error: {auth_error}')
+            #     logger.error(auth_error, exc_info=True)
+            #     logger.exception('Error uploading data.')
+            #     raise ValueError(f'[PETLOVE] - Authentication error. Exception: {auth_error}')
             
             except BaseException as e:
                 self_._add_error(batch.execution, f'Error uploading data: {e}')
