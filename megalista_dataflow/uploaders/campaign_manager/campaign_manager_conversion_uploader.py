@@ -78,6 +78,14 @@ class CampaignManagerConversionUploaderDoFn(MegalistaUploader):
         execution.account_config.campaign_manager_profile_id,
         timestamp,
         batch.elements)
+    
+    logging.getLogger("megalista").info(f'[PETLOVE] conversion_uploader | _do_upload_data : {(
+        execution,
+        execution.destination.destination_metadata[0],
+        execution.destination.destination_metadata[1],
+        execution.account_config.campaign_manager_profile_id,
+        timestamp,
+        batch.elements)}')
 
   def _do_upload_data(
       self,
