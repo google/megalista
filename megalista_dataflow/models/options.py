@@ -65,3 +65,8 @@ class DataflowOptions(PipelineOptions):
       '--show_code_lines_in_log', 
       default=False,
       help='Should show code lines in log messages. True or False')
+    # DEBUG
+    parser.add_value_provider_argument(
+      '--collect_usage_stats', 
+      default=True,
+      help='Optin to collect usage stats. True or False. This helps us suporting the solution')

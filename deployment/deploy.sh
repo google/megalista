@@ -200,6 +200,10 @@ function init() {
         SETUP_SHEET_ID=$(cat config.json | jq -r '.setup_sheet_id')
         SETUP_JSON_URL=$(cat config.json | jq -r '.setup_json_url')
         SETUP_FIRESTORE_COLLECTION=$(cat config.json | jq -r '.setup_firestore_collection')
+
+        echo -n "Optin to collect crash/usage stats to improve the solution. This helps us suporting the solution (E.g. true/false):"
+        read -r SHARE_CRASH_USAGE_STATS
+        echo
         # Validate params before deployment
         check_valid_parameters
         # Confirm details
@@ -259,7 +263,7 @@ function init() {
             # Build metadata and copy it to Cloud Storage
             start_message "Building Dataflow metadata..."
             cd ..
-            sh ./deployment/deploy_cloud.sh ${GOOGLE_CLOUD_PROJECT} ${BUCKET_NAME} ${REGION} ${SERVICE_ACCOUNT}
+            sh ./deployment/deploy_cloud.sh ${GOOGLE_CLOUD_PROJECT} ${BUCKET_NAME} ${REGION} ${SERVICE_ACCOUNT} ${SHARE_CRASH_USAGE_STATS}
             echo
 
             echo "✅ ${bold}${text_green} Done!${reset}"
