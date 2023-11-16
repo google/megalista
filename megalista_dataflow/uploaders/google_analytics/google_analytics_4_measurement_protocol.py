@@ -204,16 +204,22 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
         url = ''.join(url_container)
         
         #Petlove
-        # logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(
-        # f'[PETLOVE] Payload created:\n {json.dumps(payload)}')
+        logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(
+        f'[PETLOVE] Payload created:\n {json.dumps(payload)}')
         
         debug_response = requests.post(''.join(url_debug_container),data=json.dumps(payload))
+
+        logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] url_debug_container: {url_debug_container}")
+        
+
 
         # for k, v in debug_response["validationMessages"][0].items():
         #   print(k, v)
         # logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] debug payload: {debug_response}")
         
         response = requests.post(url,data=json.dumps(payload))
+        
+        logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] response.status_code: {response.status_code}")
         
         if response.status_code != 204:
           error_message = f'Error calling GA4 MP {response.status_code}: {str(response.content)}'
