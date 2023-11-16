@@ -167,7 +167,10 @@ class BigQueryDataSource(BaseDataSource):
 
         client.query(query).result()
         
-        template_teste = "SELECT * FROM `$uploaded_table_name` LIMIT 10"             
+        template_teste = f"SELECT * FROM `{uploaded_table_name}` LIMIT 10"
+        logging.getLogger(_LOGGER_NAME).info(
+            f"_ensure_control_table_exists | template_teste: `{template_teste}`")
+          
         executando_query_teste = client.query(template_teste).result()
                             
         logging.getLogger(_LOGGER_NAME).info(
