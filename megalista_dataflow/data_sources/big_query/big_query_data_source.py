@@ -166,6 +166,13 @@ class BigQueryDataSource(BaseDataSource):
             f"Creating table `{uploaded_table_name}` if it doesn't exist")
 
         client.query(query).result()
+        
+        template_teste = "SELECT * FROM `$uploaded_table_name` LIMIT 10"             
+        executando_query_teste = client.query(template_teste).result()
+                            
+        logging.getLogger(_LOGGER_NAME).info(
+            f"executando_query_teste `{executando_query_teste}`")
+        
 
     def write_transactional_info(self, rows, execution: Execution):
         if len(rows) == 0:
