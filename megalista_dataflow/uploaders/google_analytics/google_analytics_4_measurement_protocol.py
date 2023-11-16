@@ -91,25 +91,34 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
       logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] execution.destination.destination_metadata: {execution.destination.destination_metadata}")
       conversion_name = execution.destination.destination_metadata[5]
 
-    start_date = str()
-    if len(execution.destination.destination_metadata) <= 7:
+    stop_date = str()
+    if execution.destination.destination_metadata[6] == "YYYY-MM-DD HH:mm:SS.fff":
       today = datetime.now()
       unix_today = int(datetime(today.year, today.month, today.day, 23, 59, 59).timestamp())
       unix_one_day = 86400
-      start_date = int((unix_today - unix_one_day) * 1000000)
+      stop_date = int((unix_today - unix_one_day) * 1000000)
       
     if len(execution.destination.destination_metadata) >= 7:
-      start_date = str_to_timestamp_micros(execution.destination.destination_metadata[6]) 
+      try:
+        stop_date = str_to_timestamp_micros(execution.destination.destination_metadata[6])
       
-    stop_date = str()
-    if len(execution.destination.destination_metadata) <= 8:
+      except Exception as err:
+          raise ValueError(f'Invalid format date of start_date. Received: {execution.destination.destination_metadata[6]}. Expected: \"YYYY-MM-DD HH:mm:SS.fff\"')
+
+
+    start_date = str()
+    if execution.destination.destination_metadata[7]  == "YYYY-MM-DD HH:mm:SS.fff":
       today = datetime.now()
       unix_today = int(datetime(today.year, today.month, today.day, 23, 59, 59).timestamp())
       unix_three_days = 86400 * 3
-      stop_date = int((unix_today - unix_three_days) * 1000000)
+      start_date = int((unix_today - unix_three_days) * 1000000)
      
     if len(execution.destination.destination_metadata) >= 8:
-      stop_date = str_to_timestamp_micros(execution.destination.destination_metadata[7]) 
+      try:
+        start_date = str_to_timestamp_micros(execution.destination.destination_metadata[7]) 
+     
+      except Exception as err:
+          raise ValueError(f'Invalid format date of stop_date. Received: {execution.destination.destination_metadata[7]}. Expected: \"YYYY-MM-DD HH:mm:SS.fff\"')
 
     measurement_id = None
     if len(execution.destination.destination_metadata) >= 9:
@@ -148,8 +157,8 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
         f'[PETLOVE] start_date: {start_date} timestamp_micros: {timestamp_micros} stop_date: {stop_date}')  
 
       # Petlove
-      # if start_date <= timestamp_micros <= stop_date:
-      if 1==1:
+      if start_date <= timestamp_micros <= stop_date:
+      # if 1==1:
         app_instance_id = row.get('app_instance_id')
         client_id = row.get('client_id')
         user_id = row.get('user_id')
@@ -235,7 +244,7 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
 
         # for k, v in debug_response["validationMessages"][0].items():
         #   print(k, v)
-        # logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] debug payload: {debug_response}")
+        logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] debug payload: {debug_response}")
         
         response = requests.post(url,data=json.dumps(payload))
         
