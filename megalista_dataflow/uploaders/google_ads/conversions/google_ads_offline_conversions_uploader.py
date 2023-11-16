@@ -83,29 +83,30 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
 
   # Petlove
   def _get_start_date(self, destination:Destination):
-    if len(destination.destination_metadata) <= 3:
-      today = datetime.now()
-      unix_today = str(datetime(today.year, today.month, today.day, 23, 59, 59)) + ".000"
-      return datetime.strptime(unix_today, '%Y-%m-%d %H:%M:%S.%f') - timedelta(days=1)
-    
-    try:
-      return datetime.strptime(destination.destination_metadata[2], '%Y-%m-%d %H:%M:%S.%f')
-    
-    except Exception as err:
-      raise ValueError(f'Wrong format start date information. Exception: {err}')
-
-  # Petlove
-  def _get_stop_date(self, destination:Destination):
-    if len(destination.destination_metadata) <= 4:
+    # if len(destination.destination_metadata) <= 3:
+    if destination.destination_metadata[2] == "YYYY-MM-DD HH:mm:SS.fff":
       today = datetime.now()
       unix_today = str(datetime(today.year, today.month, today.day, 23, 59, 59)) + ".000"
       return datetime.strptime(unix_today, '%Y-%m-%d %H:%M:%S.%f') - timedelta(days=3)
     
     try:
-      return datetime.strptime(destination.destination_metadata[3], '%Y-%m-%d %H:%M:%S.%f')
+      return datetime.strptime(destination.destination_metadata[2], '%Y-%m-%d %H:%M:%S.%f')
     
     except Exception as err:
-      raise ValueError(f'Wrong format start date information. Exception: {err}')
+      raise ValueError(f'Wrong format start date information. Expected: \"YYYY-MM-DD HH:mm:SS.fff\". Received: {destination.destination_metadata[2]}')
+
+  # Petlove
+  def _get_stop_date(self, destination:Destination):
+    if destination.destination_metadata[3] == "YYYY-MM-DD HH:mm:SS.fff":
+      today = datetime.now()
+      unix_today = str(datetime(today.year, today.month, today.day, 23, 59, 59)) + ".000"
+      return datetime.strptime(unix_today, '%Y-%m-%d %H:%M:%S.%f') - timedelta(days=1)
+
+    try:
+      return datetime.strptime(destination.destination_metadata[3], '%Y-%m-%d %H:%M:%S.%f')
+
+    except Exception as err:
+      raise ValueError(f'Wrong format start date information. Expected: \"YYYY-MM-DD HH:mm:SS.fff\". Received: {destination.destination_metadata[3]}')
 
 
   @utils.safe_process(
