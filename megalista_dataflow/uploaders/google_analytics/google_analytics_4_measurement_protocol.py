@@ -219,6 +219,8 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
         
         response = requests.post(url,data=json.dumps(payload))
         
+        logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] response: {response}")
+        
         logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] response.status_code: {response.status_code}")
         
         if response.status_code != 204:
