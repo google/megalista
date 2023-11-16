@@ -64,10 +64,10 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
     is_user_property = self._str2bool(execution.destination.destination_metadata[2])
     non_personalized_ads = self._str2bool(execution.destination.destination_metadata[3])
 
-    logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').debug(f"api_secret: {api_secret}")
-    logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').debug(f"is_event: {is_event}")
-    logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').debug(f"is_user_property: {is_user_property}")
-    logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').debug(f"non_personalized_ads: {non_personalized_ads}")
+    logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] api_secret: {api_secret}")
+    logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] is_event: {is_event}")
+    logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] is_user_property: {is_user_property}")
+    logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] non_personalized_ads: {non_personalized_ads}")
 
 
     # Petlove
@@ -88,7 +88,7 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
     # Petlove
     conversion_name = None
     if len(execution.destination.destination_metadata) >= 6:
-      logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').debug(f"execution.destination.destination_metadata: {execution.destination.destination_metadata}")
+      logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] execution.destination.destination_metadata: {execution.destination.destination_metadata}")
       conversion_name = execution.destination.destination_metadata[5]
 
     start_date = str()
@@ -129,20 +129,30 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
     
     accepted_elements = []
 
+    logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(
+      f'[PETLOVE] Fora do for')
+    
     for row in batch.elements:
+      
+      logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(
+      f'[PETLOVE] Entrei no for')
+      
+      logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] row do for: {row}")
       
       timestamp_micros = row.get('timestamp_micros')
 
       # Petlove
       # logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f'[PETLOVE] timestamp_micros: {timestamp_micros}, start_date: {start_date}, stop_date: {stop_date}')
 
-      logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').debug(f"row: {row}")
+      logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(
+        f'[PETLOVE] start_date: {start_date} timestamp_micros: {timestamp_micros} stop_date: {stop_date}')  
 
       # Petlove
       if start_date <= timestamp_micros <= stop_date:
         app_instance_id = row.get('app_instance_id')
         client_id = row.get('client_id')
         user_id = row.get('user_id')
+        
 
         payload: Dict[str, Any] = {
           'nonPersonalizedAds': non_personalized_ads
@@ -218,7 +228,7 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
         
         debug_response = requests.post(''.join(url_debug_container),data=json.dumps(payload))
 
-        logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').debug(f"[PETLOVE] url_debug_container: {url_debug_container}")
+        logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] url_debug_container: {url_debug_container}")
         
 
 
@@ -228,9 +238,9 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
         
         response = requests.post(url,data=json.dumps(payload))
         
-        logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').debug(f"[PETLOVE] response: {response}")
+        logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] response: {response}")
         
-        logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').debug(f"[PETLOVE] response.status_code: {response.status_code}")
+        logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] response.status_code: {response.status_code}")
         
         if response.status_code != 204:
           error_message = f'Error calling GA4 MP {response.status_code}: {str(response.content)}'
@@ -242,12 +252,17 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
           # logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] response: {response}")
           
           accepted_elements.append(row)
-
+        exit(0)
 
       else:
-        logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').debug(
-      'Não recebeu dados')
+        logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(
+      '[PETLOVE] Não recebeu dados')
+    
     
     logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(
       f'Successfully uploaded {len(accepted_elements)}/{len(batch.elements)} events.')
+    
+    logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(
+      f'[PETLOVE] accepted_elements {accepted_elements}')
+    
     return [Batch(execution, accepted_elements)]
