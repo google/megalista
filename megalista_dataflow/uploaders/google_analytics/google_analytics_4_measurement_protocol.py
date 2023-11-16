@@ -148,7 +148,8 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
         f'[PETLOVE] start_date: {start_date} timestamp_micros: {timestamp_micros} stop_date: {stop_date}')  
 
       # Petlove
-      if start_date <= timestamp_micros <= stop_date:
+      # if start_date <= timestamp_micros <= stop_date:
+      if 1==1:
         app_instance_id = row.get('app_instance_id')
         client_id = row.get('client_id')
         user_id = row.get('user_id')
