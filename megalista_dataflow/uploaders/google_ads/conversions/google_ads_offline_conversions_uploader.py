@@ -238,6 +238,8 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
             'external_attribution_model': row['external_attribution_model']
           }
           
+        logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] conversion: {conversion}')
+          
         
         conversions.append(conversion)
         
@@ -278,13 +280,20 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
 
   def _get_resource_name(self, ads_service, customer_id: str, name: str):
       query = f"SELECT conversion_action.resource_name FROM conversion_action WHERE conversion_action.name = '{name}'"
+      logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] customer_id: {customer_id}')
+      logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] query: {query}')
+      logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] ads_service: {ads_service}')
+      logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] name: {name}')
+      
       response_query = ads_service.search_stream(customer_id=customer_id, query=query)
+      logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] response_query: {response_query}')
+      
       for batch in response_query:
         for row in batch.results:
           logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] row.conversion_action.resource_name: {row.conversion_action.resource_name}')
           return row.conversion_action.resource_name
-      logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] query: {query}')
-      logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] response_query: {response_query}')
+      
+      
       
       
       raise Exception(f'Conversion "{name}" could not be found on account {customer_id}')
