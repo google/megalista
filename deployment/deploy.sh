@@ -259,7 +259,7 @@ function init() {
                 done
             fi
             # Create a new version of the Cloud Scheduler appending the timestamp
-            create_scheduler
+            #create_scheduler
             # Build metadata and copy it to Cloud Storage
             start_message "Building Dataflow metadata..."
             cd ..
