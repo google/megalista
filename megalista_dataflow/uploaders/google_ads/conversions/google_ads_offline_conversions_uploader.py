@@ -266,7 +266,7 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     response = oc_service.upload_click_conversions(request=upload_data)
     
     logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] response: {response}')
-    logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] response.status_code: {response.status_code}')
+    #logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] response.status_code: {response.status_code}')
     
     logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] response: {upload_data}')
 
