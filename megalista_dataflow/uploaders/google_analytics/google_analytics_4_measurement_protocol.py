@@ -91,35 +91,44 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
       logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] execution.destination.destination_metadata: {execution.destination.destination_metadata}")
       conversion_name = execution.destination.destination_metadata[5]
 
-    stop_date = str()
-    if execution.destination.destination_metadata[6] == "YYYY-MM-DD HH:mm:SS.fff":
-      today = datetime.now()
-      unix_today = int(datetime(today.year, today.month, today.day, 23, 59, 59).timestamp())
-      unix_one_day = 86400
-      stop_date = int((unix_today - unix_one_day) * 1000000)
-      
-    if len(execution.destination.destination_metadata) >= 7:
-      try:
-        stop_date = str_to_timestamp_micros(execution.destination.destination_metadata[6])
-      
-      except Exception as err:
-          raise ValueError(f'Invalid format date of start_date. Received: {execution.destination.destination_metadata[6]}. Expected: \"YYYY-MM-DD HH:mm:SS.fff\"')
-
+  # Calcula o start_date que será passado para consultar a tabela 
+  # Caso esteja como "YYYY-MM-DD HH:mm:SS.fff" irá retornar os últimos 3d; Caso esteja como uma data seguindo o padrão
+  # "YYYY-MM-DD HH:mm:SS.fff" irá consultar dessa data
 
     start_date = str()
-    if execution.destination.destination_metadata[7]  == "YYYY-MM-DD HH:mm:SS.fff":
+    destination_metadata_start_date = execution.destination.destination_metadata[6]
+    
+    if destination_metadata_start_date  == "YYYY-MM-DD HH:mm:SS.fff":
       today = datetime.now()
       unix_today = int(datetime(today.year, today.month, today.day, 23, 59, 59).timestamp())
       unix_three_days = 86400 * 3
       start_date = int((unix_today - unix_three_days) * 1000000)
      
-    if len(execution.destination.destination_metadata) >= 8:
+    elif destination_metadata_start_date != "YYYY-MM-DD HH:mm:SS.fff":
       try:
-        start_date = str_to_timestamp_micros(execution.destination.destination_metadata[7]) 
+        start_date = str_to_timestamp_micros(destination_metadata_start_date) 
      
-      except Exception as err:
-          raise ValueError(f'Invalid format date of stop_date. Received: {execution.destination.destination_metadata[7]}. Expected: \"YYYY-MM-DD HH:mm:SS.fff\"')
+      except Exception as error:
+          raise ValueError(f'Invalid format date of start_date. Received: {destination_metadata_start_date}. Expected: \"YYYY-MM-DD HH:mm:SS.fff\" | \n error: {error}')
 
+  
+    stop_date = str()
+    destination_metadata_stop_date = execution.destination.destination_metadata[7]
+    
+    if destination_metadata_stop_date == "YYYY-MM-DD HH:mm:SS.fff":
+      today = datetime.now()
+      unix_today = int(datetime(today.year, today.month, today.day, 23, 59, 59).timestamp())
+      unix_one_day = 86400
+      stop_date = int((unix_today - unix_one_day) * 1000000)
+
+    elif destination_metadata_stop_date != "YYYY-MM-DD HH:mm:SS.fff":
+      try:
+        stop_date = str_to_timestamp_micros(destination_metadata_stop_date)
+      
+      except Exception as error:
+          raise ValueError(f'Invalid format date of stop_date. Received: {destination_metadata_stop_date}. Expected: \"YYYY-MM-DD HH:mm:SS.fff\" | \n error: {error}')
+
+    #TO DO
     measurement_id = None
     if len(execution.destination.destination_metadata) >= 9:
       measurement_id = execution.destination.destination_metadata[8]
@@ -159,6 +168,9 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
       # Petlove
       if start_date <= timestamp_micros <= stop_date:
       # if 1==1:
+        logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(
+        '[PETLOVE] Entrou no IF') 
+        
         app_instance_id = row.get('app_instance_id')
         client_id = row.get('client_id')
         user_id = row.get('user_id')
