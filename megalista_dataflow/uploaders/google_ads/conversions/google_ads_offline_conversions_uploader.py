@@ -43,6 +43,10 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     logging.getLogger(_DEFAULT_LOGGER).info(
       f'[PETLOVE] ADS_API_VERSION: {ADS_API_VERSION} | self.oauth_credentials: {self.oauth_credentials} | self.developer_token.get(): {self.developer_token.get()} | customer_id: {customer_id}')
     
+    logging.getLogger(_DEFAULT_LOGGER).info(
+      f'[PETLOVE] client_id: {self.oauth_credentials.client_id} | client_secret: {self.oauth_credentials.client_secret} | access_token {self.oauth_credentials.access_token} | refresh_token {self.oauth_credentials.refresh_token}')
+    
+    
     return utils.get_ads_service('GoogleAdsService', ADS_API_VERSION,
                                      self.oauth_credentials,
                                      self.developer_token.get(),
