@@ -274,7 +274,7 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
           # logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] response: {response}")
           
           accepted_elements.append(row)
-        exit(0)
+        #exit(0)
 
       else:
         logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(
