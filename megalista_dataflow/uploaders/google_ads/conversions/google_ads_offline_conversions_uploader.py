@@ -39,6 +39,10 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     self.developer_token = developer_token
 
   def _get_ads_service(self, customer_id: str):
+    #Petlove remover
+    logging.getLogger(_DEFAULT_LOGGER).info(
+      f'[PETLOVE] ADS_API_VERSION: {ADS_API_VERSION} | self.oauth_credentials: {self.oauth_credentials} | self.developer_token.get(): {self.developer_token.get()} | customer_id: {customer_id}')
+    
     return utils.get_ads_service('GoogleAdsService', ADS_API_VERSION,
                                      self.oauth_credentials,
                                      self.developer_token.get(),
@@ -87,26 +91,36 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     if destination.destination_metadata[2] == "YYYY-MM-DD HH:mm:SS.fff":
       today = datetime.now()
       unix_today = str(datetime(today.year, today.month, today.day, 23, 59, 59)) + ".000"
+      
+    #Petlove remover
+      logging.getLogger(_DEFAULT_LOGGER).info(
+        f'[PETLOVE] destination.destination_metadata: {destination.destination_metadata}')
+      
       return datetime.strptime(unix_today, '%Y-%m-%d %H:%M:%S.%f') - timedelta(days=3)
     
     try:
       return datetime.strptime(destination.destination_metadata[2], '%Y-%m-%d %H:%M:%S.%f')
     
-    except Exception as err:
-      raise ValueError(f'Wrong format start date information. Expected: \"YYYY-MM-DD HH:mm:SS.fff\". Received: {destination.destination_metadata[2]}')
+    except Exception as error:
+      raise ValueError(f'Wrong format start date information. Expected: \"YYYY-MM-DD HH:mm:SS.fff\". Received: {destination.destination_metadata[2]} \n error: {error}')
 
   # Petlove
   def _get_stop_date(self, destination:Destination):
     if destination.destination_metadata[3] == "YYYY-MM-DD HH:mm:SS.fff":
       today = datetime.now()
       unix_today = str(datetime(today.year, today.month, today.day, 23, 59, 59)) + ".000"
+      
+      #Petlove remover
+      logging.getLogger(_DEFAULT_LOGGER).info(
+        f'[PETLOVE] destination.destination_metadata: {destination.destination_metadata}')
+      
       return datetime.strptime(unix_today, '%Y-%m-%d %H:%M:%S.%f') - timedelta(days=1)
 
     try:
       return datetime.strptime(destination.destination_metadata[3], '%Y-%m-%d %H:%M:%S.%f')
 
-    except Exception as err:
-      raise ValueError(f'Wrong format start date information. Expected: \"YYYY-MM-DD HH:mm:SS.fff\". Received: {destination.destination_metadata[3]}')
+    except Exception as error:
+      raise ValueError(f'Wrong format start date information. Expected: \"YYYY-MM-DD HH:mm:SS.fff\". Received: {destination.destination_metadata[3]} \n error: {error}')
 
 
   @utils.safe_process(
@@ -116,6 +130,10 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     
     self._assert_conversion_name_is_present(execution)
     
+    #Petlove remover
+    logging.getLogger(_DEFAULT_LOGGER).info(
+      f'[PETLOVE] execution: {execution}')
+      
     # logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] execution.account_config: {execution.account_config}')
     # logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] execution.destination: {execution.destination}')
 
@@ -148,6 +166,10 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
                     resource_name,
                     customer_id,
                     batch.elements, start_date, stop_date)
+    
+    #Petlove remover
+    logging.getLogger(_DEFAULT_LOGGER).info(
+      f'[PETLOVE] response: {response}')
 
     batch_with_successful_gclids = self._get_new_batch_with_successfully_uploaded_gclids(batch, response)
     if len(batch_with_successful_gclids.elements) > 0:
@@ -170,6 +192,10 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     conversions = []
     
     for row in rows:
+      
+      #Petlove remover
+      logging.getLogger(_DEFAULT_LOGGER).info(
+        f'[PETLOVE] Entrou no for')
     
       # Petlove
       # logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] conversion time: {conversion["time"]}')
@@ -177,6 +203,10 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
       # logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] start_date: {start_date}, date: {datetime.strptime(conversion["time"], "%Y-%m-%dT%H:%M:%S.%f")}, stop_date: {stop_date}')
       
       if start_date <= datetime.strptime(row['time'], '%Y-%m-%dT%H:%M:%S.%f') <= stop_date:
+        #Petlove remover
+        logging.getLogger(_DEFAULT_LOGGER).info(
+          f'[PETLOVE] Entrou no if')
+        
         # logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] The conversion is in time range. Conversion date: {datetime.strptime(conversion["time"], "%Y-%m-%dT%H:%M:%S.%f")}, start_date: {start_date}, stop_date: {stop_date}')
         conversion = {
           'conversion_action': conversion_resource_name,
@@ -189,14 +219,20 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
             'external_attribution_credit': float(str(row['external_attribution_credit'])),
             'external_attribution_model': row['external_attribution_model']
           }
-        
-        # logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] conversion_data: {conversion_data}')
+          
         
         conversions.append(conversion)
         
       # else:
       #   logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] The conversion is NOT in time range. Conversion date: {datetime.strptime(conversion["time"], "%Y-%m-%dT%H:%M:%S.%f")}, start_date: {start_date}, stop_date: {stop_date}')
-  
+
+      else:
+        #Petlove remover
+        logging.getLogger(_DEFAULT_LOGGER).info(
+          f'[PETLOVE] Não entrou no if')
+        
+    #Petlove remover
+    logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] conversions: {conversions}')
     
     logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] total conversions: {len(conversions)}')
     
@@ -211,7 +247,9 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     
     response = oc_service.upload_click_conversions(request=upload_data)
     
-    # logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] response: {response}')
+    logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] response: {response}')
+    
+    logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] response: {upload_data}')
 
     error_message = utils.print_partial_error_messages(_DEFAULT_LOGGER, 'uploading offline conversions', response)
     if error_message:
