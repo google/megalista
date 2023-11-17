@@ -85,10 +85,19 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
       raise ValueError('Missing destination information. Received {}'.format(
           str(destination)))
 
+
+  # Petlove
+  # def str_to_timestamp_micros(sheet_date):
+  #   try: 
+  #     data = datetime.strptime(sheet_date, "%Y-%m-%dT%H:%M:%S.000")
+  #     return int(data.timestamp()) * 1000000
+      
+  #   except Exception as err:
+  #     raise ValueError(f'Missing start date information. Received: {sheet_date}. Exception: {err}')
+
   # Petlove
   def _get_start_date(self, destination:Destination):
-    # if len(destination.destination_metadata) <= 3:
-    if destination.destination_metadata[2] == "YYYY-MM-DD HH:mm:SS.fff":
+    if destination.destination_metadata[2] == "YYYY-MM-DDTHH:MM:SS.000":
       today = datetime.now()
       unix_today = str(datetime(today.year, today.month, today.day, 23, 59, 59)) + ".000"
       
@@ -97,6 +106,14 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
         f'[PETLOVE] destination.destination_metadata: {destination.destination_metadata}')
       
       return datetime.strptime(unix_today, '%Y-%m-%d %H:%M:%S.%f') - timedelta(days=3)
+    
+    # elif destination.destination_metadata[2] != "YYYY-MM-DDTHH:MM:SS.000":
+    #   try:
+    #     start_date = str_to_timestamp_micros(destination_metadata_start_date) 
+     
+    #   except Exception as error:
+    #       raise ValueError(f'Invalid format date of start_date. Received: {destination_metadata_start_date}. Expected: \"YYYY-MM-DD HH:mm:SS.fff\" | \n error: {error}')
+    
     
     try:
       return datetime.strptime(destination.destination_metadata[2], '%Y-%m-%d %H:%M:%S.%f')
@@ -202,7 +219,8 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
       
       # logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] start_date: {start_date}, date: {datetime.strptime(conversion["time"], "%Y-%m-%dT%H:%M:%S.%f")}, stop_date: {stop_date}')
       
-      if start_date <= datetime.strptime(row['time'], '%Y-%m-%dT%H:%M:%S.%f') <= stop_date:
+      #if start_date <= datetime.strptime(row['time'], '%Y-%m-%dT%H:%M:%S.%f') <= stop_date:
+      if 1==1:
         #Petlove remover
         logging.getLogger(_DEFAULT_LOGGER).info(
           f'[PETLOVE] Entrou no if')
@@ -248,6 +266,7 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     response = oc_service.upload_click_conversions(request=upload_data)
     
     logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] response: {response}')
+    logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] response.status_code: {response.status_code}')
     
     logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] response: {upload_data}')
 
