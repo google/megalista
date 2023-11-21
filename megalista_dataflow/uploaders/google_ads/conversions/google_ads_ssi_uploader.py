@@ -197,7 +197,7 @@ class GoogleAdsSSIUploaderDoFn(MegalistaUploader):
         If the custom_key is present on the destination, return it, otherwise returns none.
         """
         if (
-            len(destination.destination_metadata) >= 5
+            len(destination.destination_metadata) >= 4
             and destination.destination_metadata[3] is not None
         ):
             return destination.destination_metadata[3]
