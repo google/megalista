@@ -38,15 +38,7 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     self.oauth_credentials = oauth_credentials
     self.developer_token = developer_token
 
-  def _get_ads_service(self, customer_id: str):
-    #Petlove remover
-    logging.getLogger(_DEFAULT_LOGGER).info(
-      f'[PETLOVE] ADS_API_VERSION: {ADS_API_VERSION} | self.oauth_credentials: {self.oauth_credentials} | self.developer_token.get(): {self.developer_token.get()} | customer_id: {customer_id}')
-    
-    logging.getLogger(_DEFAULT_LOGGER).info(
-      f'[PETLOVE] client_id: {self.oauth_credentials.client_id} | client_secret: {self.oauth_credentials.client_secret} | access_token {self.oauth_credentials.access_token} | refresh_token {self.oauth_credentials.refresh_token}')
-    
-    
+  def _get_ads_service(self, customer_id: str):    
     return utils.get_ads_service('GoogleAdsService', ADS_API_VERSION,
                                      self.oauth_credentials,
                                      self.developer_token.get(),
@@ -105,10 +97,6 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
       today = datetime.now()
       unix_today = str(datetime(today.year, today.month, today.day, 23, 59, 59)) + ".000"
       
-    #Petlove remover
-      logging.getLogger(_DEFAULT_LOGGER).info(
-        f'[PETLOVE] destination.destination_metadata: {destination.destination_metadata}')
-      
       return datetime.strptime(unix_today, '%Y-%m-%d %H:%M:%S.%f') - timedelta(days=3)
     
     # elif destination.destination_metadata[2] != "YYYY-MM-DDTHH:MM:SS.000":
@@ -131,10 +119,6 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
       today = datetime.now()
       unix_today = str(datetime(today.year, today.month, today.day, 23, 59, 59)) + ".000"
       
-      #Petlove remover
-      logging.getLogger(_DEFAULT_LOGGER).info(
-        f'[PETLOVE] destination.destination_metadata: {destination.destination_metadata}')
-      
       return datetime.strptime(unix_today, '%Y-%m-%d %H:%M:%S.%f') - timedelta(days=1)
 
     try:
@@ -151,9 +135,6 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     
     self._assert_conversion_name_is_present(execution)
     
-    #Petlove remover
-    logging.getLogger(_DEFAULT_LOGGER).info(
-      f'[PETLOVE] execution: {execution}')
       
     # logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] execution.account_config: {execution.account_config}')
     # logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] execution.destination: {execution.destination}')
@@ -168,7 +149,7 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     ads_service = self._get_ads_service(login_customer_id)
     
     
-    logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] execution.destination.destination_metadata: {execution.destination.destination_metadata}')
+    # logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] execution.destination.destination_metadata: {execution.destination.destination_metadata}')
 
     resource_name = self._get_resource_name(ads_service, customer_id, execution.destination.destination_metadata[0])
 
@@ -188,9 +169,6 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
                     customer_id,
                     batch.elements, start_date, stop_date)
     
-    #Petlove remover
-    logging.getLogger(_DEFAULT_LOGGER).info(
-      f'[PETLOVE] response: {response}')
 
     batch_with_successful_gclids = self._get_new_batch_with_successfully_uploaded_gclids(batch, response)
     if len(batch_with_successful_gclids.elements) > 0:
@@ -208,74 +186,39 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     # } for conversion in rows]
 
     # Petlove
-    logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] total rows: {len(rows)}')
+    # logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] total rows: {len(rows)}')
     
     conversions = []
-    
     for row in rows:
-      
-      #Petlove remover
-      logging.getLogger(_DEFAULT_LOGGER).info(
-        f'[PETLOVE] Entrou no for')
-    
       # Petlove
       # logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] conversion time: {conversion["time"]}')
       
       # logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] start_date: {start_date}, date: {datetime.strptime(conversion["time"], "%Y-%m-%dT%H:%M:%S.%f")}, stop_date: {stop_date}')
       
-      #if start_date <= datetime.strptime(row['time'], '%Y-%m-%dT%H:%M:%S.%f') <= stop_date:
-      if 1==1:
-        #Petlove remover
-        logging.getLogger(_DEFAULT_LOGGER).info(
-          f'[PETLOVE] Entrou no if')
-        
-        # logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] The conversion is in time range. Conversion date: {datetime.strptime(conversion["time"], "%Y-%m-%dT%H:%M:%S.%f")}, start_date: {start_date}, stop_date: {stop_date}')
-        conversion = {
-          'conversion_action': conversion_resource_name,
-          'conversion_date_time': utils.format_date(row['time']),
-          'conversion_value': float(str(row['amount'])),
-          'gclid': row['gclid']
+      # if start_date <= datetime.strptime(row['time'], '%Y-%m-%dT%H:%M:%S.%f') <= stop_date:
+      # logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] The conversion is in time range. Conversion date: {datetime.strptime(conversion["time"], "%Y-%m-%dT%H:%M:%S.%f")}, start_date: {start_date}, stop_date: {stop_date}')
+      
+      conversion = {
+        'conversion_action': conversion_resource_name,
+        'conversion_date_time': utils.format_date(row['time']),
+        'conversion_value': float(str(row['amount'])),
+        'gclid': row['gclid']
+      }
+      if 'external_attribution_credit' in row and 'external_attribution_model' in row:
+        conversion['external_attribution_data'] = {
+          'external_attribution_credit': float(str(row['external_attribution_credit'])),
+          'external_attribution_model': row['external_attribution_model']
         }
-        if 'external_attribution_credit' in row and 'external_attribution_model' in row:
-          conversion['external_attribution_data'] = {
-            'external_attribution_credit': float(str(row['external_attribution_credit'])),
-            'external_attribution_model': row['external_attribution_model']
-          }
-          
-        logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] conversion: {conversion}')
-          
-        
-        conversions.append(conversion)
-        
-      # else:
-      #   logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] The conversion is NOT in time range. Conversion date: {datetime.strptime(conversion["time"], "%Y-%m-%dT%H:%M:%S.%f")}, start_date: {start_date}, stop_date: {stop_date}')
+      conversions.append(conversion)
 
-      else:
-        #Petlove remover
-        logging.getLogger(_DEFAULT_LOGGER).info(
-          f'[PETLOVE] Não entrou no if')
-        
-    #Petlove remover
-    logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] conversions: {conversions}')
-    
-    logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] total conversions: {len(conversions)}')
-    
     upload_data = {
       'customer_id': customer_id,
       'partial_failure': True,
       'validate_only': False,
       'conversions': conversions
     }
-
-    # logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] upload_data: {upload_data}')
-    
     response = oc_service.upload_click_conversions(request=upload_data)
-    
-    logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] response: {response}')
-    #logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] response.status_code: {response.status_code}')
-    
     logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] response: {upload_data}')
-
     error_message = utils.print_partial_error_messages(_DEFAULT_LOGGER, 'uploading offline conversions', response)
     if error_message:
       self._add_error(execution, error_message)
@@ -284,22 +227,10 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
 
   def _get_resource_name(self, ads_service, customer_id: str, name: str):
       query = f"SELECT conversion_action.resource_name FROM conversion_action WHERE conversion_action.name = '{name}'"
-      logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] customer_id: {customer_id}')
-      logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] query: {query}')
-      logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] ads_service: {ads_service}')
-      logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] name: {name}')
-      
       response_query = ads_service.search_stream(customer_id=customer_id, query=query)
-      logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] response_query: {response_query}')
-      
       for batch in response_query:
         for row in batch.results:
-          logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] row.conversion_action.resource_name: {row.conversion_action.resource_name}')
           return row.conversion_action.resource_name
-      
-      
-      
-      
       raise Exception(f'Conversion "{name}" could not be found on account {customer_id}')
 
   @staticmethod
