@@ -4,7 +4,7 @@ google-api-python-client==2.106.0
 google-cloud-bigquery==3.13.0
 google-cloud-firestore==2.4.0
 google-cloud-storage==2.13.0
-aiohttp==3.8.6
+aiohttp==3.9.0
 pandas==2.1.2
 boto3==1.28.78
 typed-ast==1.5.5
