@@ -22,24 +22,24 @@ class OAuthCredentials():
 
     def get_client_id(self):
         logging.getLogger("megalista").info(
-            f"[PETLOVE] client_id: {self.client_id} type: {type(self.client_id)}"
+            f"[PETLOVE] client_id: {self.client_id.get()} type: {type(self.client_id.get())}"
         )
         return self.client_id.get()
 
     def get_client_secret(self):
         logging.getLogger("megalista").info(
-            f"[PETLOVE] client_secret: {self.client_secret} type: {type(self.client_secret)}"
+            f"[PETLOVE] client_secret: {self.client_secret.get()} type: {type(self.client_secret.get())}"
         )
         return self.client_secret.get()
 
     def get_access_token(self):
         logging.getLogger("megalista").info(
-            f"[PETLOVE] client_secret: {self.client_secret} type: {type(self.client_secret)}"
+            f"[PETLOVE] access_token: {self.access_token.get()} type: {type(self.access_token.get())}"
         )
         return self.access_token.get()
 
     def get_refresh_token(self):
         logging.getLogger("megalista").info(
-            f"[PETLOVE] refresh_token: {self.refresh_token} type: {type(self.refresh_token)}"
+            f"[PETLOVE] refresh_token: {self.refresh_token.get()} type: {type(self.refresh_token.get())}"
         )
         return self.refresh_token.get()
