@@ -92,12 +92,12 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
   #     raise ValueError(f'Missing start date information. Received: {sheet_date}. Exception: {err}')
 
   # Petlove
-  def _get_start_date(self, destination:Destination):
-    if destination.destination_metadata[2] == "YYYY-MM-DDTHH:MM:SS.000":
-      today = datetime.now()
-      unix_today = str(datetime(today.year, today.month, today.day, 23, 59, 59)) + ".000"
+  # def _get_start_date(self, destination:Destination):
+  #   if destination.destination_metadata[2] == "YYYY-MM-DDTHH:MM:SS.000":
+  #     today = datetime.now()
+  #     unix_today = str(datetime(today.year, today.month, today.day, 23, 59, 59)) + ".000"
       
-      return datetime.strptime(unix_today, '%Y-%m-%d %H:%M:%S.%f') - timedelta(days=3)
+  #     return datetime.strptime(unix_today, '%Y-%m-%d %H:%M:%S.%f') - timedelta(days=3)
     
     # elif destination.destination_metadata[2] != "YYYY-MM-DDTHH:MM:SS.000":
     #   try:
@@ -107,25 +107,27 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     #       raise ValueError(f'Invalid format date of start_date. Received: {destination_metadata_start_date}. Expected: \"YYYY-MM-DD HH:mm:SS.fff\" | \n error: {error}')
     
     
-    try:
-      return datetime.strptime(destination.destination_metadata[2], '%Y-%m-%d %H:%M:%S.%f')
+    # try:
+    #   return datetime.strptime(destination.destination_metadata[2], '%Y-%m-%d %H:%M:%S.%f')
     
-    except Exception as error:
-      raise ValueError(f'Wrong format start date information. Expected: \"YYYY-MM-DD HH:mm:SS.fff\". Received: {destination.destination_metadata[2]} \n error: {error}')
+    # except Exception as error:
+    #   raise ValueError(f'Wrong format start date information. Expected: \"YYYY-MM-DD HH:mm:SS.fff\". Received: {destination.destination_metadata[2]} \n error: {error}')
 
   # Petlove
-  def _get_stop_date(self, destination:Destination):
-    if destination.destination_metadata[3] == "YYYY-MM-DD HH:mm:SS.fff":
-      today = datetime.now()
-      unix_today = str(datetime(today.year, today.month, today.day, 23, 59, 59)) + ".000"
+  # def _get_stop_date(self, destination:Destination):
+  #   if destination.destination_metadata[3] == "YYYY-MM-DD HH:mm:SS.fff":
+  #     today = datetime.now()
+  #     unix_today = str(datetime(today.year, today.month, today.day, 23, 59, 59)) + ".000"
       
-      return datetime.strptime(unix_today, '%Y-%m-%d %H:%M:%S.%f') - timedelta(days=1)
+  #     return datetime.strptime(unix_today, '%Y-%m-%d %H:%M:%S.%f') - timedelta(days=1)
 
-    try:
-      return datetime.strptime(destination.destination_metadata[3], '%Y-%m-%d %H:%M:%S.%f')
+  #   try:
+  #     return datetime.strptime(destination.destination_metadata[3], '%Y-%m-%d %H:%M:%S.%f')
 
-    except Exception as error:
-      raise ValueError(f'Wrong format start date information. Expected: \"YYYY-MM-DD HH:mm:SS.fff\". Received: {destination.destination_metadata[3]} \n error: {error}')
+  #   except Exception as error:
+  #     raise ValueError(f'Wrong format start date information. Expected: \"YYYY-MM-DD HH:mm:SS.fff\". Received: {destination.destination_metadata[3]} \n error: {error}')
+
+
 
 
   @utils.safe_process(
@@ -154,28 +156,28 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     resource_name = self._get_resource_name(ads_service, customer_id, execution.destination.destination_metadata[0])
 
     # Petlove
-    start_date = self._get_start_date(execution.destination)
-    stop_date = self._get_stop_date(execution.destination)
+    # start_date = self._get_start_date(execution.destination)
+    # stop_date = self._get_stop_date(execution.destination)
 
     # response = self._do_upload(oc_service,
     #                 execution,
     #                 resource_name,
     #                 customer_id,
-    #                 batch.elements)
+    #                 batch.elements, start_date, stop_date)
 
     response = self._do_upload(oc_service,
                     execution,
                     resource_name,
                     customer_id,
-                    batch.elements, start_date, stop_date)
-    
+                    batch.elements)
 
     batch_with_successful_gclids = self._get_new_batch_with_successfully_uploaded_gclids(batch, response)
     if len(batch_with_successful_gclids.elements) > 0:
       return [batch_with_successful_gclids]
   
   # Petlove
-  def _do_upload(self, oc_service, execution, conversion_resource_name, customer_id, rows, start_date, stop_date):
+  #def _do_upload(self, oc_service, execution, conversion_resource_name, customer_id, rows, start_date, stop_date):
+  def _do_upload(self, oc_service, execution, conversion_resource_name, customer_id, rows):
     logging.getLogger(_DEFAULT_LOGGER).info(f'Uploading {len(rows)} offline conversions on {conversion_resource_name} to Google Ads.')
 
     # conversions = [{
@@ -186,7 +188,7 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     # } for conversion in rows]
 
     # Petlove
-    # logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] total rows: {len(rows)}')
+    logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] total rows: {len(rows)}')
     
     conversions = []
     for row in rows:
@@ -210,6 +212,8 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
           'external_attribution_model': row['external_attribution_model']
         }
       conversions.append(conversion)
+      
+      logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] conversions: {conversions}')
 
     upload_data = {
       'customer_id': customer_id,
@@ -218,7 +222,11 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
       'conversions': conversions
     }
     response = oc_service.upload_click_conversions(request=upload_data)
-    logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] response: {upload_data}')
+    
+    logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] upload_data: {upload_data}')
+    
+    logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] response: {response}')
+    
     error_message = utils.print_partial_error_messages(_DEFAULT_LOGGER, 'uploading offline conversions', response)
     if error_message:
       self._add_error(execution, error_message)
