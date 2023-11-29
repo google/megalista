@@ -213,7 +213,7 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
         }
       conversions.append(conversion)
       
-      logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] conversions: {conversions}')
+      #logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] conversions: {conversions}')
 
     upload_data = {
       'customer_id': customer_id,
