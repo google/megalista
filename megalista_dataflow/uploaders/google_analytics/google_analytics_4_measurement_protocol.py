@@ -293,8 +293,8 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
         status_code_elements.append(response.status_code)
         response_elements.append(response)
     
-      logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] response.status_code: {status_code_elements}")
-      logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] response_elements: {response_elements}")
+    logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] response.status_code: {status_code_elements}")
+    logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] response_elements: {response_elements}")
     
     logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(
       f'Successfully uploaded {len(accepted_elements)}/{len(batch.elements)} events.')
