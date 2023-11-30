@@ -60,6 +60,7 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     if len(destination.destination_metadata) >= 2 and len(destination.destination_metadata[1]) > 0:
       return Utils.filter_text_only_numbers(destination.destination_metadata[1])
     return account_config.google_ads_account_id
+  
 
   def _get_login_customer_id(self, account_config: AccountConfig, destination: Destination) -> str:
     """
@@ -178,7 +179,7 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
   # Petlove
   #def _do_upload(self, oc_service, execution, conversion_resource_name, customer_id, rows, start_date, stop_date):
   def _do_upload(self, oc_service, execution, conversion_resource_name, customer_id, rows):
-    logging.getLogger(_DEFAULT_LOGGER).info(f'Uploading {len(rows)} offline conversions on {conversion_resource_name} to Google Ads.')
+    #logging.getLogger(_DEFAULT_LOGGER).info(f'Uploading {len(rows)} offline conversions on {conversion_resource_name} to Google Ads.')
     logging.getLogger(_DEFAULT_LOGGER).info(f'Uploading {len(rows)} offline conversions on {execution.destination.destination_metadata[0]} to Google Ads.')
     # conversions = [{
     #       'conversion_action': conversion_resource_name,
@@ -188,7 +189,7 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     # } for conversion in rows]
 
     # Petlove
-    logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] total rows: {len(rows)}')
+    #logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] total rows: {len(rows)}')
     
     conversions = []
     for row in rows:

@@ -170,7 +170,7 @@ class GoogleAdsECLeadsUploaderDoFn(MegalistaUploader):
             f'Uploading {len(rows)} offline conversions on {conversion_resource_name} to Google Ads.')
         
         # Petlove
-        logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] total rows: {len(rows)}')
+        #logging.getLogger(_DEFAULT_LOGGER).info(f'[PETLOVE] total rows: {len(rows)}')
         
         conversions = []
         
