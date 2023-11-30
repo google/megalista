@@ -150,6 +150,8 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
             'GA4 MP should be called either for sending events or a user properties')        
     
     accepted_elements = []
+    status_code_elements = []
+    response_elements = []
 
     
     for row in batch.elements:
@@ -261,6 +263,8 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
       # for k, v in debug_response["validationMessages"][0].items():
       #   print(k, v)
       # logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] debug payload: {debug_response}")
+      
+      logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] Making the request")  
         
       response = requests.post(url,data=json.dumps(payload))
         
@@ -274,11 +278,11 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
         self._add_error(execution, error_message)
         
       else:
-        logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] response.status_code: {response.status_code}")
+        #logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] response.status_code: {response.status_code}")
         #logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] response.status_code TYPE: {type(response.status_code)}")
 
         
-        logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] response.content: {response}")
+        #logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] response.content: {response}")
         #logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] response.content TYPE: {type(response.content)}")
 
           # Petlove
@@ -286,6 +290,11 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
           # logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] response: {response}")
           
         accepted_elements.append(row)
+        status_code_elements.append(response.status_code)
+        response_elements.append(response)
+    
+      logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] response.status_code: {status_code_elements}")
+      logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] response_elements: {response_elements}")
     
     logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(
       f'Successfully uploaded {len(accepted_elements)}/{len(batch.elements)} events.')
