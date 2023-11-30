@@ -238,8 +238,8 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
           raise ValueError(
             'GA4 MP needs a client_id parameter when used for a Web Stream.')
         payload['client_id'] = client_id
-      else:
-        logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] measurement_id not in use")
+      # else:
+      #   logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] measurement_id not in use")
 
       if user_id:
         payload['user_id'] = user_id
@@ -278,7 +278,7 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
         #logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] response.status_code TYPE: {type(response.status_code)}")
 
         
-        logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] response.content: {response.content}")
+        logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] response.content: {response}")
         #logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] response.content TYPE: {type(response.content)}")
 
           # Petlove
