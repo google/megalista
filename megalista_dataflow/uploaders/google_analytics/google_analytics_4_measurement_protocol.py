@@ -151,8 +151,8 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
     
     accepted_elements = []
     status_code_elements = []
-    response_elements = []
 
+    logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] Returning data to make the request")  
     
     for row in batch.elements:
       #timestamp_micros = row.get('timestamp_micros')
@@ -264,7 +264,6 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
       #   print(k, v)
       # logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] debug payload: {debug_response}")
       
-      logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] Making the request")  
         
       response = requests.post(url,data=json.dumps(payload))
         
@@ -291,11 +290,8 @@ class GoogleAnalytics4MeasurementProtocolUploaderDoFn(MegalistaUploader):
           
         accepted_elements.append(row)
         status_code_elements.append(response.status_code)
-        response_elements.append(response)
     
     logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] response.status_code: {status_code_elements}")
-    logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(f"[PETLOVE] response_elements: {response_elements}")
-    
     logging.getLogger('megalista.GoogleAnalytics4MeasurementProtocolUploader').info(
       f'Successfully uploaded {len(accepted_elements)}/{len(batch.elements)} events.')
     
