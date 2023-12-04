@@ -83,7 +83,7 @@ class BigQueryDataSource(BaseDataSource):
         cols = self._get_table_columns(client, table_name)
         logging.getLogger(_LOGGER_NAME).info(f'Destination Type: {self._destination_type}')
         
-        logging.getLogger(_LOGGER_NAME).info(f'[PETLOVE] METADATA: {executions.destinations[0].destination_metadata}')
+        logging.getLogger(_LOGGER_NAME).info(f'[PETLOVE] - Metadata: {executions.destinations[0].destination_metadata}')
         
         # Petlove
         conversion_name = ""
@@ -134,6 +134,8 @@ class BigQueryDataSource(BaseDataSource):
     def _ensure_control_table_exists(self, client: Client, uploaded_table_name: str):
         template = None
         
+        #logging.getLogger(_LOGGER_NAME).info(f'function _ensure_control_table_exists | uploaded_table_name: {uploaded_table_name}')
+        
         # para alterar tabelas uploaded
         if self._transactional_type == TransactionalType.UUID:
             template = "CREATE TABLE IF NOT EXISTS `$uploaded_table_name` ( \
@@ -164,6 +166,16 @@ class BigQueryDataSource(BaseDataSource):
             f"Creating table `{uploaded_table_name}` if it doesn't exist")
 
         client.query(query).result()
+        
+        # template_teste = f"SELECT * FROM `{uploaded_table_name}` LIMIT 10"
+        # logging.getLogger(_LOGGER_NAME).info(
+        #     f"_ensure_control_table_exists | template_teste: `{template_teste}`")
+          
+        #executando_query_teste = client.query(template_teste).result()
+                            
+        # logging.getLogger(_LOGGER_NAME).info(
+        #     f"executando_query_teste `{executando_query_teste}`")
+        
 
     def write_transactional_info(self, rows, execution: Execution):
         if len(rows) == 0:
@@ -173,6 +185,10 @@ class BigQueryDataSource(BaseDataSource):
             table_name = self._get_table_name(execution.source.source_metadata, True)
             client = self._get_bq_client()
             table = client.get_table(table_name)
+            
+            logging.getLogger(_LOGGER_NAME).info(f"write_transactional_info | table_name: {table_name}")
+            logging.getLogger(_LOGGER_NAME).info(f"write_transactional_info | table: {table}")
+            
             now = self._get_now()
             all_bq_rows = self._get_bq_rows(rows, now)
             partial_results = []
@@ -199,8 +215,12 @@ class BigQueryDataSource(BaseDataSource):
             # dataset = source_metadata[0]
 
         # Petlove
+        #logging.getLogger(_LOGGER_NAME).info(f'_get_table_name | source_metadata: {source_metadata}')
+        #logging.getLogger(_LOGGER_NAME).info(f'_get_table_name | uploaded: {uploaded}')
+        
         dataset = source_metadata[0]
         table_name = dataset + '.' + source_metadata[1]
+        
         if uploaded:
             table_name = f"{table_name}_uploaded"
         return table_name.replace('`', '')
