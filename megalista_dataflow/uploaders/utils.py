@@ -37,10 +37,10 @@ def get_ads_client(oauth_credentials, developer_token, customer_id):
         oauth_credentials.get_client_id(), oauth_credentials.get_client_secret(),
         oauth_credentials.get_refresh_token())
     
-    logging.getLogger('uploaders.utils.get_ads_client').info(f'[PETLOVE] developer_token: {developer_token}')
-    logging.getLogger('uploaders.utils.get_ads_client').info(f'[PETLOVE] oauth_credentials.get_client_id(): {oauth_credentials.get_client_id()}')
-    logging.getLogger('uploaders.utils.get_ads_client').info(f'[PETLOVE] oauth_credentials.get_client_secret(): {oauth_credentials.get_client_secret()}')
-    logging.getLogger('uploaders.utils.get_ads_client').info(f'[PETLOVE] oauth_credentials.get_refresh_token(): {oauth_credentials.get_refresh_token()}')
+    #logging.getLogger('uploaders.utils.get_ads_client').info(f'[PETLOVE] developer_token: {developer_token}')
+    #logging.getLogger('uploaders.utils.get_ads_client').info(f'[PETLOVE] oauth_credentials.get_client_id(): {oauth_credentials.get_client_id()}')
+    #logging.getLogger('uploaders.utils.get_ads_client').info(f'[PETLOVE] oauth_credentials.get_client_secret(): {oauth_credentials.get_client_secret()}')
+    #logging.getLogger('uploaders.utils.get_ads_client').info(f'[PETLOVE] oauth_credentials.get_refresh_token(): {oauth_credentials.get_refresh_token()}')
 
     return GoogleAdsClient(
         oauth2_client, developer_token,
