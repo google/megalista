@@ -104,12 +104,6 @@ class GoogleAdsOfflineUploaderCallsDoFn(MegalistaUploader):
         'conversion_date_time': utils.format_date(conversion['time']),
         'conversion_value': float(str(conversion['amount']))
       }
-      #adds external attribution data if provided
-      if 'external_attribution_credit' in row and 'external_attribution_model' in row:
-        conversion['external_attribution_data'] = {
-          'external_attribution_credit': float(str(row['external_attribution_credit'])),
-          'external_attribution_model': row['external_attribution_model']
-        }
       #adds consent data if provided
       if 'consent_ad_user_data' in row and 'consent_ad_personalization' in row:
         conversion['consent'] = {
