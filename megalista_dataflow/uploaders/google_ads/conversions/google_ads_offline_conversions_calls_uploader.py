@@ -95,13 +95,28 @@ class GoogleAdsOfflineUploaderCallsDoFn(MegalistaUploader):
 
   def _do_upload(self, oc_service: Any, execution: Execution, conversion_resource_name: str, customer_id: str, rows: List[Dict[str, Union[str, Dict[str, str]]]]):
     logging.getLogger(_DEFAULT_LOGGER).info(f'Uploading {len(rows)} offline conversions (calls) on {conversion_resource_name} to Google Ads.')
-    conversions = [{
-          'conversion_action': conversion_resource_name,
-          'caller_id': conversion['caller_id'],
-          'call_start_date_time': utils.format_date(conversion['call_time']),
-          'conversion_date_time': utils.format_date(conversion['time']),
-          'conversion_value': float(str(conversion['amount']))
-    } for conversion in rows]
+    conversions = []
+    for row in rows:
+      conversion= {
+        'conversion_action': conversion_resource_name,
+        'caller_id': conversion['caller_id'],
+        'call_start_date_time': utils.format_date(conversion['call_time']),
+        'conversion_date_time': utils.format_date(conversion['time']),
+        'conversion_value': float(str(conversion['amount']))
+      }
+      #adds external attribution data if provided
+      if 'external_attribution_credit' in row and 'external_attribution_model' in row:
+        conversion['external_attribution_data'] = {
+          'external_attribution_credit': float(str(row['external_attribution_credit'])),
+          'external_attribution_model': row['external_attribution_model']
+        }
+      #adds consent data if provided
+      if 'consent_ad_user_data' in row and 'consent_ad_personalization' in row:
+        conversion['consent'] = {
+          'ad_user_data': row['ad_user_data'],
+          'ad_personalization': row['ad_personalization']
+        }
+      conversions.append(conversion)
 
     upload_data = {
       'customer_id': customer_id,
