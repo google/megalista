@@ -99,10 +99,10 @@ class GoogleAdsOfflineUploaderCallsDoFn(MegalistaUploader):
     for row in rows:
       conversion= {
         'conversion_action': conversion_resource_name,
-        'caller_id': conversion['caller_id'],
-        'call_start_date_time': utils.format_date(conversion['call_time']),
-        'conversion_date_time': utils.format_date(conversion['time']),
-        'conversion_value': float(str(conversion['amount']))
+        'caller_id': row['caller_id'],
+        'call_start_date_time': utils.format_date(row['call_time']),
+        'conversion_date_time': utils.format_date(row['time']),
+        'conversion_value': float(str(row['amount']))
       }
       #adds consent data if provided
       if 'consent_ad_user_data' in row and 'consent_ad_personalization' in row:
