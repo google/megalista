@@ -123,8 +123,8 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
       #adds consent data if provided
       if 'consent_ad_user_data' in row and 'consent_ad_personalization' in row:
         conversion['consent'] = {
-          'ad_user_data': row['ad_user_data'],
-          'ad_personalization': row['ad_personalization']
+          'ad_user_data': row['consent_ad_user_data'],
+          'ad_personalization': row['consent_ad_personalization']
         }
       conversions.append(conversion)
 
