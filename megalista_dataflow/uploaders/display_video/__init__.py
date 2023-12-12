@@ -12,4 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-DV_API_VERSION = 'v1'
+DV_API_VERSION = 'v3'
