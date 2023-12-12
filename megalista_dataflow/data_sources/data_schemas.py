@@ -51,7 +51,9 @@ _dtypes: Dict[str, Dict[str, Any]] = {
             {'name': 'time', 'required': True, 'data_type': 'string'},
             {'name': 'amount', 'required': True, 'data_type': 'string'},
             {'name': 'external_attribution_credit', 'required': False, 'data_type': 'string'},
-            {'name': 'external_attribution_model', 'required': False, 'data_type': 'string'}
+            {'name': 'external_attribution_model', 'required': False, 'data_type': 'string'},
+            {'name': 'consent_ad_user_data', 'required': False, 'data_type': 'string'},
+            {'name': 'consent_ad_personalization', 'required': False, 'data_type': 'string'}
         ],
         'groups': []
     },
@@ -78,7 +80,11 @@ _dtypes: Dict[str, Dict[str, Any]] = {
             {'name': 'time', 'required': True, 'data_type': 'string'},
             {'name': 'amount', 'required': True, 'data_type': 'string'},
             {'name': 'email', 'required': False, 'data_type': 'string'},
-            {'name': 'phone', 'required': False, 'data_type': 'string'}
+            {'name': 'phone', 'required': False, 'data_type': 'string'},
+            {'name': 'external_attribution_credit', 'required': False, 'data_type': 'string'},
+            {'name': 'external_attribution_model', 'required': False, 'data_type': 'string'},
+            {'name': 'consent_ad_user_data', 'required': False, 'data_type': 'string'},
+            {'name': 'consent_ad_personalization', 'required': False, 'data_type': 'string'}
         ],
         'groups': [
             ['email', 'phone']
@@ -89,7 +95,9 @@ _dtypes: Dict[str, Dict[str, Any]] = {
             {'name': 'caller_id', 'required': True, 'data_type': 'string'},
             {'name': 'call_time', 'required': True, 'data_type': 'string'},
             {'name': 'time', 'required': True, 'data_type': 'string'},
-            {'name': 'amount', 'required': True, 'data_type': 'string'}
+            {'name': 'amount', 'required': True, 'data_type': 'string'},
+            {'name': 'consent_ad_user_data', 'required': False, 'data_type': 'string'},
+            {'name': 'consent_ad_personalization', 'required': False, 'data_type': 'string'}
         ],
         'groups': []
     },
