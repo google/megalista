@@ -283,6 +283,78 @@ def test_error_notification(mocker, uploader, error_notifier):
   assert error_notifier.destination_type is DestinationType.ADS_OFFLINE_CONVERSION_CALLS
   assert error_notifier.errors_sent == {execution: f'Error on uploading offline conversions (calls): {error_message}.'}
 
+def test_conversion_upload_with_consent(mocker, uploader):
+  # arrange
+  conversion_resource_name = 'user_list_resouce'
+  arrange_conversion_resource_name_api_call(mocker, uploader, conversion_resource_name)
+
+  mocker.patch.object(uploader, '_get_oc_service')
+  conversion_name = 'user_list'
+  destination = Destination(
+    'dest1', DestinationType.ADS_OFFLINE_CONVERSION_CALLS, ['user_list'])
+  source = Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers'])
+  execution = Execution(_account_config, source, destination)
+
+  time1 = '2020-04-09T14:13:55.0005'
+  time1_result = '2020-04-09 14:13:55-03:00'
+
+  call_time1 = '2020-04-08T14:13:55.0005'
+  call_time1_result = '2020-04-08 14:13:55-03:00'
+
+  time2 = '2020-04-09T13:13:55.0005'
+  time2_result = '2020-04-09 13:13:55-03:00'
+
+  call_time2 = '2020-04-08T13:13:55.0005'
+  call_time2_result = '2020-04-08 13:13:55-03:00'
+
+  element1 = {
+    'time': time1,
+    'call_time': call_time1,
+    'amount': '123',
+    'caller_id': '+5511987654321',
+    'consent_ad_user_data': 'GRANTED',
+    'consent_ad_personalization': 'GRANTED'
+  }
+  element2 = {
+    'time': time2,
+    'call_time': call_time2,
+    'amount': '234',
+    'caller_id': '+5511987654321'
+  }
+
+  batch = Batch(execution, [element1, element2])
+
+  # act
+  uploader.process(batch)
+  uploader.finish_bundle()
+
+  uploader._get_ads_service.return_value.search_stream.assert_called_once_with(
+    customer_id='12345567890',
+    query=f"SELECT conversion_action.resource_name FROM conversion_action WHERE conversion_action.name = '{conversion_name}'"
+  )
+
+  uploader._get_oc_service.return_value.upload_call_conversions.assert_called_once_with(request={
+    'customer_id': '12345567890',
+    'partial_failure': True,
+    'validate_only': False,
+    'conversions': [{
+      'conversion_action': conversion_resource_name,
+      'call_start_date_time': call_time1_result,
+      'conversion_date_time': time1_result,
+      'conversion_value': 123,
+      'caller_id': '+5511987654321',
+      'consent': {
+        'ad_user_data': 'GRANTED',
+        'ad_personalization': 'GRANTED'
+      }
+    }, {
+      'conversion_action': conversion_resource_name,
+      'call_start_date_time': call_time2_result,
+      'conversion_date_time': time2_result,
+      'conversion_value': 234,
+      'caller_id': '+5511987654321'
+    }]
+  })
 
 # def test_conversion_upload_and_error_notification(mocker, uploader, error_notifier):
 #   """
