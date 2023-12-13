@@ -41,7 +41,7 @@ class DestinationType(Enum):
         DV_CUSTOMER_MATCH_DEVICE_ID_UPLOAD,
         UPLOADED_UUID,  # schema verification purposes
         UPLOADED_ORDER_ID
-    ) = range(20)
+    ) = range(21)
 
     def __eq__(self, other):
         if other is None:
