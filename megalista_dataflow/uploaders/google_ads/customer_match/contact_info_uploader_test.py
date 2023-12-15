@@ -268,3 +268,69 @@ def test_upload_add_users_with_mcc_account_override(mocker, uploader):
   uploader._get_offline_user_data_job_service.return_value.add_offline_user_data_job_operations.assert_called_once_with(
     request=data_insertion_payload
   ) 
+
+def test_upload_add_users_consent(mocker, uploader, error_notifier):
+  mocker.patch.object(uploader, '_get_offline_user_data_job_service')
+
+  uploader._get_offline_user_data_job_service.return_value.create_offline_user_data_job.return_value.resource_name = 'a'
+
+  uploader._get_offline_user_data_job_service.return_value.add_offline_user_data_job_operations.return_value = MagicMock().partial_failure_error = None
+
+  destination = Destination(
+    'dest1', DestinationType.ADS_CUSTOMER_MATCH_CONTACT_INFO_UPLOAD, ['user_list', 'ADD', '', '', '', 'GRANTED', 'GRANTED'])
+  source = Source('orig1', SourceType.BIG_QUERY, ['dt1', 'buyers'])
+  execution = Execution(_account_config, source, destination)
+
+  batch = Batch(execution, [{
+    'hashed_email': 'email1',
+    'hashed_phone_number': 'phone1',
+    'address_info': {
+      'hashed_first_name': 'first1',
+      'hashed_last_name': 'last1',
+      'country_code': 'country1',
+      'postal_code': 'postal1',
+    }
+  }])
+
+  uploader.process(batch)
+  uploader.finish_bundle()
+
+  data_insertion_payload = {
+    'enable_partial_failure': True,
+    'operations': [
+      {'create': {'user_identifiers': [{'hashed_email': 'email1'}]}},
+      {'create': {'user_identifiers': [{'address_info': {
+        'hashed_first_name': 'first1',
+        'hashed_last_name': 'last1',
+        'country_code': 'country1',
+        'postal_code': 'postal1'}},
+      ]}},
+      {'create': {'user_identifiers': [{'hashed_phone_number': 'phone1'}]}}
+    ],
+    'resource_name': 'a',
+  }
+
+  uploader._get_offline_user_data_job_service.assert_called_with(_ads_account_id) 
+
+  job_creation_payload = { 
+    'type_': 'CUSTOMER_MATCH_USER_LIST',
+    'customer_match_user_list_metadata': {
+     'user_list': 'None',
+     'consent': {
+       'ad_user_data': 'GRANTED',
+       'ad_personalization': 'GRANTED'
+      }   
+    }
+  }
+
+  uploader._get_offline_user_data_job_service.return_value.create_offline_user_data_job.assert_called_once_with(customer_id=_ads_account_id,
+    job=job_creation_payload
+  )
+
+  uploader._get_offline_user_data_job_service.return_value.add_offline_user_data_job_operations.assert_called_once_with(
+    request=data_insertion_payload
+  )
+
+  uploader._get_offline_user_data_job_service.return_value.run_offline_user_data_job.assert_called_once()
+
+  assert not error_notifier.were_errors_sent

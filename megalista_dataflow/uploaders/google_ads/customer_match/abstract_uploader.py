@@ -161,7 +161,7 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
         return self._get_customer_id(account_config, destination)
 
     def _get_job_by_list_name(self, offline_user_data_job_service, list_resource_name: str, operator: str,
-                              customer_id: str, login_customer_id: str) -> str:
+                              customer_id: str, login_customer_id: str, consents: Dict[str,Any]) -> str:
         cache_key = f"{list_resource_name}:{operator}"
 
         if cache_key in self._job_cache:
@@ -170,7 +170,8 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
         job_creation_payload = {
             'type_': 'CUSTOMER_MATCH_USER_LIST',
             'customer_match_user_list_metadata': {
-                'user_list': list_resource_name
+                'user_list': list_resource_name,
+                **(consents)
             }
         }
 
@@ -193,6 +194,21 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
 
     def get_filtered_rows(self, rows: List[Any], keys: List[str]) -> List[Dict[str, Any]]:
         return [{key: row.get(key) for key in keys if key in row} for row in rows]
+
+    def _get_consents(self, destination_metadata: List[str]) -> Dict[str, str]:
+      if len(destination_metadata) >= 7:
+          if (
+              destination_metadata[5] is not None
+              and destination_metadata[6] is not None
+          ):
+              return {
+                  "consent": {
+                      "ad_user_data": destination_metadata[5],
+                      "ad_personalization": destination_metadata[6],
+                  },
+              }
+
+      return {}
 
     @utils.safe_process(logger=logging.getLogger(_DEFAULT_LOGGER))
     def process(self, batch: Batch, **kwargs):
@@ -218,8 +234,10 @@ class GoogleAdsCustomerMatchAbstractUploaderDoFn(MegalistaUploader):
                 execution.destination.destination_metadata))
 
         operator = self._get_list_operator(execution.destination.destination_metadata[1])
+
+        consents = self._get_consents(execution.destination.destination_metadata)
         job_resource_name = self._get_job_by_list_name(offline_user_data_job_service, list_resource_name, operator,
-                                                       customer_id, login_customer_id)
+                                                       customer_id, login_customer_id, consents)
 
         rows = self.get_filtered_rows(batch.elements, self.get_row_keys())
 
