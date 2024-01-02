@@ -113,14 +113,28 @@ class GoogleAdsECLeadsUploaderDoFn(MegalistaUploader):
         return [batch]
 
     def _do_upload(self, oc_service, execution, conversion_resource_name, customer_id, rows):
-        logging.getLogger(_DEFAULT_LOGGER).info(
-            f'Uploading {len(rows)} offline conversions on {conversion_resource_name} to Google Ads.')
-        conversions = [{
-            'conversion_action': conversion_resource_name,
-            'conversion_date_time': utils.format_date(conversion['time']),
-            'conversion_value': float(str(conversion['amount'])),
-            'user_identifiers': [{k: v} for (k, v) in conversion.items() if k in ('hashed_email', 'hashed_phone_number')]
-        } for conversion in rows]
+        logging.getLogger(_DEFAULT_LOGGER).info(f'Uploading {len(rows)} offline conversions on {conversion_resource_name} to Google Ads.')
+        conversions = []
+        for row in rows:
+            conversion= {
+                'conversion_action': conversion_resource_name,
+                'conversion_date_time': utils.format_date(row['time']),
+                'conversion_value': float(str(row['amount'])),
+                'user_identifiers': [{k: v} for (k, v) in conversion.items() if k in ('hashed_email', 'hashed_phone_number')]
+            }
+            #adds external attribution data if provided
+            if 'external_attribution_credit' in row and 'external_attribution_model' in row:
+                conversion['external_attribution_data'] = {
+                'external_attribution_credit': float(str(row['external_attribution_credit'])),
+                'external_attribution_model': row['external_attribution_model']
+                }
+            #adds consent data if provided
+            if 'consent_ad_user_data' in row and 'consent_ad_personalization' in row:
+                conversion['consent'] = {
+                'ad_user_data': row['consent_ad_user_data'],
+                'ad_personalization': row['consent_ad_personalization']
+                }
+            conversions.append(conversion)
 
         upload_data = {
             'customer_id': customer_id,
@@ -163,13 +177,13 @@ class GoogleAdsECLeadsUploaderDoFn(MegalistaUploader):
                         f'Google Ads for account {customer_id} has not been set up for Enhanced Conversions for Leads, check https://developers.google.com/google-ads/api/docs/conversions/upload-identifiers'
                     )
 
-    def _get_results_dataframe(self, response):
-        successful_users = [
-            user for user in response.results if user.ListFields()]
-        logging.getLogger(_DEFAULT_LOGGER).info(
-            f'Sucessfully uploaded {len(successful_users)} conversions')
+    # def _get_results_dataframe(self, response):
+    #     successful_users = [
+    #         user for user in response.results if user.ListFields()]
+    #     logging.getLogger(_DEFAULT_LOGGER).info(
+    #         f'Sucessfully uploaded {len(successful_users)} conversions')
 
-        sucess_df = pd.DataFrame(columns=['conversion_action',
-                                          'conversion_date_time',
-                                          'hashed_email',
-                                          'hashed_phone_number'])
+    #     sucess_df = pd.DataFrame(columns=['conversion_action',
+    #                                       'conversion_date_time',
+    #                                       'hashed_email',
+    #                                       'hashed_phone_number'])
