@@ -232,6 +232,8 @@ class GoogleAdsOfflineUploaderDoFn(MegalistaUploader):
     if error_message:
       self._add_error(execution, error_message)
 
+    logging.getLogger(_DEFAULT_LOGGER).info('Teste megalista novos logs')
+    
     return response
 
   def _get_resource_name(self, ads_service, customer_id: str, name: str):
