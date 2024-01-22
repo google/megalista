@@ -120,7 +120,7 @@ class GoogleAdsECLeadsUploaderDoFn(MegalistaUploader):
                 'conversion_action': conversion_resource_name,
                 'conversion_date_time': utils.format_date(row['time']),
                 'conversion_value': float(str(row['amount'])),
-                'user_identifiers': [{k: v} for (k, v) in conversion.items() if k in ('hashed_email', 'hashed_phone_number')]
+                'user_identifiers': [{k: v} for (k, v) in row.items() if k in ('hashed_email', 'hashed_phone_number')]
             }
             #adds external attribution data if provided
             if 'external_attribution_credit' in row and 'external_attribution_model' in row:
