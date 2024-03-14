@@ -520,7 +520,7 @@ class GoogleAnalytics4MeasurementProtocolStep(MegalistaStep):
                 ),
                 self.params.dataflow_options,
                 DestinationType.GA_4_MEASUREMENT_PROTOCOL,
-                20,
+                10000,
                 TransactionalType.UUID,
             )
             | "Upload - GA 4 measurement protocol"
