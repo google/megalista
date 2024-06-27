@@ -28,6 +28,6 @@ setuptools.setup(
                       'google-cloud-firestore==2.16.0',
                       'pandas==2.1.2', 
                       'boto3==1.28.78',
-                      'tadau'],
+                      'tadau==1.0.3'],
     packages=setuptools.find_packages(),
 )
