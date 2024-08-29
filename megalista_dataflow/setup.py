@@ -23,7 +23,7 @@ setuptools.setup(
     install_requires=['google-ads==24.1.0',
                       'google-api-python-client==2.133.0',
                       'google-cloud-bigquery==3.24.0',
-                      'aiohttp==3.9.0',
+                      'aiohttp==3.10.2',
                       'google-cloud-storage==2.18.2',
                       'google-cloud-firestore==2.16.0',
                       'pandas==2.1.2', 
