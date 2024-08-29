@@ -1,4 +1,4 @@
-apache-beam==2.56.0
+apache-beam==2.58.1
 google-ads==24.1.0
 google-api-python-client==2.133.0
 google-cloud-bigquery==3.24.0
