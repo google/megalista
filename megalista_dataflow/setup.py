@@ -24,7 +24,7 @@ setuptools.setup(
                       'google-api-python-client==2.133.0',
                       'google-cloud-bigquery==3.24.0',
                       'aiohttp==3.9.0',
-                      'google-cloud-storage==2.17.0',
+                      'google-cloud-storage==2.18.2',
                       'google-cloud-firestore==2.16.0',
                       'pandas==2.1.2', 
                       'boto3==1.28.78',
