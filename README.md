@@ -1,10 +1,6 @@
 # Megalista
 
-<<<<<<< HEAD
-**Depreciation notice:** Development of new Megalista features has ceased, and Megalista will no longer receive proactive support after December 31st 2024 for potential bugs and API upgrades. Existing customers are encouraged to migrate available use cases in platform through [Google Ads Data Manager (GADM)](https://support.google.com/google-ads/answer/14639041?hl=en), or [Tightlock](https://github.com/google-marketing-solutions/Tightlock). Tightlock will continue to support customers for all use cases that are not covered by GADM.
-=======
 **Depreciation notice:** Development of new Megalista features has ceased, and Megalista will be archieved after December 31st 2024. Existing customers are encouraged to migrate available use cases in platform through [Google Ads Data Manager (GADM)](https://support.google.com/google-ads/answer/14639041?hl=en), or [Tightlock](https://github.com/google-marketing-solutions/Tightlock). Tightlock will continue to support customers for all use cases that are not covered by GADM. If you would still like to use Megalista after December 31st 2024, please fork the solution if incremenetal updates are required (e.g to address potential bugs and API upgrades).
->>>>>>> 58aecd3 (Add depreciation notice to Megalista)
 
 Sample integration code for onboarding offline/CRM data from BigQuery as custom audiences or offline conversions in Google Ads, Google Analytics 360, Google Display & Video 360, and Google Campaign Manager.
 
