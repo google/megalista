@@ -40,7 +40,8 @@ python3 -m main \
     --setup_file ./setup.py \
     --template_location "gs://$2/templates/megalista" \
     --num_workers 1 \
-    --autoscaling_algorithm=NONE \
+    --autoscaling_algorithm=THROUGHPUT_BASED \
+    --number_of_worker_harness_threads=16 \
     --service_account_email "$4" \
     --collect_usage_stats "$5"
 echo "Copy megalista_medata to bucket $2"
