@@ -523,6 +523,8 @@ class GoogleAnalytics4MeasurementProtocolStep(MegalistaStep):
                 20,
                 TransactionalType.UUID,
             )
+            | "Prevent Fusion"
+            >> beam.Reshuffle()
             | "Upload - GA 4 measurement protocol"
             >> beam.ParDo(
                 GoogleAnalytics4MeasurementProtocolUploaderDoFn(
